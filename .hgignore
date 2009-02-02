@@ -1,0 +1,8 @@
+syntax: glob
+
+*~
+
+# Files generated as part of the build process
+*.o
+*.d
+project
