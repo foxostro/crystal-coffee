@@ -1,0 +1,7 @@
+
+Describe the features you have implemented for p1, and which you have not.
+if you have missing features, be sure to explain how much you accomplished and
+why, and if you did extra work, be sure to explain what that was and how you
+did it. You should detail anything you think we need to know to understand
+your code.
+
