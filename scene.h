@@ -116,6 +116,12 @@ public:
      * Renders this geometry using OpenGL in the local coordinate space.
      */
     virtual void draw() const = 0;
+
+	/** Sets the object's material properties */
+	void set_material() const;
+
+	/** Sets the object's transformation */
+	void set_transformation() const;
 };
 
 class UpdatableGeometry : public Geometry

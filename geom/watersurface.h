@@ -21,6 +21,9 @@
 class WaterSurface: public UpdatableGeometry
 {
 public:
+	typedef struct { real_t x, y, z; } vertex_t;
+	typedef unsigned int index_t;
+
     /**
      * structure containing information about a wave-emitting point.
      */
@@ -61,15 +64,28 @@ public:
     real_t get_height(const Vec2& pos, real_t time);
 
     virtual void update(real_t time);
-    virtual void draw() const;
+
+	virtual void draw() const;
 
 private:
     // list of all wave-emitting points.
     WavePointList wave_points;
+
     // the resolution; the number of vertices in each direction minus one
     int resx, resz;
 
-    // TODO P1 add members for heightmap and model generation.
+	vertex_t * vertices;
+	vertex_t * normals;
+	unsigned int * indices;
+	unsigned int num_of_indices;
+	unsigned int num_of_vertices;
+
+	vertex_t & get_vertex(int x, int z);
+	vertex_t & get_normal(int x, int z);
+
+	Vec3 get_triangle_normal(int x1, int z1,
+	                         int x2, int z2,
+	                         int x3, int z3);
 };
 
 #endif /* _WATERSURFACE_H_ */

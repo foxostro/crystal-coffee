@@ -1,8 +1,16 @@
 syntax: glob
 
 *~
+.directory
+shot.png
 
 # Files generated as part of the build process
 *.o
 *.d
 project
+
+Debug/*
+Release/*
+*.ncb
+*.suo
+graphicsVS9.vcproj.Rook.arfox.user

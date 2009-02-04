@@ -15,6 +15,7 @@
     members.
  */
 
+#include "vec/mat.h"
 #include "scene.h"
 #include "glheaders.h"
 #include "imageio.h"
@@ -72,7 +73,35 @@ Geometry::Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl,
 
 Geometry::~Geometry() {}
 
+void Geometry::set_material() const
+{
+	assert(material);
 
+	const GLfloat ambient[] = { material->ambient.x, material->ambient.y, material->ambient.z, 1 };
+	const GLfloat diffuse[] = { material->diffuse.x, material->diffuse.y, material->diffuse.z, 1 };
+	const GLfloat specular[] = { material->specular.x, material->specular.y, material->specular.z, 1 };
+	const GLfloat black[] = { 0, 0, 0, 1 };
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);
+	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
+}
+
+void Geometry::set_transformation() const
+{
+	static const real_t pi = 3.1415;
+
+	glTranslated(position.x, position.y, position.z);
+
+	// orient the object
+	Mat4 mat;
+	orientation.to_matrix(mat);
+	glMultMatrixd(mat.m);
+
+	glScaled(scale.x, scale.y, scale.z);
+}
 
 Camera::Camera()
     : position(Vec3::Zero), orientation(Quat::Identity), focus_dist(1),

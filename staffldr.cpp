@@ -252,8 +252,9 @@ static void ldr_load_scene01(Scene* scene)
     WaterSurface* water_surface = new WaterSurface(Vec3(0, POY - 1, 0),
                                      Quat::Identity,
                                      Vec3(PIX, 0.4, PIZ),
-                                     wave_points,
-                                     240, 240, mat);
+									 wave_points,
+									 128, 128, mat);
+
     scene->objects.push_back(water_surface);
     scene->updatable_objects.push_back(water_surface);
     scene->caustic_generator = water_surface;

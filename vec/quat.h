@@ -97,7 +97,7 @@ public:
      * Convert this quaternion into an angle and axis.
      * Returns the rotation in radians about an axis.
      */
-    void to_angle_axis(Vec3& axis, real_t* angle);
+    void to_angle_axis(Vec3& axis, real_t* angle) const;
 
     /**
      * Converts this quaternion to a matrix.

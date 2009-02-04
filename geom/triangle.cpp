@@ -10,6 +10,7 @@
     signatures. The staff scene loader requires all of those to be intact.
  */
 
+#include "vec/mat.h"
 #include "triangle.h"
 #include "glheaders.h"
 #include <cstring>
@@ -48,6 +49,27 @@ Triangle::~Triangle() {}
 
 void Triangle::draw() const
 {
-    // TODO P1 draw the geometry in local space
-}
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 
+	set_transformation();
+	set_material();
+
+	glBegin(GL_TRIANGLES);
+
+	glTexCoord2f(tcoords[2].x, tcoords[2].y);
+	glVertex3f(vertices[2].x, vertices[2].y, vertices[2].z);
+	glNormal3f(normals[2].x, normals[2].y, normals[2].z);
+
+	glTexCoord2f(tcoords[1].x, tcoords[1].y);
+	glVertex3f(vertices[1].x, vertices[1].y, vertices[1].z);
+	glNormal3f(normals[1].x, normals[1].y, normals[1].z);
+
+	glTexCoord2f(tcoords[0].x, tcoords[0].y);
+	glVertex3f(vertices[0].x, vertices[0].y, vertices[0].z);
+	glNormal3f(normals[0].x, normals[0].y, normals[0].z);
+
+	glEnd();
+
+	glPopMatrix();
+}

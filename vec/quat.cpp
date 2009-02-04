@@ -107,7 +107,7 @@ Quat Quat::inverse() const
     }
 }
 
-void Quat::to_angle_axis(Vec3& axis, real_t* angle)
+void Quat::to_angle_axis(Vec3& axis, real_t* angle) const
 {
     // The quaternion representing the rotation is
     // q = cos(A/2)+sin(A/2)*(x*i+y*j+z*k)
