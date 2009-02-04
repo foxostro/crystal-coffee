@@ -157,3 +157,4 @@ void prj_render(Scene* scene)
 	         scene->objects.end(),
 	         &draw_geom);
 }
+

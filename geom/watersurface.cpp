@@ -16,6 +16,7 @@
 #include "watersurface.h"
 #include "glheaders.h"
 #include <iostream>
+#include <cstring>
 
 WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                            const WavePointList& wave_points,
