@@ -79,10 +79,28 @@ private:
 	unsigned int * indices;
 	unsigned int num_of_indices;
 	unsigned int num_of_vertices;
+	
+	/** Generate indices for the heightmap geometry (these are set once) */
+	void generate_indices();
 
+	/** Gets a vertex from the vertices array given a position in the
+	  * heightmap data.
+	  * @param x X position in the rectangular heightmap
+	  * @param z Z position in the rectangular heightmap
+	  * @return reference to the vertex in question
+	  */
 	vertex_t & get_vertex(int x, int z);
+	
+	/** Gets a normal from the normals array given a position in the
+	  * heightmap data.
+	  * @param x X position in the rectangular heightmap
+	  * @param z Z position in the rectangular heightmap
+	  * @return reference to the normal in question
+	  */
 	vertex_t & get_normal(int x, int z);
-
+	
+	/** Gets a triangle normal given the heightmap-location of three vertices.
+	  */
 	Vec3 get_triangle_normal(int x1, int z1,
 	                         int x2, int z2,
 	                         int x3, int z3);

@@ -29,8 +29,6 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
   num_of_indices(0),
   num_of_vertices(0)
 {
-	int idx, x, z;
-
 	num_of_vertices = (resx+1) * (resz+1);
 	vertices = new vertex_t[num_of_vertices];
 	normals = new vertex_t[num_of_vertices];
@@ -42,6 +40,15 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
 	memset(normals, 0, sizeof(vertex_t) * num_of_vertices);
 	memset(indices, 0, sizeof(index_t) * num_of_indices);
 
+	generate_indices();
+
+	update(0.0);
+}
+
+void WaterSurface::generate_indices()
+{
+	int idx, x, z;
+	
 	for(idx = 0, x = 0; x < resx; x++)
 	{
 		for(z = 0; z < resz; z++)
@@ -60,8 +67,6 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
 			assert((unsigned)idx <= num_of_indices);
 		}
 	}
-
-	update(0.0);
 }
 
 WaterSurface::~WaterSurface()
@@ -100,7 +105,7 @@ void WaterSurface::update(real_t time)
 		{
 			get_vertex(x,z).x = (real_t)x / resx * 2 - 1;
 			get_vertex(x,z).z = (real_t)z / resz * 2 - 1;
-			get_vertex(x,z).y = get_height(Vec2(get_vertex(x,z).x, get_vertex(x,z).z), time);
+			get_vertex(x,z).y = 2 * get_height(Vec2(get_vertex(x,z).x, get_vertex(x,z).z), time);
 
 			get_normal(x,z).x = 0.0;
 			get_normal(x,z).z = 0.0;
@@ -120,7 +125,8 @@ void WaterSurface::update(real_t time)
 			Vec3 normal5 = get_triangle_normal(x+0, z+0,  x+1, z-1,  x+0, z-1);
 			Vec3 normal6 = get_triangle_normal(x+0, z+0,  x+0, z-1,  x-1, z+0);
 
-			Vec3 normal = (normal1 + normal2 + normal3 + normal4 + normal5 + normal6) * (1.0 / 6.0);
+			Vec3 normal = (normal1 + normal2 + normal3 +
+			               normal4 + normal5 + normal6) * (1.0 / 6.0);
 
 			get_normal(x,z).x = normal.x;
 			get_normal(x,z).y = normal.y;
@@ -139,8 +145,8 @@ void WaterSurface::draw() const
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
-	glVertexPointer(3, GL_DOUBLE, 0, vertices);
 	glNormalPointer(GL_DOUBLE, 0, normals);
+	glVertexPointer(3, GL_DOUBLE, 0, vertices);
 
 	glDrawElements(GL_TRIANGLES,
 	               num_of_indices,
@@ -179,6 +185,10 @@ Vec3 WaterSurface::get_triangle_normal(int x1, int z1,
 {
 	Vec3 a, b, c, n;
 
+	/* Invalid faces have a faked normals.
+	 * This branch is actually invoked when the normals for edge vertices are
+	 * generated.
+	 */
 	if(x1<=0 || x1>resx ||
 	   x2<=0 || x2>resx ||
 	   x3<=0 || x3>resx ||
