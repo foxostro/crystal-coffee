@@ -91,8 +91,6 @@ void Geometry::set_material() const
 
 void Geometry::set_transformation() const
 {
-	static const real_t pi = 3.1415;
-
 	glTranslated(position.x, position.y, position.z);
 
 	// orient the object

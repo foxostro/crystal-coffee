@@ -23,9 +23,11 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                            int resx, int resz, Material* mat, Effect* efc)
 : UpdatableGeometry(pos, ori, scl, mat, efc),
   wave_points(wave_points), resx(resx), resz(resz),
-  num_of_indices(0),
   vertices(0),
-  indices(0)
+  normals(0),
+  indices(0),
+  num_of_indices(0),
+  num_of_vertices(0)
 {
 	int idx, x, z;
 
