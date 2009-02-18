@@ -21,11 +21,11 @@
 class WaterSurface: public UpdatableGeometry
 {
 public:
-	typedef struct { real_t x, y, z; } vertex_t;
 	typedef unsigned int index_t;
+	typedef struct { real_t x, y, z; } vertex_t;
 
     /**
-     * structure containing information about a wave-emitting point.
+     * Structure containing information about a wave-emitting point.
      */
     struct WavePoint {
         Vec2 position; // position on surface (between (-1 and 1)
@@ -74,36 +74,30 @@ private:
     // the resolution; the number of vertices in each direction minus one
     int resx, resz;
 
+	real_t * heightmap;
 	vertex_t * vertices;
 	vertex_t * normals;
 	unsigned int * indices;
 	unsigned int num_of_indices;
 	unsigned int num_of_vertices;
 	
-	/** Generate indices for the heightmap geometry (these are set once) */
+	// generate indices for the heightmap mesh
 	void generate_indices();
-
-	/** Gets a vertex from the vertices array given a position in the
-	  * heightmap data.
-	  * @param x X position in the rectangular heightmap
-	  * @param z Z position in the rectangular heightmap
-	  * @return reference to the vertex in question
-	  */
-	vertex_t & get_vertex(int x, int z);
 	
-	/** Gets a normal from the normals array given a position in the
-	  * heightmap data.
-	  * @param x X position in the rectangular heightmap
-	  * @param z Z position in the rectangular heightmap
-	  * @return reference to the normal in question
-	  */
-	vertex_t & get_normal(int x, int z);
+	// generate the heightmap from the surface function
+	void generate_heightmap(real_t time);
 	
-	/** Gets a triangle normal given the heightmap-location of three vertices.
-	  */
-	Vec3 get_triangle_normal(int x1, int z1,
-	                         int x2, int z2,
-	                         int x3, int z3);
+	// generate the normals of the heightmap
+	void generate_normals();
+	
+	// generate vertices for the mesh from the heightmap
+	void generate_vertices();
+	
+	void set_vertex(int x, int z, vertex_t v);
+	
+	void set_normal(int x, int z, vertex_t n);
+	
+	static vertex_t compute_normal(real_t *heightmap, int sx, int sz, int x, int z);
 };
 
 #endif /* _WATERSURFACE_H_ */

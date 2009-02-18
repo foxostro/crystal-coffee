@@ -253,7 +253,7 @@ static void ldr_load_scene01(Scene* scene)
                                      Quat::Identity,
                                      Vec3(PIX, 0.4, PIZ),
 									 wave_points,
-									 128, 128, mat);
+									 240, 240, mat);
 
     scene->objects.push_back(water_surface);
     scene->updatable_objects.push_back(water_surface);
