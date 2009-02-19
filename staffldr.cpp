@@ -35,57 +35,17 @@ static void ldr_load_scene00(Scene* scene)
     Material* mat;
 
     mat = new Material();
-    mat->ambient = Vec3(.5,0,.5);
-    mat->diffuse = Vec3(.5,0,.5);
-    mat->phong = Vec3(1,.3,1);
-    mat->shininess = 20;
+    mat->ambient = Vec3::Ones;
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
+    mat->shininess = 18;
     mat->specular = Vec3(.1,.1,.1);
     mat->refraction_index = 0;
-    scene->materials.push_back(mat);
-
-    {
-        Vec3 vertices[] = { Vec3(-.5,0,3), Vec3(.5,0,3), Vec3(0,-.5,3) };
-        Vec2 tcoords[] = { Vec2::Zero, Vec2::Zero, Vec2::Zero };
-        scene->objects.push_back(
-            new Triangle(Vec3(0,-1,-3), Quat(Vec3::UnitZ, PI), Vec3(2,4,2),
-                         vertices, tcoords, Vec3::UnitZ, mat, 0));
-    }
-
-    mat = new Material();
-    mat->ambient = Vec3(0,0,1);
-    mat->diffuse = Vec3(0,0,1);
-    mat->phong = Vec3(.3,.3,1);
-    mat->shininess = 20;
-    mat->specular = Vec3(.1,.1,.1);
-    mat->refraction_index = 0;
+    mat->texture_name = "images/earth.png";
     scene->materials.push_back(mat);
 
     scene->objects.push_back(
-        new Sphere(Vec3(-5,3,-2), Quat::Identity, Vec3::Ones, 2, mat));
-
-    mat = new Material();
-    mat->ambient = Vec3(0,1,0);
-    mat->diffuse = Vec3(.2,1,.2);
-    mat->phong = Vec3::Ones;
-    mat->shininess = 80;
-    mat->specular = Vec3(.8,.8,.8);
-    mat->refraction_index = 0;
-    scene->materials.push_back(mat);
-
-    scene->objects.push_back(
-        new Sphere(Vec3(4,3,-2), Quat::Identity, Vec3::Ones, 1, mat));
-
-    mat = new Material();
-    mat->ambient = Vec3(1,0,0);
-    mat->diffuse = Vec3(1,.2,.2);
-    mat->phong = Vec3::Ones;
-    mat->shininess = 40;
-    mat->specular = Vec3(.8,.8,.8);
-    mat->refraction_index = 0;
-    scene->materials.push_back(mat);
-
-    scene->objects.push_back(
-        new Sphere(Vec3(5,-1,0), Quat(Vec3::UnitY, PI/2), Vec3(1,1,2), 1, mat));
+        new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3, mat));
 
     Light light;
     light.position = Vec3(.4, .7, .8) * 100;
@@ -104,7 +64,7 @@ static void ldr_load_scene00(Scene* scene)
 
 static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
                           const Vec3& corner, const Vec3& normal, Material* mat,
-                          const Vec2& tcoord_min, const Vec2& tcoord_unit)
+                          const Vec2& tcoord_min, const Vec2& tcoord_unit, Effect* effect)
 {
     Vec3 maxi = corner + xaxis + yaxis;
 
@@ -123,7 +83,7 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
     tcoords[2] = tcoord_min + Vec2(0, dist.y) * tcoord_unit;
     scene->objects.push_back(
         new Triangle(Vec3::Zero, Quat::Identity, Vec3::Ones,
-                     vertices, tcoords, normals, materials, 0));
+                     vertices, tcoords, normals, materials, effect));
     vertices[0] = corner;
     vertices[1] = maxi;
     vertices[2] = corner + xaxis;
@@ -132,19 +92,28 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
     tcoords[2] = tcoord_min + Vec2(dist.x, 0) * tcoord_unit;
     scene->objects.push_back(
         new Triangle(Vec3::Zero, Quat::Identity, Vec3::Ones,
-                     vertices, tcoords, normals, materials, 0));
+                     vertices, tcoords, normals, materials, effect));
 }
 
 static void create_pool(Scene* scene)
 {
     Material* mat = new Material();
-    mat->ambient = Vec3(1,0,0);
-    mat->diffuse = Vec3(1,0,0);
-    mat->phong = Vec3::Zero;
+    mat->ambient = Vec3(0.7, 0.7, 0.7);
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
     mat->shininess = 40;
     mat->specular = Vec3(.2,.2,.2);
     mat->refraction_index = 0;
+	mat->texture_name = "images/bricks_diffuse.png";
     scene->materials.push_back(mat);
+
+	Material* normal_mat = new Material();
+	normal_mat->texture_name = "images/bricks_normal.png";
+	scene->materials.push_back(normal_mat);
+
+	// apply bump mapping to the pool
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
+	scene->effects.push_back(bump);
 
     Vec2 tcmin(0,0);
     Vec2 tcunit(.25,.25);
@@ -154,52 +123,52 @@ static void create_pool(Scene* scene)
     // upper corners
     create_square(scene,
                   Vec3(POX-PIX,0,0), Vec3(0,0,2*POZ), Vec3(PIX,POY,-POZ),
-                  Vec3::UnitY, mat, tcmin, tcunit);
+                  Vec3::UnitY, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(POX-PIX,0,0), Vec3(0,0,2*POZ), Vec3(-POX,POY,-POZ),
-                  Vec3::UnitY, mat, tcmin, tcunit);
+                  Vec3::UnitY, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,0,POZ-PIZ), Vec3(-PIX,POY,-POZ),
-                  Vec3::UnitY, mat, tcmin, tcunit);
+                  Vec3::UnitY, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,0,POZ-PIZ), Vec3(-PIX,POY,PIZ),
-                  Vec3::UnitY, mat, tcmin, tcunit);
+                  Vec3::UnitY, mat, tcmin, tcunit, bump);
 
     // inner sides
     create_square(scene,
                   Vec3(0,0,2*PIZ), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,-PIZ),
-                  Vec3::UnitX, mat, tcmin, tcunit);
+                  Vec3::UnitX, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(0,0,2*PIZ), Vec3(0,POY-PIY,0), Vec3(PIX,PIY,-PIZ),
-                  -Vec3::UnitX, mat, tcmin, tcunit);
+                  -Vec3::UnitX, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,-PIZ),
-                  Vec3::UnitZ, mat, tcmin, tcunit);
+                  Vec3::UnitZ, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,PIZ),
-                  -Vec3::UnitZ, mat, tcmin, tcunit);
+                  -Vec3::UnitZ, mat, tcmin, tcunit, bump);
 
     // outer sides
     create_square(scene,
                   Vec3(0,0,2*POZ), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,-POZ),
-                  -Vec3::UnitX, mat, tcmin, tcunit);
+                  -Vec3::UnitX, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(0,0,2*POZ), Vec3(0,POY-PBY,0), Vec3(POX,PBY,-POZ),
-                  Vec3::UnitX, mat, tcmin, tcunit);
+                  Vec3::UnitX, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*POX,0,0), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,-POZ),
-                  -Vec3::UnitZ, mat, tcmin, tcunit);
+                  -Vec3::UnitZ, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*POX,0,0), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,POZ),
-                  Vec3::UnitZ, mat, tcmin, tcunit);
+                  Vec3::UnitZ, mat, tcmin, tcunit, bump);
 
     // bottom
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,0,2*PIZ), Vec3(-PIX,PIY,-PIZ),
-                  Vec3::UnitY, mat, tcmin, tcunit);
+                  Vec3::UnitY, mat, tcmin, tcunit, bump);
     create_square(scene,
                   Vec3(2*POX,0,0), Vec3(0,0,2*POZ), Vec3(-POX,PBY,-POZ),
-                  -Vec3::UnitY, mat, tcmin, tcunit);
+                  -Vec3::UnitY, mat, tcmin, tcunit, bump);
 }
 
 static void ldr_load_scene01(Scene* scene)
@@ -214,7 +183,12 @@ static void ldr_load_scene01(Scene* scene)
     cam.near_clip = 1;
     cam.far_clip = 1000.0;
 
-    scene->ambient_light = Vec3(.1,.1,.1);
+	// create sphere map
+	SphereMap* spheremap = new SphereMap();
+	scene->background = spheremap;
+	spheremap->texture_name = "images/spheremap_stpeters.png";
+
+    scene->ambient_light = Vec3(.2,.2,.2);
     scene->refraction_index = 1;
 
     create_pool(scene);
@@ -252,15 +226,56 @@ static void ldr_load_scene01(Scene* scene)
     WaterSurface* water_surface = new WaterSurface(Vec3(0, POY - 1, 0),
                                      Quat::Identity,
                                      Vec3(PIX, 0.4, PIZ),
-									 wave_points,
-									 240, 240, mat);
-
+                                     wave_points,
+                                     240, 240, mat);
     scene->objects.push_back(water_surface);
     scene->updatable_objects.push_back(water_surface);
     scene->caustic_generator = water_surface;
 
+	// FRESNEL: add fresnel effect to water surface
+	Effect* fresnel = new FresnelEffect("shaders/fresnel_vert.glsl",
+										"shaders/fresnel_frag.glsl",
+										spheremap, mat);
+	water_surface->effect = fresnel;
+	scene->effects.push_back(fresnel);
+	// FRESNEL
+
+    mat = new Material();
+    mat->ambient = Vec3::Ones;
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3(1,.5,1);
+    mat->shininess = 20;
+    mat->specular = Vec3(.6,.6,.6);
+    mat->refraction_index = 0;
+    mat->texture_name = "images/swirly.png";
+    scene->materials.push_back(mat);
+
+    real_t rad = 2;
+    scene->objects.push_back(
+        new Sphere(Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+    scene->objects.push_back(
+        new Sphere(Vec3(-(POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+
+    mat = new Material();
+    mat->ambient = Vec3::Ones;
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
+    mat->shininess = 100;
+    mat->specular = Vec3::Ones;
+    mat->refraction_index = 2;
+    scene->materials.push_back(mat);
+
+    scene->objects.push_back(
+        new Sphere(Vec3(-(POX+PIX)/2, POY+rad, (POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+    scene->objects.push_back(
+        new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+
     Light light;
-    light.position = Vec3(-4, 8.5, -8) * 30;
+    light.position = Vec3(-4, 8.5, 8) * 30;
     light.color = Vec3(.7,.7,.7);
     scene->lights.push_back(light);
 }

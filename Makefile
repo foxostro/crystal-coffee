@@ -18,13 +18,14 @@ SRCS = app.cpp \
        geom/sphere.cpp \
        geom/triangle.cpp \
        geom/watersurface.cpp \
+	   effect.cpp
 
 .PHONY: clean
 TARGET = project
 CXX = g++
 UNAME := $(shell uname)
 UNAME_M := $(shell uname -m)
-CXXFLAGS = -g -O2 -Wall -I$(shell pwd)
+CXXFLAGS = -g -O2 -Wall -I"$(shell pwd)"
 LDFLAGS =
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(OBJS:.o=.d)
