@@ -22,7 +22,6 @@ class WaterSurface: public UpdatableGeometry
 {
 public:
 	typedef unsigned int index_t;
-	typedef struct { real_t x, y, z; } vertex_t;
 
     /**
      * Structure containing information about a wave-emitting point.
@@ -75,8 +74,8 @@ private:
     int resx, resz;
 
 	real_t * heightmap;
-	vertex_t * vertices;
-	vertex_t * normals;
+	Vec3 * vertices;
+	Vec3 * normals;
 	unsigned int * indices;
 	unsigned int num_of_indices;
 	unsigned int num_of_vertices;
@@ -93,11 +92,11 @@ private:
 	// generate vertices for the mesh from the heightmap
 	void generate_vertices();
 	
-	void set_vertex(int x, int z, vertex_t v);
+	void set_vertex(int x, int z, Vec3 v);
 	
-	void set_normal(int x, int z, vertex_t n);
+	void set_normal(int x, int z, Vec3 n);
 	
-	static vertex_t compute_normal(real_t *heightmap, int sx, int sz, int x, int z);
+	static Vec3 compute_normal(real_t *heightmap, int sx, int sz, int x, int z);
 };
 
 #endif /* _WATERSURFACE_H_ */

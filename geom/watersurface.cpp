@@ -32,15 +32,15 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
 {
 	num_of_vertices = (resx+1) * (resz+1);
 	heightmap = new real_t[num_of_vertices];
-	vertices = new vertex_t[num_of_vertices];
-	normals = new vertex_t[num_of_vertices];
+	vertices = new Vec3[num_of_vertices];
+	normals = new Vec3[num_of_vertices];
 
 	num_of_indices = resx * resz * 6;
 	indices = new index_t[num_of_indices];
 
 	memset(heightmap, 0, sizeof(real_t) * num_of_vertices);
-	memset(vertices, 0, sizeof(vertex_t) * num_of_vertices);
-	memset(normals, 0, sizeof(vertex_t) * num_of_vertices);
+	memset(vertices, 0, sizeof(Vec3) * num_of_vertices);
+	memset(normals, 0, sizeof(Vec3) * num_of_vertices);
 	memset(indices, 0, sizeof(index_t) * num_of_indices);
 
 	generate_indices();
@@ -112,10 +112,9 @@ void WaterSurface::generate_heightmap(real_t time)
 #undef NZ
 }
 
-WaterSurface::vertex_t
-WaterSurface::compute_normal(real_t *heightmap,
-                             int sx, int sz,
-                             int x, int z)
+Vec3 WaterSurface::compute_normal(real_t *heightmap,
+                                  int sx, int sz,
+                                  int x, int z)
 {
 	assert(heightmap);
 	
@@ -131,7 +130,7 @@ WaterSurface::compute_normal(real_t *heightmap,
 	nv.y = 8.0 / sx; // 0.03
 	nv.normalize();
 	
-	vertex_t n;
+	Vec3 n;
 	n.x = nv.x;
 	n.y = nv.y;
 	n.z = nv.z;
@@ -160,7 +159,7 @@ void WaterSurface::generate_vertices()
 		for(int z=0; z<=resz; z++)
 		{
 			// get the vertex height
-			vertex_t v;
+			Vec3 v;
 			v.x = NX(x);
 			v.z = NZ(z);
 			v.y = heightmap[x*resz + z];
@@ -203,7 +202,7 @@ void WaterSurface::draw() const
 	glPopMatrix();
 }
 
-void WaterSurface::set_vertex(int x, int z, vertex_t v)
+void WaterSurface::set_vertex(int x, int z, Vec3 v)
 {
 	assert(x <= resx);
 	assert(x >= 0);
@@ -212,7 +211,7 @@ void WaterSurface::set_vertex(int x, int z, vertex_t v)
 	vertices[x*(resz+1)+z] = v;
 }
 
-void WaterSurface::set_normal(int x, int z, vertex_t n)
+void WaterSurface::set_normal(int x, int z, Vec3 n)
 {
 	assert(x <= resx);
 	assert(x >= 0);
