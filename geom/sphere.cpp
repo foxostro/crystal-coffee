@@ -94,8 +94,20 @@ Sphere::~Sphere()
 	// do nothing
 	// Display list is cleaned up when the OpenGL context is released.
 }
+
+real_t Sphere::getU(const Vec3 &v)
+{
+	// calculate longitude and scale
+	return atan2(v.z, v.x) / (M_PI) + 1.0;
+}
+
+real_t Sphere::getV(const Vec3 &v)
+{
+	// calculate latitude and scale
+	return atan2(v.y, v.x) / (M_PI) + 1.0;
+}
    
-void Sphere::subdivide(Vec3 v1, Vec3 v2, Vec3 v3, int depth)
+void Sphere::subdivide(const Vec3 &v1, const Vec3 &v2, const Vec3 &v3, int depth)
 {
 	Vec3 v12, v23, v31;
 	
@@ -103,12 +115,15 @@ void Sphere::subdivide(Vec3 v1, Vec3 v2, Vec3 v3, int depth)
 
 	if(depth == 0)
 	{
+		glTexCoord2d(getU(v1), getV(v1));
 		glNormal3f((GLfloat)v1.x, (GLfloat)v1.y, (GLfloat)v1.z);
 		glVertex3d(v1.x, v1.y, v1.z);
 		
+		glTexCoord2d(getU(v2), getV(v2));
 		glNormal3f((GLfloat)v2.x, (GLfloat)v2.y, (GLfloat)v2.z);
 		glVertex3d(v2.x, v2.y, v2.z);
 		
+		glTexCoord2d(getU(v3), getV(v3));
 		glNormal3f((GLfloat)v3.x, (GLfloat)v3.y, (GLfloat)v3.z);
 		glVertex3d(v3.x, v3.y, v3.z);
 		return;
