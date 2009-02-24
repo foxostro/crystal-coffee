@@ -40,9 +40,9 @@ void prj_initialize(Scene* scene, bool is_gl_context)
     sim_time = scene->start_time;
 
     if (is_gl_context) {
-		GLfloat lmodel_ambient[] = { 0.5, 0.5, 0.5, 1 };
+		GLfloat lmodel_ambient[] = { 0.3, 0.3, 0.3, 1 };
 		glClearColor(0, 0, 0, 1);
-		glShadeModel(GL_FLAT);
+		glShadeModel(GL_SMOOTH);
 		glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 		glEnable(GL_LIGHTING);
 		glEnable(GL_DEPTH_TEST);

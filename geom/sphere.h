@@ -36,16 +36,36 @@ private:
 	  * @param num_of_divisions Number of times to subdivide the icosphere.
 	  */
 	static void draw_ico_sphere(int num_of_divisions);
+	
+	/** Subdivides a triangle on the icosphere, recursively.
+	 *  @param v1 Triangle Vertex 1
+	 *  @param v2 Triangle Vertex 2
+	 *  @param v3 Triangle Vertex 3
+	 *  @param depth Recursive depth subdivision
+	 */
 	static void subdivide(const Vec3 &v1,
                           const Vec3 &v2,
                           const Vec3 &v3,
-                          const Vec2 &st1,
-                          const Vec2 &st2,
-                          const Vec2 &st3,
                           int depth);
+                          
+	/** Generates spherical theta angles for a triangle.
+	 *  The dicontinity of atan is handled so that these angles will be suitable
+	 *  for direct conversion to texture coordinates.
+	 *  @param v1 Triangle Vertex 1
+	 *  @param v2 Triangle Vertex 2
+	 *  @param v3 Triangle Vertex 3
+	 *  @param theta1 Returns the theta of vertex 1 (radian longitude)
+	 *  @param theta2 Returns the theta of vertex 2 (radian longitude)
+	 *  @param theta3 Returns the theta of vertex 3 (radian longitude)
+	 */
+	static void texmap_theta(const Vec3 &v1,
+                             const Vec3 &v2,
+                             const Vec3 &v3,
+                             real_t &theta1,
+                             real_t &theta2,
+                             real_t &theta3);
         
     static Vec3 vertices[];
-    static Vec2 texcoords[];
 	static unsigned int display_list;
 };
 
