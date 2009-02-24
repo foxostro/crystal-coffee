@@ -36,12 +36,16 @@ private:
 	  * @param num_of_divisions Number of times to subdivide the icosphere.
 	  */
 	static void draw_ico_sphere(int num_of_divisions);
-	static void subdivide(const Vec3 &v1, const Vec3 &v2, const Vec3 &v3, int depth);
-	static real_t getU(const Vec3 &v);
-	static real_t getV(const Vec3 &v);
+	static void subdivide(const Vec3 &v1,
+                          const Vec3 &v2,
+                          const Vec3 &v3,
+                          const Vec2 &st1,
+                          const Vec2 &st2,
+                          const Vec2 &st3,
+                          int depth);
         
-    static real_t vdata[12][3];
-	static int tindices[20][3];
+    static Vec3 vertices[];
+    static Vec2 texcoords[];
 	static unsigned int display_list;
 };
 

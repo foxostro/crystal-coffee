@@ -40,13 +40,15 @@ void prj_initialize(Scene* scene, bool is_gl_context)
     sim_time = scene->start_time;
 
     if (is_gl_context) {
-		GLfloat lmodel_ambient[] = { 0.1, 0.1, 0.1, 1 };
+		GLfloat lmodel_ambient[] = { 0.5, 0.5, 0.5, 1 };
 		glClearColor(0, 0, 0, 1);
-		glShadeModel(GL_SMOOTH);
+		glShadeModel(GL_FLAT);
 		glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 		glEnable(GL_LIGHTING);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_NORMALIZE);
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     }
 }
 
@@ -126,7 +128,7 @@ void set_lights(const Scene::LightList & lights)
 		const GLfloat color[] = { light.color.x, light.color.y, light.color.z, 1 };
 		const GLfloat position[] = { light.position.x, light.position.y, light.position.z, 1 };
 
-		glLightfv(GL_LIGHT0 + i, GL_AMBIENT,  black);
+		glLightfv(GL_LIGHT0 + i, GL_AMBIENT, black);
 		glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, color);
 		glLightfv(GL_LIGHT0 + i, GL_SPECULAR, white);
 
@@ -149,7 +151,12 @@ void prj_render(Scene* scene)
 	assert(scene);
 
 	set_camera(scene->camera);
-	set_lights(scene->lights); // light positions are fixed relative to the scene
+	
+	/* For P2, these scenes are, indeed, static. However, there is no reason why
+	 * lights cannot by animated. Set the lights each frame to allow light
+	 * properties to be changed from frame to frame.
+	 */
+	set_lights(scene->lights); // light pos are fixed relative to the scene
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

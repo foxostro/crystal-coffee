@@ -102,13 +102,23 @@ void SphereMap::load_texture()
 	if(texture == NULL)
 		std::cout << "sphere map " << texture_name << "load failed\n";
 
-    // TODO P2 load the sphere map as OpenGL texture object
+	glGenTextures(1, &gltex_name);
+	glBindTexture(GL_TEXTURE_2D, gltex_name);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA,
+	             GL_UNSIGNED_BYTE, texture);
+    
 }
 
 SphereMap::~SphereMap()
 {
     // free the loaded texture, will have no effect if null
     free(texture);
+    
+    glDeleteTextures(1, &gltex_name);
 }
 
 Vec3 SphereMap::get_texture_color(const Vec3& direction) const

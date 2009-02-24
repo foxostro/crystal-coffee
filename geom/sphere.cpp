@@ -11,56 +11,85 @@
     signatures. The staff scene loader requires all of those to be intact.
  */
 
+#include <iostream>
+using namespace std;
+
 #include "vec/mat.h"
 #include "sphere.h"
 #include "glheaders.h"
 
-static const real_t X = 0.525731112119133606;
-static const real_t Z = 0.850650808352039932;   
-	
-real_t Sphere::vdata[12][3] =
+Vec3 Sphere::vertices[24] =
 {
-   {-X, 0.0,  Z},
-   { X, 0.0,  Z},
-   {-X, 0.0, -Z}, 
-   { X, 0.0, -Z},
-   
-   {0.0,  Z,  X},
-   {0.0,  Z, -X},
-   {0.0, -Z,  X},
-   {0.0, -Z, -X},
-   
-   { Z,  X, 0.0},
-   {-Z,  X, 0.0},
-   { Z, -X, 0.0},
-   {-Z, -X, 0.0}
+	Vec3( 0, 1,  0).normalize(), // Top, East, 1
+	Vec3( 1, 0, -1).normalize(), // Top, East, 2
+	Vec3( 1, 0,  1).normalize(), // Top, East, 3
+
+	Vec3( 0, 1,  0).normalize(), // Top, North, 1
+	Vec3( 1, 0,  1).normalize(), // Top, North, 2
+	Vec3(-1, 0,  1).normalize(), // Top, North, 3
+
+	Vec3( 0, 1,  0).normalize(), // Top, West, 1
+	Vec3(-1, 0,  1).normalize(), // Top, West, 2
+	Vec3(-1, 0, -1).normalize(), // Top, West, 3
+	
+	Vec3( 0, 1,  0).normalize(), // Top, South, 1
+	Vec3(-1, 0, -1).normalize(), // Top, South, 2
+	Vec3( 1, 0, -1).normalize(), // Top, South, 3
+	
+	Vec3( 0, -1,  0).normalize(), // Bottom, East, 1
+	Vec3( 1,  0, -1).normalize(), // Bottom, East, 2
+	Vec3( 1,  0,  1).normalize(), // Bottom, East, 3
+
+	Vec3( 0, -1,  0).normalize(), // Bottom, North, 1
+	Vec3( 1,  0,  1).normalize(), // Bottom, North, 2
+	Vec3(-1,  0,  1).normalize(), // Bottom, North, 3
+
+	Vec3( 0, -1,  0).normalize(), // Bottom, West, 1
+	Vec3(-1,  0,  1).normalize(), // Bottom, West, 2
+	Vec3(-1,  0, -1).normalize(), // Bottom, West, 3
+	
+	Vec3( 0, -1,  0).normalize(), // Bottom, South, 1
+	Vec3(-1,  0, -1).normalize(), // Bottom, South, 2
+	Vec3( 1,  0, -1).normalize(), // Bottom, South, 3
 };
 
-int Sphere::tindices[20][3] =
+Vec2 Sphere::texcoords[24] =
 {
-   {0,4,1},
-   {0,9,4},
-   {9,5,4},
-   {4,5,8},
-   {4,8,1},
-   
-   {8,10,1},
-   {8,3,10},
-   {5,3,8},
-   {5,2,3},
-   {2,7,3},
-   
-   {7,10,3},
-   {7,6,10},
-   {7,11,6},
-   {11,0,6},
-   {0,1,6},
-   
-   {6,1,10},
-   {9,0,11},
-   {9,11,2},
-   {9,2,5},
-   {7,2,11}
+	Vec2(0.00, 1.00), // Top, East, 1
+	Vec2(0.00, 0.50), // Top, East, 2
+	Vec2(0.25, 0.50), // Top, East, 3
+	
+	Vec2(0.25, 1.00), // Top, North, 1
+	Vec2(0.25, 0.50), // Top, North, 2
+	Vec2(0.50, 0.50), // Top, North, 3
+	
+	Vec2(0.50, 1.00), // Top, West, 1
+	Vec2(0.50, 0.50), // Top, West, 2
+	Vec2(0.75, 0.50), // Top, West, 3
+	
+	Vec2(0.75, 1.00), // Top, South, 1
+	Vec2(0.75, 0.50), // Top, South, 2
+	Vec2(1.00, 0.50), // Top, South, 3
+
+
+
+
+
+	Vec2(0.00, 0.00), // Bottom, East, 1
+	Vec2(0.00, 0.50), // Bottom, East, 2
+	Vec2(0.25, 0.50), // Bottom, East, 3
+	
+	Vec2(0.25, 0.00), // Bottom, North, 1
+	Vec2(0.25, 0.50), // Bottom, North, 2
+	Vec2(0.50, 0.50), // Bottom, North, 3
+	
+	Vec2(0.50, 0.00), // Bottom, West, 1
+	Vec2(0.50, 0.50), // Bottom, West, 2
+	Vec2(0.75, 0.50), // Bottom, West, 3
+	
+	Vec2(0.75, 0.00), // Bottom, South, 1
+	Vec2(0.75, 0.50), // Bottom, South, 2
+	Vec2(1.00, 0.50), // Bottom, South, 3
 };
 
 unsigned int Sphere::display_list = 0;
@@ -70,7 +99,7 @@ void Sphere::init_sphere()
 	if(display_list == 0) {
 		display_list = glGenLists(1);
 		glNewList(display_list, GL_COMPILE);
-		draw_ico_sphere(5);
+		draw_ico_sphere(0);
 		glEndList();
 	}
 }
@@ -94,64 +123,66 @@ Sphere::~Sphere()
 	// do nothing
 	// Display list is cleaned up when the OpenGL context is released.
 }
-
-real_t Sphere::getU(const Vec3 &v)
-{
-	// calculate longitude and scale
-	return atan2(v.z, v.x) / (M_PI) + 1.0;
-}
-
-real_t Sphere::getV(const Vec3 &v)
-{
-	// calculate latitude and scale
-	return atan2(v.y, v.x) / (M_PI) + 1.0;
-}
    
-void Sphere::subdivide(const Vec3 &v1, const Vec3 &v2, const Vec3 &v3, int depth)
+void Sphere::subdivide(const Vec3 &v1,
+                       const Vec3 &v2,
+                       const Vec3 &v3,
+                       const Vec2 &st1,
+                       const Vec2 &st2,
+                       const Vec2 &st3,
+                       int depth)
 {
 	Vec3 v12, v23, v31;
+	Vec2 st12, st23, st31;
 	
 	assert(depth>=0);
 
 	if(depth == 0)
 	{
-		glTexCoord2d(getU(v1), getV(v1));
+		glTexCoord2d(st1.x, st1.y);
 		glNormal3f((GLfloat)v1.x, (GLfloat)v1.y, (GLfloat)v1.z);
 		glVertex3d(v1.x, v1.y, v1.z);
 		
-		glTexCoord2d(getU(v2), getV(v2));
+		glTexCoord2d(st2.x, st2.y);
 		glNormal3f((GLfloat)v2.x, (GLfloat)v2.y, (GLfloat)v2.z);
 		glVertex3d(v2.x, v2.y, v2.z);
 		
-		glTexCoord2d(getU(v3), getV(v3));
+		glTexCoord2d(st3.x, st3.y);
 		glNormal3f((GLfloat)v3.x, (GLfloat)v3.y, (GLfloat)v3.z);
 		glVertex3d(v3.x, v3.y, v3.z);
+		
 		return;
 	}
 
 	v12 = v1 + v2;
 	v23 = v2 + v3;
 	v31 = v3 + v1;
-
 	v12.normalize();
 	v23.normalize();
 	v31.normalize();
+	
+	st12 = (st1 + st2) * 0.5;
+	st23 = (st2 + st3) * 0.5;
+	st31 = (st3 + st1) * 0.5;
 
-	subdivide(v1, v12, v31, depth-1);
-	subdivide(v2, v23, v12, depth-1);
-	subdivide(v3, v31, v23, depth-1);
-	subdivide(v12, v23, v31, depth-1);
+	subdivide(v1,  v12, v31, st1,  st12, st31, depth-1);
+	subdivide(v2,  v23, v12, st2,  st23, st12, depth-1);
+	subdivide(v3,  v31, v23, st3,  st31, st23, depth-1);
+	subdivide(v12, v23, v31, st12, st23, st31, depth-1);
 }
 
 void Sphere::draw_ico_sphere(int num_of_divisions)
 {	
 	glBegin(GL_TRIANGLES);
 	
-	for(int i = 0; i < 20; ++i)
+	for(int i = 0; i < 24; i+=3)
 	{
-		subdivide(Vec3(vdata[tindices[i][0]]),
-			      Vec3(vdata[tindices[i][1]]),
-			      Vec3(vdata[tindices[i][2]]),
+		subdivide(vertices[i+0],
+			      vertices[i+1],
+			      vertices[i+2],
+			      texcoords[i+0],
+			      texcoords[i+1],
+			      texcoords[i+2],
 			      num_of_divisions);
 	}
 	
@@ -165,7 +196,7 @@ void Sphere::draw() const
 
 	set_transformation();
 	set_material();
-
+	
 	glScaled(radius, radius, radius);
 	glCallList(display_list);
 

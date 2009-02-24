@@ -24,12 +24,14 @@
 Material::Material():
     diffuse(Vec3::Ones), phong(Vec3::Zero), ambient(Vec3::Ones),
     specular(Vec3::Zero), shininess(0), refraction_index(0),
-    texture(0), tex_width(0), tex_height(0) {}
+    texture(0), tex_width(0), tex_height(0), gltex_name(0) {}
 
 Material::~Material()
 {
     // free the loaded texture, will have no effect if null
     free(texture);
+    
+    glDeleteTextures(1, &gltex_name);
 }
 
 void Material::load_texture()
@@ -41,6 +43,16 @@ void Material::load_texture()
     std::cout << "loading texture " << texture_name << "...\n";
     texture = imageio_load_image(texture_name.c_str(),
                                  &tex_width, &tex_height);
+                                     
+	// Create an OpenGL texture        
+	glGenTextures(1, &gltex_name);
+	glBindTexture(GL_TEXTURE_2D, gltex_name);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA,
+	             GL_UNSIGNED_BYTE, texture);
 }
 
 Vec3 Material::get_texture_color(const Vec2& tex_coords) const
@@ -87,6 +99,8 @@ void Geometry::set_material() const
 	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
+	
+	glBindTexture(GL_TEXTURE_2D, material->gltex_name);
 }
 
 void Geometry::set_transformation() const

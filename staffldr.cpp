@@ -42,6 +42,7 @@ static void ldr_load_scene00(Scene* scene)
     mat->specular = Vec3(.1,.1,.1);
     mat->refraction_index = 0;
     mat->texture_name = "images/earth.png";
+    mat->load_texture();
     scene->materials.push_back(mat);
 
     scene->objects.push_back(

@@ -56,6 +56,8 @@ public:
     unsigned char* texture;
     // dimensions of texture
     int tex_width, tex_height;
+    
+    GLuint gltex_name;
 
     Material();
     ~Material();
