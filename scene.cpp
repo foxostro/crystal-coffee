@@ -123,24 +123,32 @@ void Geometry::set_material() const
 	
 	if(material->gltex_name)
 	{
+		// Bind texture unit 0
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, material->gltex_name);
+		glEnable(GL_TEXTURE_2D);
 	}
 	else
 	{
+		// Disable texture unit 0
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
 	}
 	
 	if(material->gltex1_name)
 	{
+		// Bind texture unit 1
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, material->gltex1_name);
+		glEnable(GL_TEXTURE_2D);
 	}
 	else
 	{
+		// Disable texture unit 1
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
 	}
 	
 	if(effect)
@@ -150,6 +158,7 @@ void Geometry::set_material() const
 #ifdef USE_GLSL
 	else
 	{
+		// Use the fixed function pipeline
 		glUseProgramObjectARB(0);
 	}
 #endif
