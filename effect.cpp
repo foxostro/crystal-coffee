@@ -168,14 +168,14 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
                              Material* diffuse, Material* normal)
     : Effect(vert_file, frag_file) 
 {
-	GLint diffuse_map, bump_map;
+	GLint diffuse_map, normal_map;
 	
 	// Set texture sampler uniforms only once
 	glUseProgramObjectARB(program);
 	diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
 	glUniform1iARB(diffuse_map, 0);
-	bump_map = glGetUniformLocationARB(program, "bump_map");
-	glUniform1iARB(bump_map, 1);
+	normal_map = glGetUniformLocationARB(program, "normal_map");
+	glUniform1iARB(normal_map, 1);
 	glUseProgramObjectARB(0);
 }
 

@@ -101,8 +101,10 @@ static void create_pool(Scene* scene)
     mat->ambient = Vec3(0.7, 0.7, 0.7);
     mat->diffuse = Vec3::Ones;
     mat->phong = Vec3::Ones;
-    mat->shininess = 40;
-    mat->specular = Vec3(.2,.2,.2);
+    //mat->shininess = 40;
+    //mat->specular = Vec3(.2,.2,.2);
+    mat->shininess = 100;
+    mat->specular = Vec3(1,1,1);
     mat->refraction_index = 0;
 	mat->texture_name = "images/bricks_diffuse.png";
 	mat->texture1_name = "images/bricks_normal.png";
@@ -279,7 +281,7 @@ static void ldr_load_scene01(Scene* scene)
                    Quat::Identity, Vec3::Ones, rad, mat));
 
     Light light;
-    light.position = Vec3(-4, 8.5, 8) * 30;
+    light.position = Vec3(-4, 2.5, -8); //Vec3(-4, 8.5, 8) * 30;
     light.color = Vec3(.7,.7,.7);
     scene->lights.push_back(light);
 }

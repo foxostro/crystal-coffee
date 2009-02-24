@@ -1,41 +1,14 @@
-varying vec3 normal, vp;
-varying float d;
-
 uniform sampler2D diffuse_map;
-uniform sampler2D bump_map;
+uniform sampler2D normal_map;
 
-vec4 getAmbientGlobal()
-{
-	/* light model (i.e. global) ambient term */
-	return gl_LightModel.ambient * gl_FrontMaterial.ambient;
-}
-
-vec4 getAmbient()
-{
-	return gl_FrontMaterial.ambient * gl_LightSource[0].ambient;
-}
-
-vec4 getDiffuse(float nDotVP)
-{
-	return gl_FrontMaterial.diffuse *
-	       gl_LightSource[0].diffuse *
-	       nDotVP;
-}
-
-float getAttenuation(float d)
-{		
-	/* standard light attenuation equation */
-	return 1.0 / (gl_LightSource[0].constantAttenuation +
-	              gl_LightSource[0].linearAttenuation * d +
-	              gl_LightSource[0].quadraticAttenuation * d * d);
-}
+varying vec3 nLightDir;
 
 vec4 getSpecular(vec3 n)
 {
 	float nDotHV;
 	vec3 halfVector;
 		
-	halfVector = normalize(gl_LightSource[0].halfVector.xyz);
+	halfVector = normalize(gl_ModelViewMatrixInverse * gl_LightSource[0].halfVector).xyz;
 	
 	nDotHV = max(dot(n, halfVector),0.0);
 	
@@ -44,30 +17,32 @@ vec4 getSpecular(vec3 n)
 	       pow(nDotHV, gl_FrontMaterial.shininess);
 }
 
-void main()
+void main() 
 {
 	vec3 n;
-	float nDotVP;
-	vec4 diff_tex_color;
+	float Lambert;
+	vec4 ambient_global, ambient, diffuse, diffuse_tex, specular;
 	
-	/* Fetch the texture colors first so it can read from memory while we
-	 * perform other calculations
-	 */
-	diff_tex_color = texture2D(diffuse_map, gl_TexCoord[0].st);
+//	diffuse_tex = vec4(1, 1, 1, 1);
+	diffuse_tex = texture2D(diffuse_map, gl_TexCoord[0].st);
 	
-	/* renormalize the interpolated normal */
-	n = normalize(normal);
+	n = texture2D(normal_map, gl_TexCoord[0].st).xyz;
+	n = (n - 0.5) * 2.0;
 	
-	/* Calculate the Lambert term */
-	nDotVP = max(dot(n, normalize(vp)), 0.0);
-
-	if (nDotVP > 0.0) {		/* shade the fragment using per-pixel point lighting */
-		gl_FragColor = getAmbientGlobal()*diff_tex_color +
-		               getAttenuation(d) * (getAmbient()*diff_tex_color +
-		                                    getDiffuse(nDotVP)*diff_tex_color +
-		                                    getSpecular(n));
+    Lambert = max(dot(n, normalize(nLightDir)), 0.0);
+    
+    ambient_global = gl_LightModel.ambient * gl_FrontMaterial.ambient * diffuse_tex;
+    
+	if(Lambert > 0.0) {
+		ambient = gl_FrontMaterial.ambient * gl_LightSource[0].ambient * diffuse_tex;
+		diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse * Lambert * diffuse_tex;
+		specular = getSpecular(n);
 	} else {
-		/* in darkness, the fragment is only lit by the global ambient term */
-		gl_FragColor = getAmbientGlobal() * diff_tex_color;
+		ambient = vec4(0, 0, 0, 0);
+		diffuse = vec4(0, 0, 0, 0);
+		specular = vec4(0, 0, 0, 0);
 	}
+
+	gl_FragColor = ambient_global + ambient + diffuse + specular;
 }
+
