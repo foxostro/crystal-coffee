@@ -50,14 +50,15 @@ public:
     // infinity, i.e. opaque (raytrace only)
     real_t refraction_index;
 
-    // filename of the texture
     std::string texture_name;
-    // pointer to texture array
     unsigned char* texture;
-    // dimensions of texture
     int tex_width, tex_height;
-    
     GLuint gltex_name;
+    
+    std::string texture1_name;
+    unsigned char* texture1;
+    int tex1_width, tex1_height;
+    GLuint gltex1_name;
 
     Material();
     ~Material();

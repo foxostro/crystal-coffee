@@ -50,6 +50,11 @@ class Effect
 {
 public:
     Effect(const char* vert_file, const char* frag_file);
+    
+    virtual void bind(void) = 0;
+
+protected:
+    GLhandleARB program;
 };
 
 class FresnelEffect : public Effect
@@ -57,6 +62,8 @@ class FresnelEffect : public Effect
 public:
     FresnelEffect(const char* vert_file, const char* frag_file,
                   const SphereMap* env_map, Material* mat);
+                  
+    virtual void bind() {}
 };
 
 class BumpMapEffect : public Effect
@@ -64,6 +71,8 @@ class BumpMapEffect : public Effect
 public:
     BumpMapEffect(const char* vert_file, const char* frag_file,
                   Material* diffuse_mat, Material* normal_mat);
+                  
+    virtual void bind();
 };
 
 #endif /* _EFFECT_H_ */

@@ -24,35 +24,56 @@
 Material::Material():
     diffuse(Vec3::Ones), phong(Vec3::Zero), ambient(Vec3::Ones),
     specular(Vec3::Zero), shininess(0), refraction_index(0),
-    texture(0), tex_width(0), tex_height(0), gltex_name(0) {}
+    texture(0), tex_width(0), tex_height(0), gltex_name(0),
+    texture1(0), tex1_width(0), tex1_height(0), gltex1_name(0) {}
 
 Material::~Material()
 {
-    // free the loaded texture, will have no effect if null
     free(texture);
+    free(texture1);
     
     glDeleteTextures(1, &gltex_name);
+    glDeleteTextures(1, &gltex1_name);
 }
 
 void Material::load_texture()
 {
     // don't load texture if already loaded or filename is blank
-    if (texture || texture_name.empty())
-        return;
+    if(!texture && !texture_name.empty())
+    {
 
-    std::cout << "loading texture " << texture_name << "...\n";
-    texture = imageio_load_image(texture_name.c_str(),
-                                 &tex_width, &tex_height);
-                                     
-	// Create an OpenGL texture        
-	glGenTextures(1, &gltex_name);
-	glBindTexture(GL_TEXTURE_2D, gltex_name);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA,
-	             GL_UNSIGNED_BYTE, texture);
+		std::cout << "loading texture " << texture_name << "...\n";
+		texture = imageio_load_image(texture_name.c_str(),
+		                             &tex_width, &tex_height);
+		                                 
+		// Create an OpenGL texture        
+		glGenTextures(1, &gltex_name);
+		glBindTexture(GL_TEXTURE_2D, gltex_name);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, texture);
+	}
+	
+	if(!texture1 && !texture1_name.empty())
+    {
+
+		std::cout << "loading texture (1) " << texture1_name << "...\n";
+		texture1 = imageio_load_image(texture1_name.c_str(),
+		                              &tex1_width, &tex1_height);
+		                                 
+		// Create an OpenGL texture        
+		glGenTextures(1, &gltex1_name);
+		glBindTexture(GL_TEXTURE_2D, gltex1_name);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex1_width, tex1_height, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, texture1);
+	}
 }
 
 Vec3 Material::get_texture_color(const Vec2& tex_coords) const
@@ -100,7 +121,38 @@ void Geometry::set_material() const
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
 	
-	glBindTexture(GL_TEXTURE_2D, material->gltex_name);
+	if(material->gltex_name)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, material->gltex_name);
+	}
+	else
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	
+	if(material->gltex1_name)
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, material->gltex1_name);
+	}
+	else
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	
+	if(effect)
+	{
+		effect->bind();
+	}
+#ifdef USE_GLSL
+	else
+	{
+		glUseProgramObjectARB(0);
+	}
+#endif
 }
 
 void Geometry::set_transformation() const

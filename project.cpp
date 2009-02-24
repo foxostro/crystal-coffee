@@ -162,11 +162,6 @@ void prj_render(Scene* scene)
 	assert(scene);
 
 	set_camera(scene->camera);
-	
-	/* For P2, these scenes are, indeed, static. However, there is no reason why
-	 * lights cannot by animated. Set the lights each frame to allow light
-	 * properties to be changed from frame to frame.
-	 */
 	set_lights(scene->lights); // light pos are fixed relative to the scene
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

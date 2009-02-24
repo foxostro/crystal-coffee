@@ -11,9 +11,6 @@
     signatures. The staff scene loader requires all of those to be intact.
  */
 
-#include <iostream>
-using namespace std;
-
 #include "vec/mat.h"
 #include "sphere.h"
 #include "glheaders.h"
@@ -98,8 +95,8 @@ void Sphere::texmap_theta(const Vec3 &v1,
 	
 	/* There atan function has a range from [-pi, pi]. Some triangles will have
 	 * vertices that span the transition between -pi and 0, or between pi and
-	 * -pi. These special cases ensure that no triangle in the sphere is mapped
-	 * incorrectly due to the incontinuity.
+	 * -pi. This special case code ensures that no triangle in the sphere is 
+	 * mapped incorrectly due to the incontinuity.
 	 */
 		
 	if(theta1 - theta2 > M_PI)

@@ -11,6 +11,8 @@
 #include <fstream>
 #include <cstdlib>
 
+using namespace std;
+
 #ifdef USE_GLSL
 static char* load_file(const char* file)
 {
@@ -106,8 +108,8 @@ void SphereMap::load_texture()
 	glBindTexture(GL_TEXTURE_2D, gltex_name);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA,
 	             GL_UNSIGNED_BYTE, texture);
     
@@ -150,7 +152,9 @@ Vec3 SphereMap::get_texture_color(const Vec3& direction) const
 
 
 Effect::Effect(const char* vert_file, const char* frag_file)
+	: program(0)
 {
+	program = load_shaders(vert_file, frag_file);
 }
 
 FresnelEffect::FresnelEffect(const char* vert_file, const char* frag_file,
@@ -165,6 +169,11 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
     : Effect(vert_file, frag_file) 
 {
     // TODO P2 create shader program object for bump map effect.
+}
+
+void BumpMapEffect::bind(void)
+{
+	glUseProgramObjectARB(program);
 }
  
 
