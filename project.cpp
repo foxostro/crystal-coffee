@@ -23,6 +23,18 @@ using namespace std;
 // current absolute simulation time for the current scene
 static real_t sim_time;
 
+void draw_geom(Geometry *geom)
+{
+	assert(geom);
+	geom->draw();
+}
+
+void init_mat(Material *mat)
+{
+	assert(mat);
+    mat->load_texture();
+}
+
 /**
  * Initializes all state for the given scene.
  * @param scene The next scene that will be drawn.
@@ -50,6 +62,11 @@ void prj_initialize(Scene* scene, bool is_gl_context)
 		glEnable(GL_TEXTURE_2D);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     }
+    
+    // Initialize scene objects
+	for_each(scene->materials.begin(),
+	         scene->materials.end(),
+	         &init_mat);
 }
 
 /**
@@ -97,12 +114,6 @@ static void set_camera(const Camera &camera) {
 	gluLookAt(eyex, eyey, eyez,
 			  centerx, centery, centerz,
 			  upx, upy, upz);
-}
-
-void draw_geom(const Geometry * const geom)
-{
-	assert(geom);
-	geom->draw();
 }
 
 void set_lights(const Scene::LightList & lights)
