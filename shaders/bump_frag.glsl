@@ -2,13 +2,12 @@ uniform sampler2D diffuse_map;
 uniform sampler2D normal_map;
 
 varying vec3 nLightDir;
+varying vec3 nHalfVector;
 
 vec4 getSpecular(vec3 n)
 {
 	float nDotHV;
 	vec3 halfVector;
-		
-	halfVector = normalize(gl_ModelViewMatrixInverse * gl_LightSource[0].halfVector).xyz;
 	
 	nDotHV = max(dot(n, halfVector),0.0);
 	

@@ -1,12 +1,9 @@
 varying vec3 nLightDir;
-varying vec3 ecNormal;
+varying vec3 nHalfVector;
 
 void main() 
-{
-	vec3 oLightPos, oLightDir;
-	
+{	
 	gl_Position = ftransform();
-	ecNormal = gl_NormalMatrix * gl_Normal; // normal goes to eye-space
 	gl_TexCoord[0] = gl_MultiTexCoord0;
 	
 	// Calculate the tangent and binormal
@@ -26,13 +23,11 @@ void main()
 	binormal = cross(tangent, gl_Normal); 
 	binormal = normalize(binormal);
 	
-	// Get the light position and direction in object-space
-	oLightPos = vec4(gl_ModelViewMatrixInverse * gl_LightSource[0].position).xyz;
-	oLightDir = oLightPos - gl_Vertex.xyz;
-	oLightDir = normalize(oLightDir);
+	// Transform the light direction to tangent-space
+	nLightDir = mat3(tangent, binormal, gl_Normal) *
+	            normalize(vec4(gl_ModelViewMatrixInverse * gl_LightSource[0].position - gl_Vertex).xyz);
 	
-	// Get the light position and direction in tangent-space
-	nLightDir = mat3(tangent, binormal, gl_Normal) * oLightDir;
-	nLightDir = normalize(nLightDir);
+	// Transform the halfVector to tangent-space
+	nHalfVector = mat3(tangent, binormal, gl_Normal) * vec3(gl_ModelViewMatrixInverse * gl_LightSource[0].halfVector).xyz;
 }
 
