@@ -105,14 +105,18 @@ static void create_pool(Scene* scene)
     mat->specular = Vec3(.2,.2,.2);
     mat->refraction_index = 0;
 	mat->texture_name = "images/bricks_diffuse.png";
+	mat->texture1_name = "images/bricks_normal.png";
     scene->materials.push_back(mat);
-
+    
+    // Andrew Fox: Conceptually, the pool has one material, "bump-mapped brick"
+    
+/*
 	Material* normal_mat = new Material();
 	normal_mat->texture_name = "images/bricks_normal.png";
 	scene->materials.push_back(normal_mat);
-
+*/
 	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, 0);
 	scene->effects.push_back(bump);
 
     Vec2 tcmin(0,0);
