@@ -38,8 +38,6 @@ public:
     Vec2 tcoords[3];
     // the normals of each vertex (in local space).
     Vec3 normals[3];
-    // the tangents at each vertex (in local space)
-    Vec3 tangents[3];
     // the material at each vertex (only applies to raytracing).
     Material* materials[3];
 

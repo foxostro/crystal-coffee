@@ -4,6 +4,8 @@ uniform sampler2D normal_map;
 varying vec3 vertex_to_light;
 varying vec3 eye_to_vertex;
 
+const float spec_multiplier = 3.0;
+
 void main()
 {
 	// Get the color of the diffuse texture at this fragment
@@ -13,9 +15,9 @@ void main()
 	 * This normal can be used in the Lambert term almost directly. We need to
 	 * unpack it from the texture, though.
 	 */
-//	vec3 N = texture2D(normal_map, gl_TexCoord[0].st).xyz;
-//	N = (N - 0.5) * 2.0;
-	vec3 N = vec3(0, 0, 1);
+	vec3 N = vec3(0);
+	N = texture2D(normal_map, gl_TexCoord[0].st).xyz;
+	N = ((N - 0.5) * 2.0);
 
 	/* The vertex_to_light vector encodes the distance to the light, so we need
 	 * to normalize before using it in the Lambert term.
@@ -43,18 +45,17 @@ void main()
 	float att = 1.0 / (catt + latt*d + qatt*d*d);
 	
 	// The diffuse component from light 0
-	vec4 diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse * diffuse_map_color * NdotL * att;
+	vec4 diffuse = 0.5 * gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse * diffuse_map_color * NdotL * att;
 
 	// Calculate the specular component from light 0	
 	vec4 specular = vec4(0);
-	if(NdotL > 0.0) {	
+	if(NdotL > 0.0) {
 		vec3 reflected = reflect(-L, N);
 		float spec = pow(max(0.0, dot(reflected, normalize(eye_to_vertex))), gl_FrontMaterial.shininess);
-		specular = gl_FrontMaterial.specular * gl_LightSource[0].specular * spec * att;
+		specular = gl_FrontMaterial.specular * gl_LightSource[0].specular * spec * spec_multiplier;
 	}
 
 	// The final color is the linear combination of the colors computed above.
 	gl_FragColor = ambient_global + ambient + diffuse + specular;
-//	gl_FragColor = specular;
 }
 

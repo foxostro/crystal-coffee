@@ -176,9 +176,6 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
       normal_mat(normal)
 {
 	GLint diffuse_map, normal_map;
-	
-	// Bind attribute location 1 to the tangent vector
-	glBindAttribLocationARB(program, 1, "tangent");
 		
 	// Set texture sampler uniforms only once
 	glUseProgramObjectARB(program);
