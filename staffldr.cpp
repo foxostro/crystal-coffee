@@ -304,8 +304,7 @@ static void ldr_load_scene01(Scene* scene)
                    Quat::Identity, Vec3::Ones, rad, mat));
 
     Light light;
-//	light.position = Vec3(-4, 8.5, 8) * 30;
-	light.position = Vec3(-4, 5.5, -8); // Andrew Fox (20090224)
+    light.position = Vec3(-4, 8.5, 8) * 30;
     light.color = Vec3(.7,.7,.7);
     scene->lights.push_back(light);
 }

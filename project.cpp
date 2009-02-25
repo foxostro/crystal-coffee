@@ -23,6 +23,11 @@ using namespace std;
 // current absolute simulation time for the current scene
 static real_t sim_time;
 
+static int num_gl_lights=8;
+
+void set_light_positions(const Scene::LightList & lights);
+void init_light_properties(const Scene::LightList & lights);
+
 void draw_geom(Geometry *geom)
 {
 	assert(geom);
@@ -52,7 +57,7 @@ void prj_initialize(Scene* scene, bool is_gl_context)
     sim_time = scene->start_time;
 
     if (is_gl_context) {
-		GLfloat lmodel_ambient[] = { 0.3, 0.3, 0.3, 1 };
+		GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1 };
 		glClearColor(0, 0, 0, 1);
 		glShadeModel(GL_SMOOTH);
 		glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
@@ -61,12 +66,15 @@ void prj_initialize(Scene* scene, bool is_gl_context)
 		glEnable(GL_NORMALIZE);
 		glEnable(GL_TEXTURE_2D);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glGetIntegerv(GL_MAX_LIGHTS, &num_gl_lights);
     }
     
     // Initialize scene objects
 	for_each(scene->materials.begin(),
 	         scene->materials.end(),
 	         &init_mat);
+	         
+	init_light_properties(scene->lights);	         
 }
 
 /**
@@ -116,17 +124,23 @@ static void set_camera(const Camera &camera) {
 			  upx, upy, upz);
 }
 
-void set_lights(const Scene::LightList & lights)
+void set_light_positions(const Scene::LightList & lights)
 {
-	const GLfloat catt = 0;
+	for(int i=0; i<num_gl_lights && i < (int)lights.size(); ++i)
+	{
+		const Light & light = lights[i];
+		const GLfloat position[] = { light.position.x, light.position.y, light.position.z, 1 };
+		glLightfv(GL_LIGHT0 + i, GL_POSITION, position);
+	}
+}
+
+void init_light_properties(const Scene::LightList & lights)
+{
+	const GLfloat catt = 1;
 	const GLfloat latt = 0;
-	const GLfloat qatt = 0.01;
+	const GLfloat qatt = 0;
 	const GLfloat black[] = { 0, 0, 0, 1 };
 	const GLfloat white[] = { 1, 1, 1, 1 };
-
-	int num_gl_lights=8;
-
-	glGetIntegerv(GL_MAX_LIGHTS, &num_gl_lights);
 
 	for(int i=0; i<num_gl_lights; ++i) {
 		glDisable(GL_LIGHT0 + i);
@@ -137,21 +151,19 @@ void set_lights(const Scene::LightList & lights)
 		const Light & light = lights[i];
 
 		const GLfloat color[] = { light.color.x, light.color.y, light.color.z, 1 };
-		const GLfloat position[] = { light.position.x, light.position.y, light.position.z, 1 };
 
 		glLightfv(GL_LIGHT0 + i, GL_AMBIENT, black);
 		glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, color);
 		glLightfv(GL_LIGHT0 + i, GL_SPECULAR, white);
 
-		glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION,  catt);
+		glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION,  catt * light.intensity);
 		glLightf(GL_LIGHT0 + i, GL_LINEAR_ATTENUATION,    latt);
-		glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, qatt * light.intensity);
-
-		glLightfv(GL_LIGHT0 + i, GL_POSITION, position);
+		glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, qatt);
 
 		glEnable(GL_LIGHT0 + i);
 	}
 }
+
 /**
  * Render the current scene using opengl to the current frame buffer.
  * @param scene The scene to render.
@@ -162,10 +174,10 @@ void prj_render(Scene* scene)
 	assert(scene);
 
 	set_camera(scene->camera);
-	set_lights(scene->lights); // light pos are fixed relative to the scene
+	set_light_positions(scene->lights); // light pos are fixed relative to the scene
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
 	for_each(scene->objects.begin(),
 	         scene->objects.end(),
 	         &draw_geom);
