@@ -118,9 +118,9 @@ static void set_camera(const Camera &camera) {
 
 void set_lights(const Scene::LightList & lights)
 {
-	const GLfloat catt = 1;
+	const GLfloat catt = 0;
 	const GLfloat latt = 0;
-	const GLfloat qatt = 0;
+	const GLfloat qatt = 0.01;
 	const GLfloat black[] = { 0, 0, 0, 1 };
 	const GLfloat white[] = { 1, 1, 1, 1 };
 
@@ -143,9 +143,9 @@ void set_lights(const Scene::LightList & lights)
 		glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, color);
 		glLightfv(GL_LIGHT0 + i, GL_SPECULAR, white);
 
-		glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION,  catt * light.intensity);
+		glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION,  catt);
 		glLightf(GL_LIGHT0 + i, GL_LINEAR_ATTENUATION,    latt);
-		glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, qatt);
+		glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, qatt * light.intensity);
 
 		glLightfv(GL_LIGHT0 + i, GL_POSITION, position);
 

@@ -61,7 +61,7 @@ void app_exit();
 /* gui.cpp defines and prototypes */
 
 // uncomment for P2 to enable menu item to toggle glsl features
-//#define GUI_ENABLE_GLSL_TOGGLE
+#define GUI_ENABLE_GLSL_TOGGLE
 // uncomment for P3/P4 to enable menu item for raytracing
 //#define GUI_ENABLE_RAYTRACE
 

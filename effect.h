@@ -51,6 +51,8 @@ class Effect
 public:
     Effect(const char* vert_file, const char* frag_file);
     
+    virtual ~Effect() {}
+    
     virtual void bind(void) = 0;
 
 protected:
@@ -63,7 +65,7 @@ public:
     FresnelEffect(const char* vert_file, const char* frag_file,
                   const SphereMap* env_map, Material* mat);
                   
-    virtual void bind() {}
+    virtual void bind();
 };
 
 class BumpMapEffect : public Effect
@@ -73,6 +75,10 @@ public:
                   Material* diffuse_mat, Material* normal_mat);
                   
     virtual void bind();
+    
+private:
+	Material* diffuse_mat;
+	Material* normal_mat;
 };
 
 #endif /* _EFFECT_H_ */

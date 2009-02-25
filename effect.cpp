@@ -13,6 +13,8 @@
 
 using namespace std;
 
+bool app_is_glsl_enabled();
+
 #ifdef USE_GLSL
 static char* load_file(const char* file)
 {
@@ -164,23 +166,53 @@ FresnelEffect::FresnelEffect(const char* vert_file, const char* frag_file,
     // TODO P2 create shader program object for fresnel effect.
 }
 
-BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
-                             Material* diffuse, Material* normal)
-    : Effect(vert_file, frag_file) 
-{
-	GLint diffuse_map, normal_map;
-	
-	// Set texture sampler uniforms only once
-	glUseProgramObjectARB(program);
-	diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
-	glUniform1iARB(diffuse_map, 0);
-	normal_map = glGetUniformLocationARB(program, "normal_map");
-	glUniform1iARB(normal_map, 1);
+void FresnelEffect::bind()
+{    	
 	glUseProgramObjectARB(0);
 }
 
-void BumpMapEffect::bind(void)
+BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
+                             Material* diffuse, Material* normal)
+    : Effect(vert_file, frag_file),
+      diffuse_mat(diffuse),
+      normal_mat(normal)
 {
-	glUseProgramObjectARB(program);
+	GLint diffuse_map, normal_map;
+	
+	if(app_is_glsl_enabled())
+	{
+		// Bind attribute location 1 to the tangent vector
+		glBindAttribLocationARB(program, 1, "tangent");
+		
+		// Set texture sampler uniforms only once
+		glUseProgramObjectARB(program);
+		diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
+		glUniform1iARB(diffuse_map, 0);
+		normal_map = glGetUniformLocationARB(program, "normal_map");
+		glUniform1iARB(normal_map, 1);
+		glUseProgramObjectARB(0);
+	}
+}
+
+void BumpMapEffect::bind(void)
+{		
+	// Bind texture unit 1
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normal_mat->gltex_name);
+	glEnable(GL_TEXTURE_2D);
+	
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuse_mat->gltex_name);
+	glEnable(GL_TEXTURE_2D);
+			
+	if(app_is_glsl_enabled())
+	{
+		glUseProgramObjectARB(program);
+	}
+	else
+	{
+		glUseProgramObjectARB(0);
+	}
 }
 

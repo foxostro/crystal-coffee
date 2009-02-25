@@ -3,6 +3,7 @@
  * @brief Contans the load functions for the staff's built-in test scenes.
  *
  * @author Eric Butler (edbutler)
+ * @author Zeyang Li (zeyangl)
  */
 
 /*
@@ -73,26 +74,45 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
     Material* materials[] = { mat, mat, mat };
     Vec2 tcoords[3];
 
-    Vec2 dist(xaxis.magnitude(), yaxis.magnitude());
+#ifdef UV_CLOCKWISE
+    Vec2 dist(xaxis.magnitude(), yaxis.magnitude());	
+#else
+	// computing uvs in counterclockwise order
+	Vec2 dist(yaxis.magnitude(), xaxis.magnitude());
+#endif
 
     vertices[0] = maxi;
     vertices[1] = corner;
     vertices[2] = corner + yaxis;
+	
     tcoords[0] = tcoord_min + dist * tcoord_unit;
     tcoords[1] = tcoord_min;
+#ifdef UV_CLOCKWISE
     tcoords[2] = tcoord_min + Vec2(0, dist.y) * tcoord_unit;
+#else
+	tcoords[2] = tcoord_min + Vec2(dist.x, 0) * tcoord_unit;
+#endif
+
     scene->objects.push_back(
         new Triangle(Vec3::Zero, Quat::Identity, Vec3::Ones,
                      vertices, tcoords, normals, materials, effect));
+
     vertices[0] = corner;
     vertices[1] = maxi;
     vertices[2] = corner + xaxis;
+	
     tcoords[0] = tcoord_min;
     tcoords[1] = tcoord_min + dist * tcoord_unit;
+#ifdef UV_CLOCKWISE
     tcoords[2] = tcoord_min + Vec2(dist.x, 0) * tcoord_unit;
+#else
+	tcoords[2] = tcoord_min + Vec2(0, dist.y) * tcoord_unit;
+#endif
+
     scene->objects.push_back(
         new Triangle(Vec3::Zero, Quat::Identity, Vec3::Ones,
                      vertices, tcoords, normals, materials, effect));
+
 }
 
 static void create_pool(Scene* scene)
@@ -101,24 +121,18 @@ static void create_pool(Scene* scene)
     mat->ambient = Vec3(0.7, 0.7, 0.7);
     mat->diffuse = Vec3::Ones;
     mat->phong = Vec3::Ones;
-    //mat->shininess = 40;
-    //mat->specular = Vec3(.2,.2,.2);
-    mat->shininess = 100;
-    mat->specular = Vec3(1,1,1);
+    mat->shininess = 40;
+    mat->specular = Vec3(.2,.2,.2);
     mat->refraction_index = 0;
 	mat->texture_name = "images/bricks_diffuse.png";
-	mat->texture1_name = "images/bricks_normal.png";
     scene->materials.push_back(mat);
-    
-    // Andrew Fox: Conceptually, the pool has one material, "bump-mapped brick"
-    
-/*
+
 	Material* normal_mat = new Material();
 	normal_mat->texture_name = "images/bricks_normal.png";
 	scene->materials.push_back(normal_mat);
-*/
+
 	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, 0);
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
 	scene->effects.push_back(bump);
 
     Vec2 tcmin(0,0);
@@ -133,6 +147,7 @@ static void create_pool(Scene* scene)
     create_square(scene,
                   Vec3(POX-PIX,0,0), Vec3(0,0,2*POZ), Vec3(-POX,POY,-POZ),
                   Vec3::UnitY, mat, tcmin, tcunit, bump);
+
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,0,POZ-PIZ), Vec3(-PIX,POY,-POZ),
                   Vec3::UnitY, mat, tcmin, tcunit, bump);
@@ -141,40 +156,48 @@ static void create_pool(Scene* scene)
                   Vec3::UnitY, mat, tcmin, tcunit, bump);
 
     // inner sides
+
     create_square(scene,
                   Vec3(0,0,2*PIZ), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,-PIZ),
                   Vec3::UnitX, mat, tcmin, tcunit, bump);
+
     create_square(scene,
-                  Vec3(0,0,2*PIZ), Vec3(0,POY-PIY,0), Vec3(PIX,PIY,-PIZ),
-                  -Vec3::UnitX, mat, tcmin, tcunit, bump);
-    create_square(scene,
-                  Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,-PIZ),
+                  -Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(PIX,PIY,-PIZ),
                   Vec3::UnitZ, mat, tcmin, tcunit, bump);
+
+    create_square(scene,
+                  -Vec3(0,POY-PIY,0), -Vec3(0,0,2*PIZ), Vec3(PIX,POY,PIZ),
+                  -Vec3::UnitX, mat, tcmin, tcunit, bump);
+
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,PIZ),
                   -Vec3::UnitZ, mat, tcmin, tcunit, bump);
 
     // outer sides
     create_square(scene,
-                  Vec3(0,0,2*POZ), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,-POZ),
+                  Vec3(0,POY-PBY,0), Vec3(0,0,2*POZ), Vec3(-POX,PBY,-POZ),
                   -Vec3::UnitX, mat, tcmin, tcunit, bump);
+
     create_square(scene,
                   Vec3(0,0,2*POZ), Vec3(0,POY-PBY,0), Vec3(POX,PBY,-POZ),
                   Vec3::UnitX, mat, tcmin, tcunit, bump);
+
     create_square(scene,
                   Vec3(2*POX,0,0), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,-POZ),
                   -Vec3::UnitZ, mat, tcmin, tcunit, bump);
+
     create_square(scene,
-                  Vec3(2*POX,0,0), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,POZ),
+                  Vec3(0,POY-PBY,0), Vec3(2*POX,0,0), Vec3(-POX,PBY,POZ),
                   Vec3::UnitZ, mat, tcmin, tcunit, bump);
 
     // bottom
     create_square(scene,
-                  Vec3(2*PIX,0,0), Vec3(0,0,2*PIZ), Vec3(-PIX,PIY,-PIZ),
+                  Vec3(0,0,2*PIZ), Vec3(2*PIX,0,0), Vec3(-PIX,PIY,-PIZ),
                   Vec3::UnitY, mat, tcmin, tcunit, bump);
     create_square(scene,
-                  Vec3(2*POX,0,0), Vec3(0,0,2*POZ), Vec3(-POX,PBY,-POZ),
+                  Vec3(0,0,2*POZ), Vec3(2*POX,0,0), Vec3(-POX,PBY,-POZ),
                   -Vec3::UnitY, mat, tcmin, tcunit, bump);
+
 }
 
 static void ldr_load_scene01(Scene* scene)
@@ -281,7 +304,8 @@ static void ldr_load_scene01(Scene* scene)
                    Quat::Identity, Vec3::Ones, rad, mat));
 
     Light light;
-    light.position = Vec3(-4, 2.5, -8); //Vec3(-4, 8.5, 8) * 30;
+//	light.position = Vec3(-4, 8.5, 8) * 30;
+	light.position = Vec3(-4, 5.5, -8); // Andrew Fox (20090224)
     light.color = Vec3(.7,.7,.7);
     scene->lights.push_back(light);
 }

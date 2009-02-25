@@ -54,11 +54,6 @@ public:
     unsigned char* texture;
     int tex_width, tex_height;
     GLuint gltex_name;
-    
-    std::string texture1_name;
-    unsigned char* texture1;
-    int tex1_width, tex1_height;
-    GLuint gltex1_name;
 
     Material();
     ~Material();

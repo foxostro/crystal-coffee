@@ -24,16 +24,13 @@
 Material::Material():
     diffuse(Vec3::Ones), phong(Vec3::Zero), ambient(Vec3::Ones),
     specular(Vec3::Zero), shininess(0), refraction_index(0),
-    texture(0), tex_width(0), tex_height(0), gltex_name(0),
-    texture1(0), tex1_width(0), tex1_height(0), gltex1_name(0) {}
+    texture(0), tex_width(0), tex_height(0), gltex_name(0) {}
 
 Material::~Material()
 {
     free(texture);
-    free(texture1);
     
     glDeleteTextures(1, &gltex_name);
-    glDeleteTextures(1, &gltex1_name);
 }
 
 void Material::load_texture()
@@ -55,24 +52,6 @@ void Material::load_texture()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0,
 		             GL_RGBA, GL_UNSIGNED_BYTE, texture);
-	}
-	
-	if(!texture1 && !texture1_name.empty())
-    {
-
-		std::cout << "loading texture (1) " << texture1_name << "...\n";
-		texture1 = imageio_load_image(texture1_name.c_str(),
-		                              &tex1_width, &tex1_height);
-		                                 
-		// Create an OpenGL texture        
-		glGenTextures(1, &gltex1_name);
-		glBindTexture(GL_TEXTURE_2D, gltex1_name);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex1_width, tex1_height, 0,
-		             GL_RGBA, GL_UNSIGNED_BYTE, texture1);
 	}
 }
 
@@ -121,36 +100,6 @@ void Geometry::set_material() const
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
 	
-	if(material->gltex_name)
-	{
-		// Bind texture unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, material->gltex_name);
-		glEnable(GL_TEXTURE_2D);
-	}
-	else
-	{
-		// Disable texture unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-	}
-	
-	if(material->gltex1_name)
-	{
-		// Bind texture unit 1
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, material->gltex1_name);
-		glEnable(GL_TEXTURE_2D);
-	}
-	else
-	{
-		// Disable texture unit 1
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-	}
-	
 	if(effect)
 	{
 		effect->bind();
@@ -160,6 +109,26 @@ void Geometry::set_material() const
 	{
 		// Use the fixed function pipeline
 		glUseProgramObjectARB(0);
+		
+		// Disable texture unit 1
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+		
+		if(material->gltex_name)
+		{
+			// Bind texture unit 0
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, material->gltex_name);
+			glEnable(GL_TEXTURE_2D);
+		}
+		else
+		{
+			// Disable texture unit 0
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glDisable(GL_TEXTURE_2D);
+		}
 	}
 #endif
 }
