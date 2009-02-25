@@ -54,6 +54,9 @@ public:
     virtual ~Effect() {}
     
     virtual void bind(void) = 0;
+    
+    virtual bool areTangentsRequired() const { return false; }
+    virtual bool getTangentAttribSlot() const { return 0; }
 
 protected:
     GLhandleARB program;
@@ -76,9 +79,13 @@ public:
                   
     virtual void bind();
     
+    virtual bool areTangentsRequired() const { return true; }
+    virtual bool getTangentAttribSlot() const { return tangent_attrib_slot; }
+    
 private:
 	Material* diffuse_mat;
 	Material* normal_mat;
+	GLint tangent_attrib_slot;
 };
 
 #endif /* _EFFECT_H_ */

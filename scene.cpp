@@ -101,16 +101,17 @@ void Geometry::set_material() const
 	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
-	
+
 	if(effect && app_is_glsl_enabled())
 	{
 		effect->bind();
 	}
-#ifdef USE_GLSL
 	else
 	{
+#ifdef USE_GLSL
 		// Use the fixed function pipeline
 		glUseProgramObjectARB(0);
+#endif
 		
 		// Disable texture unit 1
 		glActiveTexture(GL_TEXTURE1);
@@ -132,7 +133,6 @@ void Geometry::set_material() const
 			glDisable(GL_TEXTURE_2D);
 		}
 	}
-#endif
 }
 
 void Geometry::set_transformation() const
@@ -145,6 +145,21 @@ void Geometry::set_transformation() const
 	glMultMatrixd(mat.m);
 
 	glScaled(scale.x, scale.y, scale.z);
+}
+
+void Geometry::CalculateTriangleTangent(const Vec3 *vertices,
+                                        const Vec3 *normals,
+                                        const Vec2 *tcoords,
+                                        Vec3 *tangents)
+{
+	/*
+	Generate a tangent for each vertex. Do so in a consistent *enough* manner
+	that tangents are interpolateable across the surface of the mesh.
+	*/
+	for(int i=0; i<3; ++i)
+	{
+		tangents[i] = normals[i].cross(Vec3(0.0, -1.0, 1.0)).normalize();
+	}
 }
 
 Camera::Camera()

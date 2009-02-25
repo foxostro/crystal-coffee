@@ -19,7 +19,7 @@
 class Sphere : public Geometry
 {
 public:
-	static void init_sphere();
+	void init_sphere();
 	
     Sphere();
     Sphere(const Vec3& pos, const Quat& ori, const Vec3& scl,
@@ -35,7 +35,7 @@ private:
 	/** Draws a unit isosphere.
 	  * @param num_of_divisions Number of times to subdivide the icosphere.
 	  */
-	static void draw_ico_sphere(int num_of_divisions);
+	void draw_ico_sphere(int num_of_divisions);
 	
 	/** Subdivides a triangle on the icosphere, recursively.
 	 *  @param v1 Triangle Vertex 1
@@ -43,10 +43,10 @@ private:
 	 *  @param v3 Triangle Vertex 3
 	 *  @param depth Recursive depth subdivision
 	 */
-	static void subdivide(const Vec3 &v1,
-                          const Vec3 &v2,
-                          const Vec3 &v3,
-                          int depth);
+	void subdivide(const Vec3 &v1,
+                   const Vec3 &v2,
+                   const Vec3 &v3,
+                   int depth);
                           
 	/** Generates spherical theta angles for a triangle.
 	 *  The dicontinity of atan is handled so that these angles will be suitable
@@ -66,7 +66,7 @@ private:
                              real_t &theta3);
         
     static Vec3 vertices[];
-	static unsigned int display_list;
+	GLuint display_list;
 };
 
 #endif

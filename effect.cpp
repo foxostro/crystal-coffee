@@ -184,6 +184,8 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
 	normal_map = glGetUniformLocationARB(program, "normal_map");
 	glUniform1iARB(normal_map, 1);
 	glUseProgramObjectARB(0);
+	
+	tangent_attrib_slot = glGetAttribLocation(program, "Tangent");
 }
 
 void BumpMapEffect::bind(void)

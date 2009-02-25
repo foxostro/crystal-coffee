@@ -114,12 +114,20 @@ public:
      * Renders this geometry using OpenGL in the local coordinate space.
      */
     virtual void draw() const = 0;
-
+   
+protected:
 	/** Sets the object's material properties */
 	void set_material() const;
 
 	/** Sets the object's transformation */
 	void set_transformation() const;
+	
+	/** Calculate the tangents for one triangle */
+	static void CalculateTriangleTangent(const Vec3 *vertices,
+                                         const Vec3 *normals,
+	                                     const Vec2 *tcoords,
+	                                     Vec3 *tangents);
+
 };
 
 class UpdatableGeometry : public Geometry

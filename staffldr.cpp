@@ -451,6 +451,50 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox
     scene->lights.push_back(light);
 }
 
+static void ldr_load_scene03(Scene* scene) // Andrew Fox
+{
+    // "Basic" Scene
+    Camera& cam = scene->camera;
+    cam.orientation = Quat::Identity;
+    cam.position = Vec3(0,0,10);
+    cam.focus_dist = 10;
+    cam.fov = PI / 3.0;
+    cam.near_clip = .1;
+    cam.far_clip = 100.0;
+
+    scene->ambient_light = Vec3(.1,.1,.1);
+    scene->refraction_index = 1;
+    scene->caustic_generator = 0;
+
+    Material* mat;
+
+    mat = new Material();
+    mat->ambient = Vec3(0.2, 0.2, 0.2);
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
+    mat->shininess = 16;
+    mat->specular = Vec3(0.2, 0.2, 0.2);
+    mat->refraction_index = 0;
+	mat->texture_name = "images/bricks_diffuse.png";
+    scene->materials.push_back(mat);
+
+	Material* normal_mat = new Material();
+	normal_mat->texture_name = "images/bricks_normal.png";
+	scene->materials.push_back(normal_mat);
+
+	// apply bump mapping to the pool
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
+	scene->effects.push_back(bump);
+
+    scene->objects.push_back(
+        new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3, mat, bump));
+
+    Light light;
+    light.position = Vec3(.4, .7, .8) * 100;
+    light.color = Vec3::Ones;
+    scene->lights.push_back(light);
+}
+
 bool ldr_load_staff_scene(Scene* scene, int num)
 {
     switch (num)
@@ -463,6 +507,9 @@ bool ldr_load_staff_scene(Scene* scene, int num)
         break;
     case 2:
         ldr_load_scene02(scene);
+        break;
+    case 3:
+        ldr_load_scene03(scene);
         break;
     default:
         return false;

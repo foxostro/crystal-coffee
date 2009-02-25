@@ -50,20 +50,17 @@ Vec3 Sphere::vertices[24] =
 	Vec3( 1,  0, -1).normalize(), // Bottom, South, 3
 };
 
-unsigned int Sphere::display_list = 0;
-
 void Sphere::init_sphere()
 {
-	if(display_list == 0) {
-		display_list = glGenLists(1);
-		glNewList(display_list, GL_COMPILE);
-		draw_ico_sphere(4);
-		glEndList();
-	}
+	display_list = glGenLists(1);
+	glNewList(display_list, GL_COMPILE);
+	draw_ico_sphere(3);
+	glEndList();
 }
 
 Sphere::Sphere()
-: radius(0)
+: radius(0),
+  display_list(0)
 {
 	init_sphere();
 }
@@ -71,15 +68,15 @@ Sphere::Sphere()
 Sphere::Sphere(const Vec3& pos, const Quat& ori, const Vec3& scl,
                real_t rad, Material* mat, Effect* efc)
 : Geometry(pos, ori, scl, mat, efc),
-  radius(rad)
+  radius(rad),
+  display_list(0)
 {
 	init_sphere();
 }
 
 Sphere::~Sphere()
 {
-	// do nothing
-	// Display list is cleaned up when the OpenGL context is released.
+	glDeleteLists(display_list, 1);
 }
                
 void Sphere::texmap_theta(const Vec3 &v1,
@@ -182,18 +179,34 @@ void Sphere::subdivide(const Vec3 &v1,
 		st2 = Vec2(theta2 / (2 * M_PI), phi2 / M_PI);
 		st3 = Vec2(theta3 / (2 * M_PI), phi3 / M_PI);
 		
+/*****************************************************************************/
 		
-		glTexCoord2d(st1.x, st1.y);
-		glNormal3f(v1.x, v1.y, v1.z);
-		glVertex3d(v1.x, v1.y, v1.z);
+		Vec3 tangents[3];
+		Vec3 vertices[3] = { v1, v2, v3 };
+		Vec3 normals[3] = { v1, v2, v3 };
+		Vec2 tcoords[3] = { st1, st2, st3 };
 		
-		glTexCoord2d(st2.x, st2.y);
-		glNormal3f(v2.x, v2.y, v2.z);
-		glVertex3d(v2.x, v2.y, v2.z);
+		if(effect && effect->areTangentsRequired())
+		{
+			CalculateTriangleTangent(vertices, normals, tcoords, tangents);
+		}
 		
-		glTexCoord2d(st3.x, st3.y);
-		glNormal3f(v3.x, v3.y, v3.z);
-		glVertex3d(v3.x, v3.y, v3.z);
+		for(int i=0; i<3; ++i)
+		{
+			if(effect && effect->areTangentsRequired())
+			{
+				assert(abs(tangents[i].dot(normals[i])) < 0.00001);
+				
+				glVertexAttrib3d(effect->getTangentAttribSlot(),
+							     tangents[i].x,
+							     tangents[i].y,
+							     tangents[i].z);
+			}
+		
+			glTexCoord2d(tcoords[i].x, tcoords[i].y);
+			glNormal3f(normals[i].x, normals[i].y, normals[i].z);
+			glVertex3d(vertices[i].x, vertices[i].y, vertices[i].z);
+		}
 						
 		return;
 	}

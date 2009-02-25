@@ -6,7 +6,7 @@ varying vec3 eye_to_vertex;
 
 /* Tweak the specular lighting calculations a bit to enhance highlights.
  */
-const float spec_multiplier = 3.0;
+const float spec_multiplier = 2.0;
 
 void main()
 {
