@@ -21,6 +21,8 @@
 #include "imageio.h"
 #include <iostream>
 
+bool app_is_glsl_enabled();
+
 Material::Material():
     diffuse(Vec3::Ones), phong(Vec3::Zero), ambient(Vec3::Ones),
     specular(Vec3::Zero), shininess(0), refraction_index(0),
@@ -100,7 +102,7 @@ void Geometry::set_material() const
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
 	
-	if(effect)
+	if(effect && app_is_glsl_enabled())
 	{
 		effect->bind();
 	}

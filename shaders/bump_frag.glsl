@@ -13,8 +13,9 @@ void main()
 	 * This normal can be used in the Lambert term almost directly. We need to
 	 * unpack it from the texture, though.
 	 */
-	vec3 N = texture2D(normal_map, gl_TexCoord[0].st).xyz;
-	N = (N - 0.5) * 2.0;
+//	vec3 N = texture2D(normal_map, gl_TexCoord[0].st).xyz;
+//	N = (N - 0.5) * 2.0;
+	vec3 N = vec3(0, 0, 1);
 
 	/* The vertex_to_light vector encodes the distance to the light, so we need
 	 * to normalize before using it in the Lambert term.
@@ -32,7 +33,7 @@ void main()
 	// The ambient component from light 0
 	vec4 ambient = gl_FrontMaterial.ambient * gl_LightSource[0].ambient * diffuse_map_color;
 	
-	/* Calculate light fall-off according to the standard OpenGL light
+	/* Calculate light fall-off according to the standard OpenGL light.
 	 * attenuation function.
 	 */
 	float catt = gl_LightSource[0].constantAttenuation;
@@ -46,15 +47,14 @@ void main()
 
 	// Calculate the specular component from light 0	
 	vec4 specular = vec4(0);
-	if(NdotL > 0.0) {		
-		// Calculate the specular term.
-		vec3 halfVector = normalize(L + N);
-		float NdotHV = max(dot(N, halfVector), 0.0);
-		float pf = pow(NdotHV, gl_FrontMaterial.shininess);
-		specular = gl_FrontMaterial.specular * gl_LightSource[0].specular * pf * att;
+	if(NdotL > 0.0) {	
+		vec3 reflected = reflect(-L, N);
+		float spec = pow(max(0.0, dot(reflected, normalize(eye_to_vertex))), gl_FrontMaterial.shininess);
+		specular = gl_FrontMaterial.specular * gl_LightSource[0].specular * spec * att;
 	}
 
 	// The final color is the linear combination of the colors computed above.
 	gl_FragColor = ambient_global + ambient + diffuse + specular;
+//	gl_FragColor = specular;
 }
 

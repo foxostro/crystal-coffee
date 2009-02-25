@@ -13,8 +13,6 @@
 
 using namespace std;
 
-bool app_is_glsl_enabled();
-
 #ifdef USE_GLSL
 static char* load_file(const char* file)
 {
@@ -179,19 +177,16 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
 {
 	GLint diffuse_map, normal_map;
 	
-	if(app_is_glsl_enabled())
-	{
-		// Bind attribute location 1 to the tangent vector
-		glBindAttribLocationARB(program, 1, "tangent");
+	// Bind attribute location 1 to the tangent vector
+	glBindAttribLocationARB(program, 1, "tangent");
 		
-		// Set texture sampler uniforms only once
-		glUseProgramObjectARB(program);
-		diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
-		glUniform1iARB(diffuse_map, 0);
-		normal_map = glGetUniformLocationARB(program, "normal_map");
-		glUniform1iARB(normal_map, 1);
-		glUseProgramObjectARB(0);
-	}
+	// Set texture sampler uniforms only once
+	glUseProgramObjectARB(program);
+	diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
+	glUniform1iARB(diffuse_map, 0);
+	normal_map = glGetUniformLocationARB(program, "normal_map");
+	glUniform1iARB(normal_map, 1);
+	glUseProgramObjectARB(0);
 }
 
 void BumpMapEffect::bind(void)
@@ -206,13 +201,6 @@ void BumpMapEffect::bind(void)
 	glBindTexture(GL_TEXTURE_2D, diffuse_mat->gltex_name);
 	glEnable(GL_TEXTURE_2D);
 			
-	if(app_is_glsl_enabled())
-	{
-		glUseProgramObjectARB(program);
-	}
-	else
-	{
-		glUseProgramObjectARB(0);
-	}
+	glUseProgramObjectARB(program);
 }
 
