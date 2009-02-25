@@ -4,6 +4,8 @@ uniform sampler2D normal_map;
 varying vec3 vertex_to_light;
 varying vec3 eye_to_vertex;
 
+/* Tweak the specular lighting calculations a bit to enhance highlights.
+ */
 const float spec_multiplier = 3.0;
 
 void main()
@@ -45,7 +47,7 @@ void main()
 	float att = 1.0 / (catt + latt*d + qatt*d*d);
 	
 	// The diffuse component from light 0
-	vec4 diffuse = 0.5 * gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse * diffuse_map_color * NdotL * att;
+	vec4 diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse * diffuse_map_color * NdotL * att;
 
 	// Calculate the specular component from light 0	
 	vec4 specular = vec4(0);
