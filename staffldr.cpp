@@ -309,6 +309,148 @@ static void ldr_load_scene01(Scene* scene)
     scene->lights.push_back(light);
 }
 
+static void ldr_load_scene02(Scene* scene) // Andrew Fox
+{
+    Material* mat;
+
+	/************************************************************************/
+    
+    Camera& cam = scene->camera;
+    cam.orientation = Quat(-0.0946664, -0.00690199, 0.970616, 0.22112);
+    cam.position = Vec3(-2.62381,6.01017,-12.4194);
+    cam.focus_dist = 14.0444;
+    cam.fov = PI / 3.0;
+    cam.near_clip = 1;
+    cam.far_clip = 1000.0;
+
+	/************************************************************************/
+
+	// create sphere map
+	SphereMap* spheremap = new SphereMap();
+	scene->background = spheremap;
+	spheremap->texture_name = "images/spheremap_stpeters.png";
+
+    scene->ambient_light = Vec3(.2,.2,.2);
+    scene->refraction_index = 1;
+
+	/************************************************************************/
+
+    create_pool(scene);
+
+	/************************************************************************/
+
+    mat = new Material();
+    mat->ambient = Vec3(0.0, 0.2, 0.3);
+    mat->diffuse = Vec3(0.0, 0.2, 0.3); // blue water
+    mat->phong = Vec3::Ones;
+    mat->shininess = 20;
+    mat->specular = Vec3::Ones;
+    mat->refraction_index = 1.33;
+    scene->materials.push_back(mat);
+
+    WaterSurface::WavePointList wave_points;
+    WaterSurface::WavePoint* p;
+
+    wave_points.push_back(WaterSurface::WavePoint());
+    p = &wave_points.back();
+    p->position = Vec2(.42,.56);
+    p->falloff = 2;
+    p->coefficient = .3;
+    p->timerate = -6*PI;
+    p->period = 16*PI;
+
+    wave_points.push_back(WaterSurface::WavePoint());
+    p = &wave_points.back();
+    p->position = Vec2(-.58,-.30);
+    p->falloff = 2;
+    p->coefficient = .3;
+    p->timerate = -8*PI;
+    p->period = 20*PI;
+
+    WaterSurface* water_surface = new WaterSurface(Vec3(0, POY - 1, 0),
+                                     Quat::Identity,
+                                     Vec3(PIX, 0.4, PIZ),
+                                     wave_points,
+                                     240, 240, mat);
+    scene->objects.push_back(water_surface);
+    scene->updatable_objects.push_back(water_surface);
+    scene->caustic_generator = water_surface;
+
+	// FRESNEL: add fresnel effect to water surface
+	Effect* fresnel = new FresnelEffect("shaders/fresnel_vert.glsl",
+										"shaders/fresnel_frag.glsl",
+										spheremap, mat);
+	water_surface->effect = fresnel;
+	scene->effects.push_back(fresnel);
+	// FRESNEL
+
+	/************************************************************************/
+
+    mat = new Material();
+    mat->ambient = Vec3::Ones;
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3(1,.5,1);
+    mat->shininess = 20;
+    mat->specular = Vec3(.6,.6,.6);
+    mat->refraction_index = 0;
+    mat->texture_name = "images/swirly.png";
+    scene->materials.push_back(mat);
+
+    real_t rad = 2;
+    scene->objects.push_back(
+        new Sphere(Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+    scene->objects.push_back(
+        new Sphere(Vec3(-(POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+
+	/************************************************************************/
+
+    mat = new Material();
+    mat->ambient = Vec3(0.7, 0.7, 0.7);
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
+    mat->shininess = 40;
+    mat->specular = Vec3(.2,.2,.2);
+    mat->refraction_index = 0;
+	mat->texture_name = "images/bricks_diffuse.png";
+    scene->materials.push_back(mat);
+
+	Material* normal_mat = new Material();
+	normal_mat->texture_name = "images/bricks_normal.png";
+	scene->materials.push_back(normal_mat);
+
+	// apply bump mapping to the pool
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
+	scene->effects.push_back(bump);
+
+    scene->objects.push_back(
+        new Sphere(Vec3(-(POX+PIX)/2, POY+rad, (POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat, bump));
+
+	/************************************************************************/
+
+    mat = new Material();
+    mat->ambient = Vec3::Ones;
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
+    mat->shininess = 100;
+    mat->specular = Vec3::Ones;
+    mat->refraction_index = 2;
+    scene->materials.push_back(mat);
+                   
+    scene->objects.push_back(
+        new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
+                   Quat::Identity, Vec3::Ones, rad, mat));
+
+	/************************************************************************/
+
+    Light light;
+    light.position = Vec3(-4, 8.5, 8) * 30;
+    light.color = Vec3(.7,.7,.7);
+    scene->lights.push_back(light);
+}
+
 bool ldr_load_staff_scene(Scene* scene, int num)
 {
     switch (num)
@@ -318,6 +460,9 @@ bool ldr_load_staff_scene(Scene* scene, int num)
         break;
     case 1:
         ldr_load_scene01(scene);
+        break;
+    case 2:
+        ldr_load_scene02(scene);
         break;
     default:
         return false;
