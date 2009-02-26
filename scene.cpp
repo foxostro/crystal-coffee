@@ -148,11 +148,9 @@ void Geometry::set_transformation() const
 }
 
 void Geometry::CalculateTriangleTangent(const Vec3 *vertices,
-                                        const Vec3 *normals,
                                         const Vec2 *tcoords,
                                         Vec3 *tangents)
 {
-#if 1
 	for(int i=0; i<3; ++i)
 	{		
 		const Vec3 &v1 = vertices[i];
@@ -188,44 +186,6 @@ void Geometry::CalculateTriangleTangent(const Vec3 *vertices,
 		tangents[i] = (((-c13.y) * v12) + (c12.y * v13)) / det_M;		          
 		tangents[i].normalize();
 	}
-#else
-/*
-Source:
-Lengyel, Eric. “Computing Tangent Space Basis Vectors for an Arbitrary Mesh”.
-	Terathon Software 3D Graphics Library, 2001.
-	<http://www.terathon.com/code/tangent.html>
-*/
-	
-	const Vec3 &v1 = vertices[0];
-	const Vec3 &v2 = vertices[1];
-	const Vec3 &v3 = vertices[2];
-
-	const Vec2 &w1 = tcoords[0];
-	const Vec2 &w2 = tcoords[1];
-	const Vec2 &w3 = tcoords[2];
-
-	real_t x1 = v2.x - v1.x;
-	real_t x2 = v3.x - v1.x;
-	real_t y1 = v2.y - v1.y;
-	real_t y2 = v3.y - v1.y;
-	real_t z1 = v2.z - v1.z;
-	real_t z2 = v3.z - v1.z;
-
-	real_t s1 = w2.x - w1.x;
-	real_t s2 = w3.x - w1.x;
-	real_t t1 = w2.y - w1.y;
-	real_t t2 = w3.y - w1.y;
-
-	real_t r = 1.0 / (s1 * t2 - s2 * t1);
-	Vec3 sdir((t2 * x1 - t1 * x2) * r,
-	          (t2 * y1 - t1 * y2) * r,
-	          (t2 * z1 - t1 * z2) * r);
-
-	// Gram-Schmidt orthogonalize
-	tangents[0] = (sdir - normals[0] * normals[0].dot(sdir)).normalize();
-	tangents[1] = (sdir - normals[1] * normals[1].dot(sdir)).normalize();
-	tangents[2] = (sdir - normals[2] * normals[2].dot(sdir)).normalize();
-#endif
 }
 
 Camera::Camera()

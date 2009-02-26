@@ -37,7 +37,7 @@ Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
     memcpy(this->materials, materials, sizeof this->materials);
     memcpy(this->tcoords, tcoords, sizeof this->tcoords);
     
-    CalculateTriangleTangent(vertices, normals, tcoords, tangents);
+    CalculateTriangleTangent(vertices, tcoords, tangents);
 }
 
 Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
@@ -50,7 +50,7 @@ Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
     normals[0] = normals[1] = normals[2] = normal;
     materials[0] = materials[1] = materials[2] = mat;
     
-    CalculateTriangleTangent(vertices, normals, tcoords, tangents);
+    CalculateTriangleTangent(vertices, tcoords, tangents);
 }
 
 Triangle::~Triangle() { /* Do Nothing */ }

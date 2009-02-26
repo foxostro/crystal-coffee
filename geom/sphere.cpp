@@ -188,15 +188,13 @@ void Sphere::subdivide(const Vec3 &v1,
 		
 		if(effect && effect->areTangentsRequired())
 		{
-			CalculateTriangleTangent(vertices, normals, tcoords, tangents);
+			CalculateTriangleTangent(vertices, tcoords, tangents);
 		}
 		
 		for(int i=0; i<3; ++i)
 		{
 			if(effect && effect->areTangentsRequired())
-			{
-				assert(fabs(tangents[i].dot(normals[i])) < 0.00001);
-				
+			{				
 				glVertexAttrib3d(effect->getTangentAttribSlot(),
 							     tangents[i].x,
 							     tangents[i].y,
