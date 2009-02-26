@@ -124,8 +124,9 @@ protected:
 	
 	/** Calculate the tangents for one triangle */
 	static void CalculateTriangleTangent(const Vec3 *vertices,
+                                         const Vec3 *normals,
 	                                     const Vec2 *tcoords,
-	                                     Vec3 *tangents);
+	                                     Vec4 *tangents);
 
 };
 

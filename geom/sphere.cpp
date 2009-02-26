@@ -181,24 +181,25 @@ void Sphere::subdivide(const Vec3 &v1,
 		
 /*****************************************************************************/
 		
-		Vec3 tangents[3];
+		Vec4 tangents[3];
 		Vec3 vertices[3] = { v1, v2, v3 };
 		Vec3 normals[3] = { v1, v2, v3 };
 		Vec2 tcoords[3] = { st1, st2, st3 };
 		
 		if(effect && effect->areTangentsRequired())
 		{
-			CalculateTriangleTangent(vertices, tcoords, tangents);
+			CalculateTriangleTangent(vertices, normals, tcoords, tangents);
 		}
 		
 		for(int i=0; i<3; ++i)
 		{
 			if(effect && effect->areTangentsRequired())
 			{				
-				glVertexAttrib3d(effect->getTangentAttribSlot(),
+				glVertexAttrib4d(effect->getTangentAttribSlot(),
 							     tangents[i].x,
 							     tangents[i].y,
-							     tangents[i].z);
+							     tangents[i].z,
+							     tangents[i].w);
 			}
 		
 			glTexCoord2d(tcoords[i].x, tcoords[i].y);

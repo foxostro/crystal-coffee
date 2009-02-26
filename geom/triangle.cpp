@@ -37,7 +37,7 @@ Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
     memcpy(this->materials, materials, sizeof this->materials);
     memcpy(this->tcoords, tcoords, sizeof this->tcoords);
     
-    CalculateTriangleTangent(vertices, tcoords, tangents);
+    CalculateTriangleTangent(vertices, normals, tcoords, tangents);
 }
 
 Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
@@ -50,7 +50,7 @@ Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
     normals[0] = normals[1] = normals[2] = normal;
     materials[0] = materials[1] = materials[2] = mat;
     
-    CalculateTriangleTangent(vertices, tcoords, tangents);
+    CalculateTriangleTangent(vertices, normals, tcoords, tangents);
 }
 
 Triangle::~Triangle() { /* Do Nothing */ }
@@ -69,10 +69,11 @@ void Triangle::draw() const
 	{
 		if(effect && effect->areTangentsRequired())
 		{
-			glVertexAttrib3d(effect->getTangentAttribSlot(),
+			glVertexAttrib4d(effect->getTangentAttribSlot(),
 			                 tangents[i].x,
 			                 tangents[i].y,
-			                 tangents[i].z);
+			                 tangents[i].z,
+			                 tangents[i].w);
 		}
 		
 		glTexCoord2d(tcoords[i].x, tcoords[i].y);
