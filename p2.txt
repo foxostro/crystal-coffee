@@ -1,0 +1,22 @@
+Project 2
+Andrew Fox
+
+My P2 works perfectly.
+
+Extensions:
+
+1. Instead of using a lat/long sphere, I'm using a subdivided platonic solid.
+These spheres have a consistent distribution of polygons across the surface of
+the sphere, which -- besides being kinda cool -- prevents a common issue with
+lat/long spheres where the poles have a large number of tiny, useless polygons.
+
+Also, I'm generating tangents for the sphere and have included a bump-mapped
+sphere as an additional scene in staffldr.
+
+(See scenes 3 and 2.)
+
+2. I've created a new shader "BumpyChrome" which combines the effects of the 
+bump map shader with the environment mapping portion of the fresnel shader.
+
+(See scenes 4 and 2.)
+
