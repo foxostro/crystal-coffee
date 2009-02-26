@@ -124,16 +124,23 @@ static void create_pool(Scene* scene)
     mat->shininess = 40;
     mat->specular = Vec3(.2,.2,.2);
     mat->refraction_index = 0;
-	mat->texture_name = "images/bricks_diffuse.png";
+	mat->texture_name = "images/bricks2_diffuse_map.png";
     scene->materials.push_back(mat);
 
 	Material* normal_mat = new Material();
-	normal_mat->texture_name = "images/bricks_normal.png";
+	normal_mat->texture_name = "images/bricks2_normal_map.png";
 	scene->materials.push_back(normal_mat);
 
+	Material* height_mat = new Material();
+	height_mat->texture_name = "images/bricks2_height_map.png";
+	scene->materials.push_back(height_mat);
+
 	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
-	scene->effects.push_back(bump);
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl",
+	                                 "shaders/bump_frag.glsl",
+	                                 mat,
+	                                 normal_mat,
+	                                 height_mat);
 
     Vec2 tcmin(0,0);
     Vec2 tcunit(.25,.25);
@@ -415,18 +422,23 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Modified Pool Scene
     mat->shininess = 40;
     mat->specular = Vec3(.2,.2,.2);
     mat->refraction_index = 0;
-	mat->texture_name = "images/bricks_diffuse.png";
+	mat->texture_name = "images/bricks2_diffuse_map.png";
     scene->materials.push_back(mat);
 
 	Material* normal_mat = new Material();
-	normal_mat->texture_name = "images/bricks_normal.png";
+	normal_mat->texture_name = "images/bricks2_normal_map.png";
 	scene->materials.push_back(normal_mat);
+
+	Material* height_mat = new Material();
+	height_mat->texture_name = "images/bricks2_height_map.png";
+	scene->materials.push_back(height_mat);
 
 	// apply bump mapping to the pool
 	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl",
 	                                 "shaders/bump_frag.glsl",
 	                                 mat,
-	                                 normal_mat);
+	                                 normal_mat,
+	                                 height_mat);
 	scene->effects.push_back(bump);
 
     scene->objects.push_back(
@@ -491,15 +503,23 @@ static void ldr_load_scene03(Scene* scene) // Andrew Fox: Bump-mapped Sphere
     mat->shininess = 16;
     mat->specular = Vec3(0.2, 0.2, 0.2);
     mat->refraction_index = 0;
-	mat->texture_name = "images/bricks_diffuse.png";
+	mat->texture_name = "images/bricks2_diffuse_map.png";
     scene->materials.push_back(mat);
 
 	Material* normal_mat = new Material();
-	normal_mat->texture_name = "images/bricks_normal.png";
+	normal_mat->texture_name = "images/bricks2_normal_map.png";
 	scene->materials.push_back(normal_mat);
 
+	Material* height_mat = new Material();
+	height_mat->texture_name = "images/bricks2_height_map.png";
+	scene->materials.push_back(height_mat);
+
 	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl",
+	                                 "shaders/bump_frag.glsl",
+	                                 mat,
+	                                 normal_mat,
+	                                 height_mat);
 	scene->effects.push_back(bump);
 
     scene->objects.push_back(

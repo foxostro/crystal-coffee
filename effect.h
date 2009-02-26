@@ -78,8 +78,11 @@ protected:
 class BumpMapEffect : public Effect
 {
 public:
-    BumpMapEffect(const char* vert_file, const char* frag_file,
-                  Material* diffuse_mat, Material* normal_mat);
+    BumpMapEffect(const char* vert_file,
+                  const char* frag_file,
+                  Material* diffuse_mat,
+                  Material* normal_mat,
+                  Material* height_mat);
                   
     virtual void bind();
     
@@ -89,6 +92,7 @@ public:
 private:
 	Material *diffuse_mat;
 	Material *normal_mat;
+	Material *height_mat;
 	GLint tangent_attrib_slot;
 };
 

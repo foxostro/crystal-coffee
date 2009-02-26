@@ -193,13 +193,17 @@ void FresnelEffect::bind()
 	glUseProgramObjectARB(program);
 }
 
-BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
-                             Material* diffuse, Material* normal)
+BumpMapEffect::BumpMapEffect(const char* vert_file,
+                             const char* frag_file,
+                             Material* diffuse,
+                             Material* normal,
+                             Material* height)
     : Effect(vert_file, frag_file),
       diffuse_mat(diffuse),
-      normal_mat(normal)
+      normal_mat(normal),
+      height_mat(height)
 {
-	GLint diffuse_map, normal_map;
+	GLint diffuse_map, normal_map, height_map;
 		
 	// Set these uniforms only once when the effect is initialized
 	
@@ -211,6 +215,9 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
 	normal_map = glGetUniformLocationARB(program, "normal_map");
 	glUniform1iARB(normal_map, 1);
 	
+	height_map = glGetUniformLocationARB(program, "height_map");
+	glUniform1iARB(height_map, 2);
+	
 	tangent_attrib_slot = glGetAttribLocation(program, "Tangent");
 	
 	glUseProgramObjectARB(0);
@@ -218,6 +225,11 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
 
 void BumpMapEffect::bind(void)
 {
+	// Bind texture unit 2
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, height_mat->gltex_name);
+	glEnable(GL_TEXTURE_2D);
+	
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normal_mat->gltex_name);
