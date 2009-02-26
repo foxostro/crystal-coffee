@@ -1,4 +1,4 @@
-attribute vec3 Tangent;
+attribute vec4 Tangent;
 
 varying vec3 vertex_to_light;
 varying vec3 eye_to_vertex;
@@ -22,8 +22,8 @@ void main()
 	
 	// TBN will transform from eye-space to tangent-space
 	vec3 n = vec3(gl_NormalMatrix * gl_Normal);
-	vec3 t = vec3(gl_NormalMatrix * -Tangent);
-	vec3 b = cross(n, t);
+	vec3 t = vec3(gl_NormalMatrix * Tangent.xyz);
+	vec3 b = cross(n, t) * Tangent.w;
 	mat3 to_tangent_space = mat3(vec3(t.x, b.x, n.x),
 	                             vec3(t.y, b.y, n.y),
 	                             vec3(t.z, b.z, n.z)); // transpose(mat3(t, b, n));
