@@ -34,7 +34,9 @@ void main()
 	vec3 n = normal;
 	vec3 t = vec3(gl_NormalMatrix * -Tangent);
 	vec3 b = cross(n, t);
-	mat3 to_tangent_space = transpose(mat3(t, b, n));
+	mat3 to_tangent_space = mat3(vec3(t.x, b.x, n.x),
+	                             vec3(t.y, b.y, n.y),
+	                             vec3(t.z, b.z, n.z)); // transpose(mat3(t, b, n));
 	
 	// Transform these to tangent-space for the fragment shader
 	vertex_to_light = to_tangent_space * vertex_to_light;
