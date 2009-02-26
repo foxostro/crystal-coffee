@@ -30,7 +30,7 @@ void main()
 
 	// Get the texture coordinates to use, applying a "parallax" effect
 	// NOTE: We are scaling the texture coordinates here to tile the tex more.
-	vec2 tcoord = parallax_tcoord(gl_TexCoord[0].st * 2.0, E);
+	vec2 tcoord = parallax_tcoord(gl_TexCoord[0].st, E);
 	
 	// Get the color of the diffuse texture at this fragment
 	vec4 diffuse_map_color = texture2D(diffuse_map, tcoord);
