@@ -163,12 +163,18 @@ FresnelEffect::FresnelEffect(const char *vert_file, const char *frag_file,
       mat(_mat),
 	  env_mat(env)
 {
-	GLint diffuse_map, env_map;
+	GLint env_map, n_t;
 		
-	// Set texture sampler uniforms only once
+	// Set these uniforms only once when the effect is initialized
+	
 	glUseProgramObjectARB(program);
+	
 	env_map = glGetUniformLocationARB(program, "env_map");
 	glUniform1iARB(env_map, 0);
+	
+	n_t = glGetUniformLocationARB(program, "n_t");
+	glUniform1fARB(n_t, (GLfloat)mat->refraction_index);
+
 	glUseProgramObjectARB(0);
 }
 
@@ -195,15 +201,19 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
 {
 	GLint diffuse_map, normal_map;
 		
-	// Set texture sampler uniforms only once
+	// Set these uniforms only once when the effect is initialized
+	
 	glUseProgramObjectARB(program);
+	
 	diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
 	glUniform1iARB(diffuse_map, 0);
+	
 	normal_map = glGetUniformLocationARB(program, "normal_map");
 	glUniform1iARB(normal_map, 1);
-	glUseProgramObjectARB(0);
 	
 	tangent_attrib_slot = glGetAttribLocation(program, "Tangent");
+	
+	glUseProgramObjectARB(0);
 }
 
 void BumpMapEffect::bind(void)

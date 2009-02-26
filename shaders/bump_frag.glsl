@@ -17,9 +17,7 @@ void main()
 	 * This normal can be used in the Lambert term almost directly. We need to
 	 * unpack it from the texture, though.
 	 */
-	vec3 N = vec3(0);
-	N = texture2D(normal_map, gl_TexCoord[0].st).xyz;
-	N = ((N - 0.5) * 2.0);
+	vec3 N = texture2D(normal_map, gl_TexCoord[0].st).xyz * 2.0 - 1.0;
 
 	/* The vertex_to_light vector encodes the distance to the light, so we need
 	 * to normalize before using it in the Lambert term.

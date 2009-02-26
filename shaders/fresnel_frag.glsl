@@ -1,9 +1,28 @@
 uniform sampler2D env_map;
+uniform float n_t; // Refractive Index (we assume the "air" has n = 1.0)
+
+varying vec3 vertex_to_eye;
+varying vec3 normal;
 
 void main (void)
-{
-	vec4 env = texture2D(env_map, gl_TexCoord[0].st);
+{	
+	// Get the color of the environment texture at this fragment
+	vec4 c_e = texture2D(env_map, gl_TexCoord[0].st);
+	
+	/* Renormalize the interpolated normal (eye-space, btw) */
+	vec3 N = normalize(normal);
+	
+	/* Renormalize the interpolated vector to the eye (eye-space, btw) */
+	vec3 D = normalize(vertex_to_eye);
+	
+	vec4 c_d = gl_FrontMaterial.diffuse;
 
-	gl_FragColor = vec4(env.xyz, 1.0);
+	// Calculate the Fresnel term
+	float sqrt_R_0 = (n_t - 1.0) / (n_t + 1.0);
+	float R_0 = sqrt_R_0 * sqrt_R_0;
+	float R = R_0 + (1.0 - R_0) * pow(1.0 - dot(D, N), 2.0);
+	
+	// The final color is the linear combination of the colors computed above.
+	gl_FragColor = c_e*R + c_d*(1.0-R);
 }
 

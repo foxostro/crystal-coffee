@@ -5,7 +5,7 @@ varying vec3 eye_to_vertex;
 
 void main()
 {
-	vec3 vertex_in_eye_space, v;
+	vec3 vertex_in_eye_space;
 	
 	// First, get some standard computations out of the way
 	gl_Position = ftransform();           // Transform vertex position
@@ -22,9 +22,9 @@ void main()
 	
 	// TBN will transform from eye-space to tangent-space
 	vec3 n = vec3(gl_NormalMatrix * gl_Normal);
-	vec3 t = vec3(gl_NormalMatrix * Tangent);
+	vec3 t = vec3(gl_NormalMatrix * -Tangent);
 	vec3 b = cross(n, t);
-	mat3 to_tangent_space = mat3(t, b, n);
+	mat3 to_tangent_space = transpose(mat3(t, b, n));
 	
 	// Transform these to tangent-space for the fragment shader
 	vertex_to_light = to_tangent_space * vertex_to_light;
