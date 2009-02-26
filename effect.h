@@ -92,5 +92,26 @@ private:
 	GLint tangent_attrib_slot;
 };
 
+class BumpyChromeEffect : public Effect
+{
+public:
+    BumpyChromeEffect(const char* vert_file,
+                      const char* frag_file,
+                      const SphereMap* env_map,
+                      Material* mat,
+                      Material* normal_mat);
+                  
+    virtual void bind();
+    
+    virtual bool areTangentsRequired() const { return true; }
+    virtual bool getTangentAttribSlot() const { return tangent_attrib_slot; }
+    
+private:
+	const SphereMap *env_mat;
+    Material* mat;
+	Material *normal_mat;
+	GLint tangent_attrib_slot;
+};
+
 #endif /* _EFFECT_H_ */
 

@@ -423,7 +423,10 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Modified Pool Scene
 	scene->materials.push_back(normal_mat);
 
 	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl", "shaders/bump_frag.glsl", mat, normal_mat);
+	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl",
+	                                 "shaders/bump_frag.glsl",
+	                                 mat,
+	                                 normal_mat);
 	scene->effects.push_back(bump);
 
     scene->objects.push_back(
@@ -440,10 +443,21 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Modified Pool Scene
     mat->specular = Vec3::Ones;
     mat->refraction_index = 2;
     scene->materials.push_back(mat);
-                   
-    scene->objects.push_back(
-        new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
-                   Quat::Identity, Vec3::Ones, rad, mat));
+
+	Effect* bumpychrome = new BumpyChromeEffect("shaders/bumpy_chrome_vert.glsl",
+										        "shaders/bumpy_chrome_frag.glsl",
+										        spheremap,
+										        mat,
+										        normal_mat);
+										
+	scene->effects.push_back(bumpychrome);
+
+    scene->objects.push_back(new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
+                                        Quat::Identity,
+                                        Vec3(-1,1,1),
+                                        rad,
+                                        mat,
+                                        bumpychrome));
 
 	/************************************************************************/
 
@@ -497,7 +511,7 @@ static void ldr_load_scene03(Scene* scene) // Andrew Fox: Bump-mapped Sphere
     scene->lights.push_back(light);
 }
 
-static void ldr_load_scene04(Scene* scene) // Andrew Fox: Env-mapped Sphere
+static void ldr_load_scene04(Scene* scene) // Andrew Fox: Bumpy Chrome Sphere
 {
     Material* mat;
     
@@ -517,8 +531,13 @@ static void ldr_load_scene04(Scene* scene) // Andrew Fox: Env-mapped Sphere
     scene->caustic_generator = 0;
     
 	/************************************************************************/
+
+    // create sphere map
+	SphereMap* spheremap = new SphereMap();
+	spheremap->texture_name = "images/spheremap_stpeters.png";
+	spheremap->load_texture();
 	
-	// create sphere material
+	// create basic sphere material
     mat = new Material();
     mat->ambient = Vec3::Ones;
     mat->diffuse = Vec3::Ones;
@@ -528,23 +547,25 @@ static void ldr_load_scene04(Scene* scene) // Andrew Fox: Env-mapped Sphere
     mat->refraction_index = 2;
     scene->materials.push_back(mat);
 
-    // create sphere map
-	SphereMap* spheremap = new SphereMap();
-	spheremap->texture_name = "images/spheremap_stpeters.png";
-	spheremap->load_texture();
+	// sphere's normal map
+	Material* normal_mat = new Material();
+	normal_mat->texture_name = "images/bricks_normal.png";
+	scene->materials.push_back(normal_mat);
 	
-	Effect* fresnel = new FresnelEffect("shaders/fresnel_vert.glsl",
-										"shaders/fresnel_frag.glsl",
-										spheremap, mat);
+	Effect* bumpychrome = new BumpyChromeEffect("shaders/bumpy_chrome_vert.glsl",
+										        "shaders/bumpy_chrome_frag.glsl",
+										        spheremap,
+										        mat,
+										        normal_mat);
 										
-	scene->effects.push_back(fresnel);
+	scene->effects.push_back(bumpychrome);
 
     scene->objects.push_back(new Sphere(Vec3::Zero,
                                         Quat::Identity,
                                         Vec3(-1,1,1),
                                         3,
                                         mat,
-                                        fresnel));
+                                        bumpychrome));
 	
 	/************************************************************************/
 
@@ -570,7 +591,7 @@ bool ldr_load_staff_scene(Scene* scene, int num)
     case 3: // bump-mapped sphere
         ldr_load_scene03(scene);
         break;
-    case 4: // env-mapped sphere
+    case 4: // Bumpy Chrome Sphere
         ldr_load_scene04(scene);
         break;
     default:

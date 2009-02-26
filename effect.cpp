@@ -231,3 +231,53 @@ void BumpMapEffect::bind(void)
 	glUseProgramObjectARB(program);
 }
 
+BumpyChromeEffect::BumpyChromeEffect(const char* vert_file,
+                                     const char* frag_file,
+                                     const SphereMap* _env_mat,
+                                     Material* _mat,
+                                     Material* _normal_mat)
+    : Effect(vert_file, frag_file),
+      env_mat(_env_mat),
+      mat(_mat),
+      normal_mat(_normal_mat)
+{
+	assert(env_mat);
+	assert(mat);
+	assert(normal_mat);
+	
+	GLint normal_map, env_map;
+		
+	// Set these uniforms only once when the effect is initialized
+	
+	glUseProgramObjectARB(program);
+	
+	normal_map = glGetUniformLocationARB(program, "normal_map");
+	glUniform1iARB(normal_map, 0);
+	
+	env_map = glGetUniformLocationARB(program, "env_map");
+	glUniform1iARB(env_map, 1);
+	
+	tangent_attrib_slot = glGetAttribLocation(program, "Tangent");
+	
+	glUseProgramObjectARB(0);
+}
+
+void BumpyChromeEffect::bind(void)
+{
+	assert(env_mat);
+	assert(normal_mat);
+	
+	// Bind texture unit 1
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, env_mat->gltex_name);
+	glEnable(GL_TEXTURE_2D);
+	
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, normal_mat->gltex_name);
+	glEnable(GL_TEXTURE_2D);
+			
+	glUseProgramObjectARB(program);
+}
+
+
