@@ -157,16 +157,34 @@ Effect::Effect(const char* vert_file, const char* frag_file)
 	program = load_shaders(vert_file, frag_file);
 }
 
-FresnelEffect::FresnelEffect(const char* vert_file, const char* frag_file,
-                             const SphereMap* env_map, Material* mat)
-    : Effect(vert_file, frag_file)
+FresnelEffect::FresnelEffect(const char *vert_file, const char *frag_file,
+                             const SphereMap *env, Material *_mat)
+    : Effect(vert_file, frag_file),
+      mat(_mat),
+	  env_mat(env)
 {
-    // TODO P2 create shader program object for fresnel effect.
+	GLint diffuse_map, env_map;
+		
+	// Set texture sampler uniforms only once
+	glUseProgramObjectARB(program);
+	env_map = glGetUniformLocationARB(program, "env_map");
+	glUniform1iARB(env_map, 0);
+	glUseProgramObjectARB(0);
 }
 
 void FresnelEffect::bind()
-{    	
-	glUseProgramObjectARB(0);
+{
+	// Bind texture unit 1
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+	
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, env_mat->gltex_name);
+	glEnable(GL_TEXTURE_2D);
+			
+	glUseProgramObjectARB(program);
 }
 
 BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
@@ -189,7 +207,7 @@ BumpMapEffect::BumpMapEffect(const char* vert_file, const char* frag_file,
 }
 
 void BumpMapEffect::bind(void)
-{		
+{
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normal_mat->gltex_name);

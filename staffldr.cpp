@@ -216,6 +216,7 @@ static void ldr_load_scene01(Scene* scene)
 	SphereMap* spheremap = new SphereMap();
 	scene->background = spheremap;
 	spheremap->texture_name = "images/spheremap_stpeters.png";
+	spheremap->load_texture(); // Andrew Fox
 
     scene->ambient_light = Vec3(.2,.2,.2);
     scene->refraction_index = 1;
@@ -309,7 +310,7 @@ static void ldr_load_scene01(Scene* scene)
     scene->lights.push_back(light);
 }
 
-static void ldr_load_scene02(Scene* scene) // Andrew Fox
+static void ldr_load_scene02(Scene* scene) // Andrew Fox: Modified Pool Scene
 {
     Material* mat;
 
@@ -329,6 +330,7 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox
 	SphereMap* spheremap = new SphereMap();
 	scene->background = spheremap;
 	spheremap->texture_name = "images/spheremap_stpeters.png";
+	spheremap->load_texture();
 
     scene->ambient_light = Vec3(.2,.2,.2);
     scene->refraction_index = 1;
@@ -451,7 +453,7 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox
     scene->lights.push_back(light);
 }
 
-static void ldr_load_scene03(Scene* scene) // Andrew Fox
+static void ldr_load_scene03(Scene* scene) // Andrew Fox: Bump-mapped Sphere
 {
     // "Basic" Scene
     Camera& cam = scene->camera;
@@ -495,6 +497,63 @@ static void ldr_load_scene03(Scene* scene) // Andrew Fox
     scene->lights.push_back(light);
 }
 
+static void ldr_load_scene04(Scene* scene) // Andrew Fox: Env-mapped Sphere
+{
+    Material* mat;
+    
+	/************************************************************************/
+
+    // "Basic" Scene
+    Camera& cam = scene->camera;
+    cam.orientation = Quat::Identity;
+    cam.position = Vec3(0,0,10);
+    cam.focus_dist = 10;
+    cam.fov = PI / 3.0;
+    cam.near_clip = .1;
+    cam.far_clip = 100.0;
+
+    scene->ambient_light = Vec3(.1,.1,.1);
+    scene->refraction_index = 1;
+    scene->caustic_generator = 0;
+    
+	/************************************************************************/
+	
+	// create sphere material
+    mat = new Material();
+    mat->ambient = Vec3::Ones;
+    mat->diffuse = Vec3::Ones;
+    mat->phong = Vec3::Ones;
+    mat->shininess = 100;
+    mat->specular = Vec3::Ones;
+    mat->refraction_index = 2;
+    scene->materials.push_back(mat);
+
+    // create sphere map
+	SphereMap* spheremap = new SphereMap();
+	spheremap->texture_name = "images/spheremap_stpeters.png";
+	spheremap->load_texture();
+	
+	Effect* fresnel = new FresnelEffect("shaders/fresnel_vert.glsl",
+										"shaders/fresnel_frag.glsl",
+										spheremap, mat);
+										
+	scene->effects.push_back(fresnel);
+
+    scene->objects.push_back(new Sphere(Vec3::Zero,
+                                        Quat::Identity,
+                                        Vec3(-1,1,1),
+                                        3,
+                                        mat,
+                                        fresnel));
+	
+	/************************************************************************/
+
+    Light light;
+    light.position = Vec3(.4, .7, .8) * 100;
+    light.color = Vec3::Ones;
+    scene->lights.push_back(light);
+}
+
 bool ldr_load_staff_scene(Scene* scene, int num)
 {
     switch (num)
@@ -505,11 +564,14 @@ bool ldr_load_staff_scene(Scene* scene, int num)
     case 1:
         ldr_load_scene01(scene);
         break;
-    case 2:
+    case 2: // modified pool scene has extra effects
         ldr_load_scene02(scene);
         break;
-    case 3:
+    case 3: // bump-mapped sphere
         ldr_load_scene03(scene);
+        break;
+    case 4: // env-mapped sphere
+        ldr_load_scene04(scene);
         break;
     default:
         return false;

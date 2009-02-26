@@ -195,7 +195,7 @@ void Sphere::subdivide(const Vec3 &v1,
 		{
 			if(effect && effect->areTangentsRequired())
 			{
-				assert(abs(tangents[i].dot(normals[i])) < 0.00001);
+				assert(fabs(tangents[i].dot(normals[i])) < 0.00001);
 				
 				glVertexAttrib3d(effect->getTangentAttribSlot(),
 							     tangents[i].x,

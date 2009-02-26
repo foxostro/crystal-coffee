@@ -69,6 +69,10 @@ public:
                   const SphereMap* env_map, Material* mat);
                   
     virtual void bind();
+    
+protected:
+	Material *mat;
+	const SphereMap *env_mat;
 };
 
 class BumpMapEffect : public Effect
@@ -83,8 +87,8 @@ public:
     virtual bool getTangentAttribSlot() const { return tangent_attrib_slot; }
     
 private:
-	Material* diffuse_mat;
-	Material* normal_mat;
+	Material *diffuse_mat;
+	Material *normal_mat;
 	GLint tangent_attrib_slot;
 };
 

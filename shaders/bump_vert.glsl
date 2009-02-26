@@ -3,17 +3,6 @@ attribute vec3 Tangent;
 varying vec3 vertex_to_light;
 varying vec3 eye_to_vertex;
 
-vec3 get_tangent()
-{
-	/*
-	// Generate a tangent for each vertex. Do so in a consistent *enough* 
-	// manner that tangents are interpolateable across the surface of the mesh.
-	return normalize(cross(gl_Normal, vec3(0.0, -1.0, 1.0)));
-	*/
-	
-	return Tangent; // Just return the tangent passed from the CPU
-}
-
 void main()
 {
 	vec3 vertex_in_eye_space, v;
@@ -33,7 +22,7 @@ void main()
 	
 	// TBN will transform from eye-space to tangent-space
 	vec3 n = vec3(gl_NormalMatrix * gl_Normal);
-	vec3 t = vec3(gl_NormalMatrix * get_tangent());
+	vec3 t = vec3(gl_NormalMatrix * Tangent);
 	vec3 b = cross(n, t);
 	mat3 to_tangent_space = mat3(t, b, n);
 	
