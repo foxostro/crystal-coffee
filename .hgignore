@@ -4,13 +4,19 @@ syntax: glob
 .directory
 shot.png
 
-# Files generated as part of the build process
-*.o
-*.d
-project
 
+# Files generated as part of the build process (Linux)
+Makefile
+crystal-coffee.make
+crystal-coffee
+obj/*
+
+# Files generated as part of the build process (Windows)
 Debug/*
 Release/*
 *.ncb
 *.suo
-graphicsVS9.vcproj.Rook.arfox.user
+*.sln
+*.vcproj
+*.vcproj.Rook.arfox.user
+
