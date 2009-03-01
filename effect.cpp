@@ -180,6 +180,11 @@ FresnelEffect::FresnelEffect(const char *vert_file, const char *frag_file,
 
 void FresnelEffect::bind()
 {
+	// Bind texture unit 2
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+	
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -278,6 +283,11 @@ void BumpyChromeEffect::bind(void)
 {
 	assert(env_mat);
 	assert(normal_mat);
+	
+	// Bind texture unit 2
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
 	
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
