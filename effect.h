@@ -12,46 +12,16 @@
 #include <string>
 
 class Material;
+class Texture;
 
-class EnvironmentMap
-{
-public:
-    virtual ~EnvironmentMap() {}
-    virtual void load_texture() = 0;
-    virtual Vec3 get_texture_color(const Vec3& direction) const = 0;
-};
-
-class SphereMap : public EnvironmentMap
-{
-public:
-    SphereMap();
-    ~SphereMap();
-    virtual void load_texture();
-    virtual Vec3 get_texture_color(const Vec3& direction) const;
-
-public:
-    std::string texture_name;
-    GLuint gltex_name;
-    unsigned char* texture;
-    int tex_width, tex_height;
-};
-
-
-/* DO NOT change the signature of the constructors 
-   defined in *Effect classes. The staff scene needs them
-   to compile. You may change the signatures of any other functions
-   if desired.
- */
-
-/* STUDENT SOLUTION STARTS HERE
-   TODO P2 add members and code to implement shaders. 
- */
 class Effect
 {
 public:
+	Effect(void) : program(0) { /* Do Nothing */ }
+
     Effect(const char* vert_file, const char* frag_file);
     
-    virtual ~Effect() {}
+    virtual ~Effect() { /* Do Nothing */ }
     
     virtual void bind(void) = 0;
     
@@ -62,27 +32,42 @@ protected:
     GLhandleARB program;
 };
 
+class DiffuseTextureEffect : public Effect
+{
+public:
+	DiffuseTextureEffect(Material *mat, Texture *diffuse_texture);
+
+	virtual void bind();
+
+private:
+	Material *mat;
+	Texture *diffuse_texture;
+};
+
 class FresnelEffect : public Effect
 {
 public:
-    FresnelEffect(const char* vert_file, const char* frag_file,
-                  const SphereMap* env_map, Material* mat);
+    FresnelEffect(const char* vert_file,
+	              const char* frag_file,
+				  const Material* mat,
+                  const Texture* env_map);
                   
     virtual void bind();
     
 protected:
-	Material *mat;
-	const SphereMap *env_mat;
+	const Material* mat;
+	const Texture* env_map;
 };
 
 class BumpMapEffect : public Effect
 {
 public:
-    BumpMapEffect(const char* vert_file,
-                  const char* frag_file,
-                  Material* diffuse_mat,
-                  Material* normal_mat,
-                  Material* height_mat);
+    BumpMapEffect(const char *vert_file,
+                  const char *frag_file,
+				  Material *mat,
+				  const Texture *diffuse_map,
+                  const Texture *normal_map,
+				  const Texture *height_map);
                   
     virtual void bind();
     
@@ -90,30 +75,10 @@ public:
     virtual GLint getTangentAttribSlot() const { return tangent_attrib_slot; }
     
 private:
-	Material *diffuse_mat;
-	Material *normal_mat;
-	Material *height_mat;
-	GLint tangent_attrib_slot;
-};
-
-class BumpyChromeEffect : public Effect
-{
-public:
-    BumpyChromeEffect(const char* vert_file,
-                      const char* frag_file,
-                      const SphereMap* env_map,
-                      Material* mat,
-                      Material* normal_mat);
-                  
-    virtual void bind();
-    
-    virtual bool areTangentsRequired() const { return true; }
-    virtual GLint getTangentAttribSlot() const { return tangent_attrib_slot; }
-    
-private:
-	const SphereMap *env_mat;
-    Material* mat;
-	Material *normal_mat;
+	Material* mat;
+	const Texture *normal_map;
+	const Texture *height_map;
+	const Texture *diffuse_map;
 	GLint tangent_attrib_slot;
 };
 

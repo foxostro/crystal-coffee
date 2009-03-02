@@ -11,6 +11,8 @@
 #include <fstream>
 #include <cstdlib>
 
+bool app_is_glsl_enabled();
+
 using namespace std;
 
 #ifdef USE_GLSL
@@ -91,86 +93,67 @@ static GLhandleARB load_shaders(const char* vert_file, const char* frag_file)
 }
 #endif /* USE_GLSL */
 
-
-SphereMap::SphereMap():
-     gltex_name(0), texture(0), tex_width(0), tex_height(0) {}
-
-void SphereMap::load_texture()
-{
-    if (texture)
-        return;
-
-    texture = imageio_load_image(texture_name.c_str(), &tex_width, &tex_height);
-	if(texture == NULL)
-		std::cout << "sphere map " << texture_name << "load failed\n";
-
-	glGenTextures(1, &gltex_name);
-	glBindTexture(GL_TEXTURE_2D, gltex_name);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA,
-	             GL_UNSIGNED_BYTE, texture);
-    
-}
-
-SphereMap::~SphereMap()
-{
-    // free the loaded texture, will have no effect if null
-    free(texture);
-    
-    glDeleteTextures(1, &gltex_name);
-}
-
-Vec3 SphereMap::get_texture_color(const Vec3& direction) const
-{
-    if (!texture)
-        return Vec3::Zero;
-
-    int tx, ty;
-
-    Vec3 n = direction.unit();
-    n.z += 1.0;
-
-    if (n.z == 0) {
-        tx = 0;
-        ty = tex_height / 2;
-    } else {
-        real_t p = 2*n.magnitude();
-        Vec2 tc(n.x / p + .5, n.y / p + .5);
-
-        // nearest sampling
-        tx = static_cast<int>(tc.x * (tex_width - 1));
-        ty = static_cast<int>(tc.y * (tex_height - 1));
-    }
-
-    assert(0 <= tx && 0 <= ty && tx < tex_width && ty < tex_height);
-
-    return color_array_to_vector(texture + 4 * (tx + ty * tex_width)).xyz();
-}
-
-
 Effect::Effect(const char* vert_file, const char* frag_file)
 	: program(0)
 {
 	program = load_shaders(vert_file, frag_file);
 }
 
-FresnelEffect::FresnelEffect(const char *vert_file, const char *frag_file,
-                             const SphereMap *env, Material *_mat)
-    : Effect(vert_file, frag_file),
-      mat(_mat),
-	  env_mat(env)
+DiffuseTextureEffect::DiffuseTextureEffect(Material *mat,
+										   Texture *diffuse_texture)
 {
-	GLint env_map, n_t;
+	assert(mat);
+	assert(diffuse_texture);
+
+	this->mat = mat;
+	this->diffuse_texture = diffuse_texture;
+}
+
+void DiffuseTextureEffect::bind()
+{
+	assert(mat);
+	assert(diffuse_texture);
+
+	mat->bind();
+
+	// Disable texture unit 2
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+
+	// Disable texture unit 1
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuse_texture->get_gltex_name());
+	glEnable(GL_TEXTURE_2D);
+
+	glUseProgramObjectARB(0);
+}
+
+FresnelEffect::FresnelEffect(const char* vert_file,
+							 const char* frag_file,
+							 const Material* mat,
+							 const Texture* env_map)
+: Effect(vert_file, frag_file)
+{
+	GLint env_map_uniform, n_t;
+
+	assert(mat);
+	assert(env_map);
+
+	this->mat = mat;
+	this->env_map = env_map;
 		
 	// Set these uniforms only once when the effect is initialized
 	
 	glUseProgramObjectARB(program);
 	
-	env_map = glGetUniformLocationARB(program, "env_map");
-	glUniform1iARB(env_map, 0);
+	env_map_uniform = glGetUniformLocationARB(program, "env_map");
+	glUniform1iARB(env_map_uniform, 0);
 	
 	n_t = glGetUniformLocationARB(program, "n_t");
 	glUniform1fARB(n_t, (GLfloat)mat->refraction_index);
@@ -180,6 +163,8 @@ FresnelEffect::FresnelEffect(const char *vert_file, const char *frag_file,
 
 void FresnelEffect::bind()
 {
+	mat->bind();
+
 	// Bind texture unit 2
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -192,36 +177,48 @@ void FresnelEffect::bind()
 	
 	// Bind texture unit 0
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, env_mat->gltex_name);
+	glBindTexture(GL_TEXTURE_2D, env_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 			
-	glUseProgramObjectARB(program);
+	if(app_is_glsl_enabled()) {
+		glUseProgramObjectARB(program);
+	} else {
+		glUseProgramObjectARB(0);
+	}
 }
 
 BumpMapEffect::BumpMapEffect(const char* vert_file,
-                             const char* frag_file,
-                             Material* diffuse,
-                             Material* normal,
-                             Material* height)
-    : Effect(vert_file, frag_file),
-      diffuse_mat(diffuse),
-      normal_mat(normal),
-      height_mat(height)
+							 const char* frag_file,
+							 Material *mat,
+							 const Texture *diffuse_map,
+							 const Texture *normal_map,
+							 const Texture *height_map)
+: Effect(vert_file, frag_file)
 {
-	GLint diffuse_map, normal_map, height_map;
+	GLint diffuse_map_uniform, normal_map_uniform, height_map_uniform;
+
+	assert(mat);
+	assert(normal_map);
+	assert(height_map);
+	assert(diffuse_map);
+
+	this->mat = mat;
+	this->normal_map = normal_map;
+	this->height_map = height_map;
+	this->diffuse_map = diffuse_map;
 		
 	// Set these uniforms only once when the effect is initialized
 	
 	glUseProgramObjectARB(program);
 	
-	diffuse_map = glGetUniformLocationARB(program, "diffuse_map");
-	glUniform1iARB(diffuse_map, 0);
+	diffuse_map_uniform = glGetUniformLocationARB(program, "diffuse_map");
+	glUniform1iARB(diffuse_map_uniform, 0);
 	
-	normal_map = glGetUniformLocationARB(program, "normal_map");
-	glUniform1iARB(normal_map, 1);
+	normal_map_uniform = glGetUniformLocationARB(program, "normal_map");
+	glUniform1iARB(normal_map_uniform, 1);
 	
-	height_map = glGetUniformLocationARB(program, "height_map");
-	glUniform1iARB(height_map, 2);
+	height_map_uniform = glGetUniformLocationARB(program, "height_map");
+	glUniform1iARB(height_map_uniform, 2);
 	
 	tangent_attrib_slot = glGetAttribLocationARB(program, "Tangent");
 	
@@ -230,76 +227,26 @@ BumpMapEffect::BumpMapEffect(const char* vert_file,
 
 void BumpMapEffect::bind(void)
 {
+	mat->bind();
+
 	// Bind texture unit 2
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, height_mat->gltex_name);
+	glBindTexture(GL_TEXTURE_2D, height_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 	
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normal_mat->gltex_name);
+	glBindTexture(GL_TEXTURE_2D, normal_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 	
 	// Bind texture unit 0
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, diffuse_mat->gltex_name);
+	glBindTexture(GL_TEXTURE_2D, diffuse_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
-			
-	glUseProgramObjectARB(program);
+
+	if(app_is_glsl_enabled()) {
+		glUseProgramObjectARB(program);
+	} else {
+		glUseProgramObjectARB(0);
+	}
 }
-
-BumpyChromeEffect::BumpyChromeEffect(const char* vert_file,
-                                     const char* frag_file,
-                                     const SphereMap* _env_mat,
-                                     Material* _mat,
-                                     Material* _normal_mat)
-    : Effect(vert_file, frag_file),
-      env_mat(_env_mat),
-      mat(_mat),
-      normal_mat(_normal_mat)
-{
-	assert(env_mat);
-	assert(mat);
-	assert(normal_mat);
-	
-	GLint normal_map, env_map;
-		
-	// Set these uniforms only once when the effect is initialized
-	
-	glUseProgramObjectARB(program);
-	
-	normal_map = glGetUniformLocationARB(program, "normal_map");
-	glUniform1iARB(normal_map, 0);
-	
-	env_map = glGetUniformLocationARB(program, "env_map");
-	glUniform1iARB(env_map, 1);
-	
-	tangent_attrib_slot = glGetAttribLocationARB(program, "Tangent");
-	
-	glUseProgramObjectARB(0);
-}
-
-void BumpyChromeEffect::bind(void)
-{
-	assert(env_mat);
-	assert(normal_mat);
-	
-	// Bind texture unit 2
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_TEXTURE_2D);
-	
-	// Bind texture unit 1
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, env_mat->gltex_name);
-	glEnable(GL_TEXTURE_2D);
-	
-	// Bind texture unit 0
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, normal_mat->gltex_name);
-	glEnable(GL_TEXTURE_2D);
-			
-	glUseProgramObjectARB(program);
-}
-
-

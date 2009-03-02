@@ -50,32 +50,10 @@ public:
     // infinity, i.e. opaque (raytrace only)
     real_t refraction_index;
 
-    std::string texture_name;
-    unsigned char* texture;
-    int tex_width, tex_height;
-    GLuint gltex_name;
-
     Material();
     ~Material();
 
-    /**
-     * Returns true iff this is opaque (no refraction)
-     */
-    bool is_opaque() const
-    {
-        return refraction_index == 0;
-    }
-
-    /**
-     * Loads the texture to a buffer.
-     */
-    void load_texture();
-
-    /**
-     * Returns the texture color at the given s,t texture coordinates.
-     * The values are wrapped to [0,1).
-     */
-    Vec3 get_texture_color(const Vec2& tex_coords) const;
+	void bind() const;
 
 private:
     // no meaningful assignment or copy
@@ -83,12 +61,37 @@ private:
     Material& operator=(const Material&);
 };
 
+/**
+ * Represents a single texture unit and associated settings.
+ */
+class Texture
+{
+public:
+	Texture(const std::string &texture_name);
+
+	~Texture();
+
+	GLuint get_gltex_name() const {
+		return gltex_name;
+	}
+
+	void load_texture();
+
+private:
+	// no meaningful assignment or copy
+	Texture(const Texture &r);
+	Texture& operator=(const Texture &r);
+
+private:
+	std::string texture_name;
+	GLuint gltex_name;
+};
+
 class Geometry
 {
 public:
     Geometry();
-    Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl,
-             Material* mat, Effect* efc);
+    Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl, Effect* efc);
     virtual ~Geometry();
 
     /*
@@ -104,9 +107,6 @@ public:
     Quat orientation;
     // The world scale of the object.
     Vec3 scale;
-    // The material to use to render this object in opengl (raytracing may use
-    // a different material.
-    Material* material;
     // The shader program to use to render this object in opengl.
     Effect* effect;
 
@@ -133,11 +133,14 @@ protected:
 class UpdatableGeometry : public Geometry
 {
 public:
-    UpdatableGeometry() {}
-    UpdatableGeometry(const Vec3& pos, const Quat& ori, const Vec3& scl,
-                      Material* mat, Effect* efc)
-        : Geometry(pos, ori, scl, mat, efc) {}
-    virtual ~UpdatableGeometry() {}
+    UpdatableGeometry() { /* Do Nothing */ }
+
+    UpdatableGeometry(const Vec3& pos, const Quat& ori,
+					  const Vec3& scl, Effect* efc)
+        : Geometry(pos, ori, scl, efc) { /* Do Nothing */ }
+
+    virtual ~UpdatableGeometry() { /* Do Nothing */ }
+
     /**
      * Updates this Geometry to the given time.
      * @param time The absolute world time.
@@ -235,13 +238,12 @@ public:
     typedef std::vector<Light> LightList;
     typedef std::vector<Geometry*> GeometryList;
     typedef std::vector<UpdatableGeometry*> UpdatableGeometryList;
-    typedef std::vector<Material*> MaterialList;
+	typedef std::vector<Material*> MaterialList;
+	typedef std::vector<Texture*> TextureList;
     typedef std::vector<Effect*> EffectList;
 
     // the camera
     Camera camera;
-    // the background environment map (USED STARTING P2)
-    EnvironmentMap* background;
     // the amibient light of the scene
     Vec3 ambient_light;
     // the refraction index of air (USED STARTING P3)
@@ -257,6 +259,8 @@ public:
     UpdatableGeometryList updatable_objects;
     // list of all materials used by the objects/effects. deleted in dctor
     MaterialList materials;
+	// list of all textures used by the scene. deleted in dctor
+	TextureList textures;
 
     // list of all effects used by objects. deleted in deconstructor
     // (USED STARTING P2)

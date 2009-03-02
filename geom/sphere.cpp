@@ -65,9 +65,12 @@ Sphere::Sphere()
 	init_sphere();
 }
 
-Sphere::Sphere(const Vec3& pos, const Quat& ori, const Vec3& scl,
-               real_t rad, Material* mat, Effect* efc)
-: Geometry(pos, ori, scl, mat, efc),
+Sphere::Sphere(const Vec3& pos,
+			   const Quat& ori,
+			   const Vec3& scl,
+               real_t rad,
+			   Effect* efc)
+: Geometry(pos, ori, scl, efc),
   radius(rad),
   display_list(0)
 {

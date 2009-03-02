@@ -22,8 +22,13 @@ public:
 	void init_sphere();
 	
     Sphere();
-    Sphere(const Vec3& pos, const Quat& ori, const Vec3& scl,
-           real_t rad, Material* mat, Effect* efc=0);
+
+    Sphere(const Vec3& pos,
+		   const Quat& ori,
+		   const Vec3& scl,
+           real_t rad,
+		   Effect* efc=0);
+
     virtual ~Sphere();
 
     // the radius of this sphere.

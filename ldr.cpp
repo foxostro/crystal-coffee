@@ -17,32 +17,47 @@
 
 static void ldr_load_example_scene(Scene* scene)
 {
-    Camera& cam = scene->camera;
-    cam.orientation = Quat::Identity;
-    cam.position = Vec3(0,0,10);
-    cam.focus_dist = 10;
-    cam.fov = PI / 3.0;
-    cam.near_clip = .1;
-    cam.far_clip = 100.0;
+	Material* mat;
+	Texture *tex;
+	Effect *effect;
 
-    scene->ambient_light = Vec3(.1,.1,.1);
+	// "Basic" Scene
+	Camera& cam = scene->camera;
+	cam.orientation = Quat::Identity;
+	cam.position = Vec3(0,0,10);
+	cam.focus_dist = 10;
+	cam.fov = PI / 3.0;
+	cam.near_clip = .1;
+	cam.far_clip = 100.0;
 
-    Material* mat;
+	scene->ambient_light = Vec3(.1,.1,.1);
+	scene->refraction_index = 1;
+	scene->caustic_generator = 0;
 
-    mat = new Material();
-    mat->ambient = Vec3(0,0,1);
-    mat->diffuse = Vec3(0,0,1);
-    mat->phong = Vec3(.3,.3,1);
-    mat->shininess = 20;
-    scene->materials.push_back(mat);
+	// Earth material
+	mat = new Material();
+	mat->ambient = Vec3::Ones;
+	mat->diffuse = Vec3::Ones;
+	mat->phong = Vec3::Ones;
+	mat->shininess = 18;
+	mat->specular = Vec3(.1,.1,.1);
+	mat->refraction_index = 0;
+	scene->materials.push_back(mat);
 
-    scene->objects.push_back(
-        new Sphere(Vec3::Zero, Quat::Identity, Vec3::Ones, 2, mat));
+	// Earth diffuse texture
+	tex = new Texture("images/earth.png");
+	scene->textures.push_back(tex);
 
-    Light light;
-    light.position = Vec3(.4, .7, .8) * 100;
-    light.color = Vec3::Ones;
-    scene->lights.push_back(light);
+	// Earth shader (diffuse texture)
+	effect = new DiffuseTextureEffect(mat, tex);
+	scene->effects.push_back(effect);
+
+	scene->objects.push_back(new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3, effect));
+
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
 }
 
 /**

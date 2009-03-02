@@ -23,12 +23,12 @@ public:
     // construct a triangle with different materials/normals at each vertex
     Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
              const Vec3 vertices[3], const Vec2 tcoords[3],
-             const Vec3 normals[3], Material* materials[3], Effect* efc=0);
+             const Vec3 normals[3], Effect* efc=0);
 
     // construct a triangle with same material/normal at each vertex
     Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
              const Vec3 vertices[3], const Vec2 tcoords[3],
-             const Vec3& normal, Material* material, Effect* efc=0);
+             const Vec3& normal, Effect* efc=0);
 
     virtual ~Triangle();
 
@@ -40,8 +40,6 @@ public:
     Vec3 normals[3];
     // the tangents of each vertex (in local space).
     Vec4 tangents[3];
-    // the material at each vertex (only applies to raytracing).
-    Material* materials[3];
 
     virtual void draw() const;
     

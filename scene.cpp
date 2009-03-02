@@ -23,86 +23,90 @@
 
 bool app_is_glsl_enabled();
 
-Material::Material():
-    diffuse(Vec3::Ones), phong(Vec3::Zero), ambient(Vec3::Ones),
-    specular(Vec3::Zero), shininess(0), refraction_index(0),
-    texture(0), tex_width(0), tex_height(0), gltex_name(0) {}
+Material::Material()
+: diffuse(Vec3::Ones),
+  phong(Vec3::Zero),
+  ambient(Vec3::Ones),
+  specular(Vec3::Zero),
+  shininess(0),
+  refraction_index(0)
+{
+	// Do nothing
+}
 
 Material::~Material()
 {
-    free(texture);
-    
-    glDeleteTextures(1, &gltex_name);
+	// Do nothing
 }
 
-void Material::load_texture()
+void Material::bind() const
 {
-    // don't load texture if already loaded or filename is blank
-    if(!texture && !texture_name.empty())
-    {
+	const GLfloat c_a[] = { ambient.x, ambient.y, ambient.z, 1 };
+	const GLfloat c_d[] = { diffuse.x, diffuse.y, diffuse.z, 1 };
+	const GLfloat c_s[] = { specular.x, specular.y, specular.z, 1 };
+	const GLfloat black[] = { 0, 0, 0, 1 };
 
-		std::cout << "loading texture " << texture_name << "...\n";
-		texture = imageio_load_image(texture_name.c_str(),
-		                             &tex_width, &tex_height);
-		                                 
-		// Create an OpenGL texture        
-		glGenTextures(1, &gltex_name);
-		glBindTexture(GL_TEXTURE_2D, gltex_name);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0,
-		             GL_RGBA, GL_UNSIGNED_BYTE, texture);
-	}
+	glMaterialfv(GL_FRONT, GL_AMBIENT, c_a);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, c_d);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, c_s);
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);
+	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)shininess);
 }
 
-Vec3 Material::get_texture_color(const Vec2& tex_coords) const
+Texture::Texture(const std::string &tex_name)
+: texture_name(tex_name),
+  gltex_name(0)
 {
-    if (texture) {
-        // wrap texture values
-        Vec2 tc(tex_coords);
-        tc.x = fmod(tc.x, 1);
-        tc.y = fmod(tc.y, 1);
-
-        // use nearest sampling to query color
-        int tx = static_cast<int>(tc.x * (tex_width - 1));
-        int ty = static_cast<int>(tc.y * (tex_height - 1));
-        assert(0 <= tx && 0 <= ty && tx < tex_width && ty < tex_height);
-
-        return color_array_to_vector(texture + 4 * (tx + ty * tex_width)).xyz();
-    } else
-        return Vec3::Ones;
+	// Do Nothing
 }
 
+Texture::~Texture()
+{
+	glDeleteTextures(1, &gltex_name);
+}
 
+void Texture::load_texture()
+{
+	unsigned char* texture;
+	int tex_width, tex_height;
+
+	// don't load texture if already loaded or filename is blank
+	if(gltex_name || texture_name.empty())
+		return;
+
+	std::cout << "loading texture " << texture_name << "...\n";
+	texture = imageio_load_image(texture_name.c_str(),
+	                             &tex_width,
+	                             &tex_height);
+
+	// Create an OpenGL texture        
+	glGenTextures(1, &gltex_name);
+	glBindTexture(GL_TEXTURE_2D, gltex_name);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0,
+	             GL_RGBA, GL_UNSIGNED_BYTE, texture);
+
+	free(texture);
+}
 
 Geometry::Geometry():
     position(Vec3::Zero), orientation(Quat::Identity),
     scale(Vec3::Ones), effect(0) {}
 
-Geometry::Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl,
-                   Material* mat, Effect* efc):
-    position(pos), orientation(ori), scale(scl), material(mat), effect(efc) {}
+Geometry::Geometry(const Vec3& pos,
+				   const Quat& ori,
+				   const Vec3& scl,
+				   Effect* efc):
+    position(pos), orientation(ori), scale(scl), effect(efc) {}
 
 Geometry::~Geometry() {}
 
 void Geometry::set_material() const
 {
-	assert(material);
-
-	const GLfloat ambient[] = { material->ambient.x, material->ambient.y, material->ambient.z, 1 };
-	const GLfloat diffuse[] = { material->diffuse.x, material->diffuse.y, material->diffuse.z, 1 };
-	const GLfloat specular[] = { material->specular.x, material->specular.y, material->specular.z, 1 };
-	const GLfloat black[] = { 0, 0, 0, 1 };
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-	glMaterialfv(GL_FRONT, GL_EMISSION, black);
-	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)material->shininess);
-
-	if(effect && app_is_glsl_enabled())
+	if(effect)
 	{
 		effect->bind();
 	}
@@ -112,26 +116,29 @@ void Geometry::set_material() const
 		// Use the fixed function pipeline
 		glUseProgramObjectARB(0);
 #endif
-		
-		// Disable texture unit 1
+		// Disable texture unit 2 (TODO: Disable all texture units)
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+
+		// Disable texture unit 1 (TODO: Disable all texture units)
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDisable(GL_TEXTURE_2D);
-		
-		if(material->gltex_name)
-		{
-			// Bind texture unit 0
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, material->gltex_name);
-			glEnable(GL_TEXTURE_2D);
-		}
-		else
-		{
-			// Disable texture unit 0
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glDisable(GL_TEXTURE_2D);
-		}
+	
+		// Disable texture unit 0
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+
+		// Apply a default material
+		const GLfloat black[] = { 0, 0, 0, 1 };
+		const GLfloat white[] = { 1, 1, 1, 1 };
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)20.0);
 	}
 }
 
@@ -298,7 +305,7 @@ Light::Light()
 
 
 Scene::Scene()
-    : background(0), ambient_light(Vec3::Zero), refraction_index(1),
+    : ambient_light(Vec3::Zero), refraction_index(1),
       start_time(0), caustic_generator(0) {}
 
 Scene::~Scene()
@@ -306,9 +313,10 @@ Scene::~Scene()
     for (GeometryList::iterator i=objects.begin(); i!=objects.end(); ++i)
         delete *i;
     for (MaterialList::iterator i=materials.begin(); i!=materials.end(); ++i)
-        delete *i;
+		delete *i;
+	for (TextureList::iterator i=textures.begin(); i!=textures.end(); ++i)
+		delete *i;
     for (EffectList::iterator i=effects.begin(); i!=effects.end(); ++i)
         delete *i;
-    delete background;
 }
 

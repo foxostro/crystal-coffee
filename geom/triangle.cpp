@@ -22,19 +22,17 @@ Triangle::Triangle()
 {
     memset(vertices, 0, sizeof vertices);
     memset(normals, 0, sizeof normals);
-    memset(materials, 0, sizeof materials);
     memset(tcoords, 0, sizeof tcoords);
     memset(tangents, 0, sizeof tangents);
 }
 
 Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
                    const Vec3 vertices[3], const Vec2 tcoords[3],
-                   const Vec3 normals[3], Material* materials[3], Effect* efc)
-    : Geometry(pos, ori, scl, materials[0], efc)
+                   const Vec3 normals[3], Effect* efc)
+    : Geometry(pos, ori, scl, efc)
 {
     memcpy(this->vertices, vertices, sizeof this->vertices);
     memcpy(this->normals, normals, sizeof this->normals);
-    memcpy(this->materials, materials, sizeof this->materials);
     memcpy(this->tcoords, tcoords, sizeof this->tcoords);
     
     CalculateTriangleTangent(vertices, normals, tcoords, tangents);
@@ -42,13 +40,12 @@ Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
 
 Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
                    const Vec3 vertices[3], const Vec2 tcoords[3],
-                   const Vec3& normal, Material* mat, Effect* efc)
-    : Geometry(pos, ori, scl, mat, efc)
+                   const Vec3& normal, Effect* efc)
+    : Geometry(pos, ori, scl, efc)
 {
     memcpy(this->vertices, vertices, sizeof this->vertices);
     memcpy(this->tcoords, tcoords, sizeof this->tcoords);
     normals[0] = normals[1] = normals[2] = normal;
-    materials[0] = materials[1] = materials[2] = mat;
     
     CalculateTriangleTangent(vertices, normals, tcoords, tangents);
 }

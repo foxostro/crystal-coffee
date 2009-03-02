@@ -44,12 +44,11 @@ public:
      * @param wave_points The list of wave-emitting points.
      * @param resx The mesh resolution along the local x axis.
      * @param resz The mesh resolution along the local z azis.
-     * @param mat The material to use for gl rendering.
      * @param efc The shader effect to use for gl rendering.
      */
     WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                  const WavePointList& wave_points,
-                 int resx, int resz, Material* mat, Effect* efc=0);
+                 int resx, int resz, Effect* efc=0);
 
     virtual ~WaterSurface();
 

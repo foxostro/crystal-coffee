@@ -34,10 +34,10 @@ void draw_geom(Geometry *geom)
 	geom->draw();
 }
 
-void init_mat(Material *mat)
+void init_texture(Texture *texture)
 {
-	assert(mat);
-    mat->load_texture();
+	assert(texture);
+	texture->load_texture();
 }
 
 /**
@@ -72,9 +72,9 @@ void prj_initialize(Scene* scene, bool is_gl_context)
     }
     
     // Initialize scene objects
-	for_each(scene->materials.begin(),
-	         scene->materials.end(),
-	         &init_mat);
+	for_each(scene->textures.begin(),
+	         scene->textures.end(),
+	         &init_texture);
 	         
 	init_light_properties(scene->lights);	         
 }

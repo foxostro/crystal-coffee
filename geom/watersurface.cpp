@@ -20,8 +20,8 @@
 
 WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                            const WavePointList& wave_points,
-                           int resx, int resz, Material* mat, Effect* efc)
-: UpdatableGeometry(pos, ori, scl, mat, efc),
+                           int resx, int resz, Effect* efc)
+: UpdatableGeometry(pos, ori, scl, efc),
   wave_points(wave_points), resx(resx), resz(resz),
   heightmap(0),
   vertices(0),
