@@ -33,6 +33,7 @@
 #include <GL/glew.h>
 #endif /* WIN32 */
 
+#include <cstdlib>
 #include <GL/glut.h>
 #ifdef USE_GLSL
 #include <GL/glext.h>
