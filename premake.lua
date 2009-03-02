@@ -17,12 +17,12 @@ if OS == "windows" then
 	package.libpaths = { "$(ProjectDir)lib" }
 	
 	package.links = {
+		"opengl32",
+		"glu32",
 		"glut32",
 		"glew32",
 		"libpng"
 	}
-	
-	package.linkoptions = { "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:MSVCRT" }
     
 elseif OS == "linux" then
 	package.links = {
@@ -33,7 +33,7 @@ elseif OS == "linux" then
 		"glut"
 	}
 	
-	package.buildoptions = { "-I\"$(shell pwd)\"" }
+	package.buildoptions = { "-I\"$(shell pwd)\"", "-I\"$(shell pwd)/include\"" }
 else
 	error("Unsupported Operating System: " .. OS)
 end

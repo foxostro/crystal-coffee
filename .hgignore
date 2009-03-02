@@ -19,4 +19,6 @@ Release/*
 *.sln
 *.vcproj
 *.vcproj.Rook.arfox.user
+crystal-coffee.exe
+crystal-coffee.pdb
 
