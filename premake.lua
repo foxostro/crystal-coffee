@@ -12,13 +12,17 @@ package.files = {
 }
 
 if OS == "windows" then    
+	package.includepaths = { "$(ProjectDir)", "$(ProjectDir)include" }
+	
+	package.libpaths = { "$(ProjectDir)lib" }
+	
 	package.links = {
-		"opengl32",
-		"glu32",
-		"glew32",
 		"glut32",
-		"png"
+		"glew32",
+		"libpng"
 	}
+	
+	package.linkoptions = { "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:MSVCRT" }
     
 elseif OS == "linux" then
 	package.links = {

@@ -96,62 +96,62 @@ void Sphere::texmap_theta(const Vec3 &v1,
 	 * mapped incorrectly due to the incontinuity.
 	 */
 		
-	if(theta1 - theta2 > M_PI)
+	if(theta1 - theta2 > PI)
 	{
-		theta1 -= 2 * M_PI;
+		theta1 -= 2 * PI;
 	}
-	else if(theta1 - theta3 > M_PI)
+	else if(theta1 - theta3 > PI)
 	{
-		theta3 += 2 * M_PI;
+		theta3 += 2 * PI;
 	}
-	else if(theta2 - theta1 > M_PI)
+	else if(theta2 - theta1 > PI)
 	{
-		theta1 += 2 * M_PI;
+		theta1 += 2 * PI;
 	}
-	else if(theta2 - theta3 > M_PI)
+	else if(theta2 - theta3 > PI)
 	{
-		theta3 += 2 * M_PI;
+		theta3 += 2 * PI;
 	}
-	else if(theta3 - theta1 > M_PI)
+	else if(theta3 - theta1 > PI)
 	{
-		theta3 -= 2 * M_PI;
+		theta3 -= 2 * PI;
 	}
-	else if(theta3 - theta2 > M_PI)
+	else if(theta3 - theta2 > PI)
 	{
-		theta3 -= 2 * M_PI;
+		theta3 -= 2 * PI;
 	}
 
-	if(theta1 - theta2 < -M_PI)
+	if(theta1 - theta2 < -PI)
 	{
-		theta1 += 2 * M_PI;
+		theta1 += 2 * PI;
 	}
-	else if(theta1 - theta3 < -M_PI)
+	else if(theta1 - theta3 < -PI)
 	{
 		// fix so that draw_ico_sphere(1) suffers less distortion near the poles
 		if(abs(theta1) < 0.001)
 		{
-			theta1 += M_PI;
+			theta1 += PI;
 		}
 		else
 		{
-			theta3 -= 2 * M_PI;
+			theta3 -= 2 * PI;
 		}
 	}
-	else if(theta2 - theta1 < -M_PI)
+	else if(theta2 - theta1 < -PI)
 	{
-		theta1 -= 2 * M_PI;
+		theta1 -= 2 * PI;
 	}
-	else if(theta2 - theta3 < -M_PI)
+	else if(theta2 - theta3 < -PI)
 	{
-		theta3 -= 2 * M_PI;
+		theta3 -= 2 * PI;
 	}
-	else if(theta3 - theta1 < -M_PI)
+	else if(theta3 - theta1 < -PI)
 	{
-		theta3 += 2 * M_PI;
+		theta3 += 2 * PI;
 	}
-	else if(theta3 - theta2 < -M_PI)
+	else if(theta3 - theta2 < -PI)
 	{
-		theta3 += 2 * M_PI;
+		theta3 += 2 * PI;
 	}
 }
    
@@ -175,9 +175,9 @@ void Sphere::subdivide(const Vec3 &v1,
 		phi2 = acos(-v2.y);
 		phi3 = acos(-v3.y);
 		
-		st1 = Vec2(theta1 / (2 * M_PI), phi1 / M_PI);
-		st2 = Vec2(theta2 / (2 * M_PI), phi2 / M_PI);
-		st3 = Vec2(theta3 / (2 * M_PI), phi3 / M_PI);
+		st1 = Vec2(theta1 / (2 * PI), phi1 / PI);
+		st2 = Vec2(theta2 / (2 * PI), phi2 / PI);
+		st3 = Vec2(theta3 / (2 * PI), phi3 / PI);
 		
 /*****************************************************************************/
 		
@@ -195,11 +195,11 @@ void Sphere::subdivide(const Vec3 &v1,
 		{
 			if(effect && effect->areTangentsRequired())
 			{				
-				glVertexAttrib4d(effect->getTangentAttribSlot(),
-							     tangents[i].x,
-							     tangents[i].y,
-							     tangents[i].z,
-							     tangents[i].w);
+				glVertexAttrib4dARB(effect->getTangentAttribSlot(),
+							        tangents[i].x,
+							        tangents[i].y,
+							        tangents[i].z,
+							        tangents[i].w);
 			}
 		
 			glTexCoord2d(tcoords[i].x, tcoords[i].y);

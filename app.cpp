@@ -12,6 +12,10 @@
     YOU DO NOT NEED TO EDIT THIS FILE, though you may do so if you wish.
  */
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "glheaders.h"
 #include "imageio.h"
 #include "project.h"

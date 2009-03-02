@@ -27,7 +27,7 @@
 #else
 
 // fixes bizarre header errors with windows.h
-#ifdef WIN32
+#ifdef _WIN32
 #define NOMINMAX
 #include <iostream>
 #include <GL/glew.h>

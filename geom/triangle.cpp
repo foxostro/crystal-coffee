@@ -69,11 +69,11 @@ void Triangle::draw() const
 	{
 		if(effect && effect->areTangentsRequired())
 		{
-			glVertexAttrib4d(effect->getTangentAttribSlot(),
-			                 tangents[i].x,
-			                 tangents[i].y,
-			                 tangents[i].z,
-			                 tangents[i].w);
+			glVertexAttrib4dARB(effect->getTangentAttribSlot(),
+			                    tangents[i].x,
+			                    tangents[i].y,
+			                    tangents[i].z,
+			                    tangents[i].w);
 		}
 		
 		glTexCoord2d(tcoords[i].x, tcoords[i].y);

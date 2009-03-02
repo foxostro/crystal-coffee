@@ -223,7 +223,7 @@ BumpMapEffect::BumpMapEffect(const char* vert_file,
 	height_map = glGetUniformLocationARB(program, "height_map");
 	glUniform1iARB(height_map, 2);
 	
-	tangent_attrib_slot = glGetAttribLocation(program, "Tangent");
+	tangent_attrib_slot = glGetAttribLocationARB(program, "Tangent");
 	
 	glUseProgramObjectARB(0);
 }
@@ -274,7 +274,7 @@ BumpyChromeEffect::BumpyChromeEffect(const char* vert_file,
 	env_map = glGetUniformLocationARB(program, "env_map");
 	glUniform1iARB(env_map, 1);
 	
-	tangent_attrib_slot = glGetAttribLocation(program, "Tangent");
+	tangent_attrib_slot = glGetAttribLocationARB(program, "Tangent");
 	
 	glUseProgramObjectARB(0);
 }
