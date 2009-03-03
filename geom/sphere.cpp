@@ -130,7 +130,7 @@ void Sphere::texmap_theta(const Vec3 &v1,
 	else if(theta1 - theta3 < -PI)
 	{
 		// fix so that draw_ico_sphere(1) suffers less distortion near the poles
-		if(abs(theta1) < 0.001)
+		if(fabs(theta1) < 0.001)
 		{
 			theta1 += PI;
 		}

@@ -28,7 +28,6 @@ elseif OS == "linux" then
 	package.links = {
 		"GL",
 		"GLU",
-		"GLEW",
 		"png",
 		"glut"
 	}

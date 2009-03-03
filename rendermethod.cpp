@@ -279,3 +279,4 @@ void RenderMethod_BumpMap::draw() const
 		(*i)->draw();
 	}
 }
+
