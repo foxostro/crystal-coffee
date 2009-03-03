@@ -181,6 +181,6 @@ void prj_render(Scene* scene)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	for_each(scene->effects.begin(), scene->effects.end(), &draw);
+	for_each(scene->render_methods.begin(), scene->render_methods.end(), &draw);
 }
 

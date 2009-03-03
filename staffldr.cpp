@@ -34,8 +34,6 @@ static void ldr_load_scene00(Scene* scene)
     cam.far_clip = 100.0;
 
     scene->ambient_light = Vec3(.1,.1,.1);
-    scene->refraction_index = 1;
-    scene->caustic_generator = 0;
 
 	// Earth material
     mat = new Material();
@@ -52,11 +50,11 @@ static void ldr_load_scene00(Scene* scene)
 
 	// Earth vertex stream
 	Geometry *sphere = new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3);
-	scene->objects.push_back(sphere);
+	scene->geoms.push_back(sphere);
 
 	// Renders the Earth
 	effect = new RenderMethod_DiffuseTexture(sphere, mat, tex);
-	scene->effects.push_back(effect);
+	scene->render_methods.push_back(effect);
 
     Light light;
     light.position = Vec3(.4, .7, .8) * 100;
@@ -111,7 +109,7 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
 	                        vertices,
 							tcoords,
 							normals);
-    scene->objects.push_back(triangle);
+    scene->geoms.push_back(triangle);
 	effect->add_geom(triangle);
 
     vertices[0] = corner;
@@ -132,13 +130,13 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
 	                        vertices,
 							tcoords,
 							normals);
-	scene->objects.push_back(triangle);
+	scene->geoms.push_back(triangle);
 	effect->add_geom(triangle);
 }
 
-static void create_pool(Scene* scene)
+static RenderMethod * create_pool_rendermethod(Scene *scene)
 {
-    Material *mat;
+	Material *mat;
 	Texture *diffuse_map, *normal_map, *height_map;
 	
 	mat = new Material();
@@ -160,13 +158,21 @@ static void create_pool(Scene* scene)
 
 	// apply bump mapping to the pool
 	RenderMethod* bump = new RenderMethod_BumpMap("shaders/bump_vert.glsl",
-	                                 "shaders/bump_frag.glsl",
-									 NULL,
-	                                 mat,
-	                                 diffuse_map,
-	                                 normal_map,
-									 height_map);
-	scene->effects.push_back(bump);
+	                                              "shaders/bump_frag.glsl",
+									              NULL,
+	                                              mat,
+	                                              diffuse_map,
+	                                              normal_map,
+									              height_map);
+	scene->render_methods.push_back(bump);
+
+	return bump;
+}
+
+static void create_pool(Scene* scene, RenderMethod *rendermethod)
+{
+	assert(scene);
+	assert(rendermethod);
 
     Vec2 tcmin(0,0);
     Vec2 tcunit(.25,.25);
@@ -176,60 +182,60 @@ static void create_pool(Scene* scene)
     // upper corners
     create_square(scene,
                   Vec3(POX-PIX,0,0), Vec3(0,0,2*POZ), Vec3(PIX,POY,-POZ),
-                  Vec3::UnitY, tcmin, tcunit, bump);
+                  Vec3::UnitY, tcmin, tcunit, rendermethod);
     create_square(scene,
                   Vec3(POX-PIX,0,0), Vec3(0,0,2*POZ), Vec3(-POX,POY,-POZ),
-                  Vec3::UnitY, tcmin, tcunit, bump);
+                  Vec3::UnitY, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,0,POZ-PIZ), Vec3(-PIX,POY,-POZ),
-                  Vec3::UnitY, tcmin, tcunit, bump);
+                  Vec3::UnitY, tcmin, tcunit, rendermethod);
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,0,POZ-PIZ), Vec3(-PIX,POY,PIZ),
-                  Vec3::UnitY, tcmin, tcunit, bump);
+                  Vec3::UnitY, tcmin, tcunit, rendermethod);
 
     // inner sides
 
     create_square(scene,
                   Vec3(0,0,2*PIZ), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,-PIZ),
-                  Vec3::UnitX, tcmin, tcunit, bump);
+                  Vec3::UnitX, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   -Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(PIX,PIY,-PIZ),
-                  Vec3::UnitZ, tcmin, tcunit, bump);
+                  Vec3::UnitZ, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   -Vec3(0,POY-PIY,0), -Vec3(0,0,2*PIZ), Vec3(PIX,POY,PIZ),
-                  -Vec3::UnitX, tcmin, tcunit, bump);
+                  -Vec3::UnitX, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   Vec3(2*PIX,0,0), Vec3(0,POY-PIY,0), Vec3(-PIX,PIY,PIZ),
-                  -Vec3::UnitZ, tcmin, tcunit, bump);
+                  -Vec3::UnitZ, tcmin, tcunit, rendermethod);
 
     // outer sides
     create_square(scene,
                   Vec3(0,POY-PBY,0), Vec3(0,0,2*POZ), Vec3(-POX,PBY,-POZ),
-                  -Vec3::UnitX, tcmin, tcunit, bump);
+                  -Vec3::UnitX, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   Vec3(0,0,2*POZ), Vec3(0,POY-PBY,0), Vec3(POX,PBY,-POZ),
-                  Vec3::UnitX, tcmin, tcunit, bump);
+                  Vec3::UnitX, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   Vec3(2*POX,0,0), Vec3(0,POY-PBY,0), Vec3(-POX,PBY,-POZ),
-                  -Vec3::UnitZ, tcmin, tcunit, bump);
+                  -Vec3::UnitZ, tcmin, tcunit, rendermethod);
 
     create_square(scene,
                   Vec3(0,POY-PBY,0), Vec3(2*POX,0,0), Vec3(-POX,PBY,POZ),
-                  Vec3::UnitZ, tcmin, tcunit, bump);
+                  Vec3::UnitZ, tcmin, tcunit, rendermethod);
 
     // bottom
     create_square(scene,
                   Vec3(0,0,2*PIZ), Vec3(2*PIX,0,0), Vec3(-PIX,PIY,-PIZ),
-                  Vec3::UnitY, tcmin, tcunit, bump);
+                  Vec3::UnitY, tcmin, tcunit, rendermethod);
     create_square(scene,
                   Vec3(0,0,2*POZ), Vec3(2*POX,0,0), Vec3(-POX,PBY,-POZ),
-                  -Vec3::UnitY, tcmin, tcunit, bump);
+                  -Vec3::UnitY, tcmin, tcunit, rendermethod);
 
 }
 
@@ -252,9 +258,10 @@ static void ldr_load_scene01(Scene* scene)
 	scene->textures.push_back(spheremap);
 
     scene->ambient_light = Vec3(.2,.2,.2);
-    scene->refraction_index = 1;
 
-    create_pool(scene);
+	RenderMethod *bump = create_pool_rendermethod(scene);
+
+    create_pool(scene, bump);
 
     mat = new Material();
     mat->ambient = Vec3(0.0, 0.2, 0.3);
@@ -288,7 +295,7 @@ static void ldr_load_scene01(Scene* scene)
                                      Vec3(PIX, 0.4, PIZ),
                                      wave_points,
                                      240, 240);
-    scene->objects.push_back(water_surface);
+    scene->geoms.push_back(water_surface);
     scene->updatable_objects.push_back(water_surface);
 
 	real_t refraction_index = 1.33;
@@ -298,7 +305,7 @@ static void ldr_load_scene01(Scene* scene)
 										mat,
 										spheremap,
 										refraction_index);
-	scene->effects.push_back(fresnel);
+	scene->render_methods.push_back(fresnel);
 
     mat = new Material();
     mat->ambient = Vec3::Ones;
@@ -312,37 +319,29 @@ static void ldr_load_scene01(Scene* scene)
 	scene->textures.push_back(swirly_tex);
 
 	RenderMethod *swirly = new RenderMethod_DiffuseTexture(NULL, mat, swirly_tex);
-	scene->effects.push_back(swirly);
+	scene->render_methods.push_back(swirly);
 
     real_t rad = 2;
 	Geometry *sphere;
 	
 	sphere = new Sphere(Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
-	swirly->add_geom(sphere);
-    scene->objects.push_back(sphere);
+	bump->add_geom(sphere);
+    scene->geoms.push_back(sphere);
 
 	sphere = new Sphere(Vec3(-(POX+PIX)/2, POY+rad, -(POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
 	swirly->add_geom(sphere);
-    scene->objects.push_back(sphere);
-
-    mat = new Material();
-    mat->ambient = Vec3::Ones;
-    mat->diffuse = Vec3::Ones;
-    mat->phong = Vec3::Ones;
-    mat->shininess = 100;
-    mat->specular = Vec3::Ones;
-	scene->materials.push_back(mat);
+    scene->geoms.push_back(sphere);
 
 	RenderMethod *plain = new RenderMethod_DiffuseTexture(NULL, mat, swirly_tex);
-	scene->effects.push_back(plain);
+	scene->render_methods.push_back(plain);
 
 	sphere = new Sphere(Vec3(-(POX+PIX)/2, POY+rad, (POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
-	plain->add_geom(sphere);
-    scene->objects.push_back(sphere);
+	swirly->add_geom(sphere);
+    scene->geoms.push_back(sphere);
 
 	sphere = new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
-	plain->add_geom(sphere);
-    scene->objects.push_back(sphere);
+	swirly->add_geom(sphere);
+    scene->geoms.push_back(sphere);
 
     Light light;
     light.position = Vec3(-4, 8.5, 8) * 30;
@@ -369,8 +368,6 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Bump-mapped Sphere
     cam.far_clip = 100.0;
 
     scene->ambient_light = Vec3(.1,.1,.1);
-    scene->refraction_index = 1;
-    scene->caustic_generator = 0;
 
     mat = new Material();
     mat->ambient = Vec3(0.2, 0.2, 0.2);
@@ -390,7 +387,7 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Bump-mapped Sphere
 	scene->textures.push_back(height_map);
 
 	sphere = new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3);
-	scene->objects.push_back(sphere);
+	scene->geoms.push_back(sphere);
 
 	bump = new RenderMethod_BumpMap("shaders/bump_vert.glsl",
 	                         "shaders/bump_frag.glsl",
@@ -399,7 +396,7 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Bump-mapped Sphere
 							 diffuse_map,
 							 normal_map,
 							 height_map);
-	scene->effects.push_back(bump);
+	scene->render_methods.push_back(bump);
 
     Light light;
     light.position = Vec3(.4, .7, .8) * 100;

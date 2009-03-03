@@ -32,8 +32,6 @@ static void ldr_load_example_scene(Scene* scene)
 	cam.far_clip = 100.0;
 
 	scene->ambient_light = Vec3(.1,.1,.1);
-	scene->refraction_index = 1;
-	scene->caustic_generator = 0;
 
 	// Earth material
 	mat = new Material();
@@ -49,10 +47,10 @@ static void ldr_load_example_scene(Scene* scene)
 	scene->textures.push_back(tex);
 
 	sphere = new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3);
-	scene->objects.push_back(sphere);
+	scene->geoms.push_back(sphere);
 
 	effect = new RenderMethod_DiffuseTexture(sphere, mat, tex);
-	scene->effects.push_back(effect);
+	scene->render_methods.push_back(effect);
 
 	Light light;
 	light.position = Vec3(.4, .7, .8) * 100;

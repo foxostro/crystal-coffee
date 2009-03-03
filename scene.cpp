@@ -266,18 +266,18 @@ Light::Light()
 
 
 Scene::Scene()
-    : ambient_light(Vec3::Zero), refraction_index(1),
-      start_time(0), caustic_generator(0) {}
+    : ambient_light(Vec3::Zero),
+      start_time(0) {}
 
 Scene::~Scene()
 {
-    for (GeometryList::iterator i=objects.begin(); i!=objects.end(); ++i)
+    for (GeometryList::iterator i=geoms.begin(); i!=geoms.end(); ++i)
         delete *i;
     for (MaterialList::iterator i=materials.begin(); i!=materials.end(); ++i)
 		delete *i;
 	for (TextureList::iterator i=textures.begin(); i!=textures.end(); ++i)
 		delete *i;
-    for (EffectList::iterator i=effects.begin(); i!=effects.end(); ++i)
+    for (EffectList::iterator i=render_methods.begin(); i!=render_methods.end(); ++i)
         delete *i;
 }
 

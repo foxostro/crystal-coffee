@@ -237,31 +237,31 @@ public:
 
     // the camera
     Camera camera;
+
     // the amibient light of the scene
     Vec3 ambient_light;
-    // the refraction index of air (USED STARTING P3)
-    real_t refraction_index;
+
     // the absolute time at which to start updates for ths scene.
     real_t start_time;
 
     // list of all lights in the scene
     LightList lights;
-    // list of all objects (includes updatable objects). deleted in dctor
-    GeometryList objects;
-    // list of all updatable objects
+
+    // list of all geometry (includes updatable geometry). deleted in dctor
+    GeometryList geoms;
+
+    // list of all updatable geometry
     UpdatableGeometryList updatable_objects;
+
     // list of all materials used by the objects/effects. deleted in dctor
     MaterialList materials;
+
 	// list of all textures used by the scene. deleted in dctor
 	TextureList textures;
 
     // list of all effects used by objects. deleted in deconstructor
     // (USED STARTING P2)
-    EffectList effects;
-
-    // the geometry in the scene that should be fired at to generate
-    // caustics (USED STARTING P4)
-    Geometry* caustic_generator;
+    EffectList render_methods;
 
     /**
      * Creates a new empty scene.
