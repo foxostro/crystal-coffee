@@ -472,7 +472,7 @@ static void app_initialize(int argc, char *argv[],
     glutInitWindowSize(width, height);
     glutCreateWindow(title);
 
-#if (defined USE_GLSL) && (defined WIN32)
+#if defined WIN32
     // use glew for windows to load extension libraries
     glewInit();
 #endif

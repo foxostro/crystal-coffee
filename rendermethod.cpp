@@ -15,7 +15,6 @@ bool app_is_glsl_enabled();
 
 using namespace std;
 
-#ifdef USE_GLSL
 static char* load_file(const char* file)
 {
     std::ifstream infile;
@@ -91,7 +90,6 @@ static GLhandleARB load_shaders(const char* vert_file, const char* frag_file)
 
     return program;
 }
-#endif /* USE_GLSL */
 
 RenderMethod_DiffuseTexture::RenderMethod_DiffuseTexture(const Geometry *geom,
 										   const Material *mat,
@@ -128,9 +126,7 @@ void RenderMethod_DiffuseTexture::draw() const
 	glBindTexture(GL_TEXTURE_2D, diffuse_texture->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
-#ifdef USE_GLSL
 	glUseProgramObjectARB(0);
-#endif /* USE_GLSL */
 
 	for(GeomList::const_iterator i=geoms.begin(); i!=geoms.end(); ++i)
 	{
@@ -156,7 +152,6 @@ RenderMethod_Fresnel::RenderMethod_Fresnel(const char* vert_file,
 
 	add_geom(geom);
 	
-#ifdef USE_GLSL
 	program = load_shaders(vert_file, frag_file);
 
 	// Set these uniforms only once when the effect is initialized
@@ -169,7 +164,6 @@ RenderMethod_Fresnel::RenderMethod_Fresnel(const char* vert_file,
 	glUniform1fARB(n_t, (GLfloat)refraction_index);
 
 	glUseProgramObjectARB(0);
-#endif /* USE_GLSL */
 }
 
 void RenderMethod_Fresnel::draw() const
@@ -194,13 +188,11 @@ void RenderMethod_Fresnel::draw() const
 	glBindTexture(GL_TEXTURE_2D, env_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
-#ifdef USE_GLSL
 	if(app_is_glsl_enabled()) {
 		glUseProgramObjectARB(program);
 	} else {
 		glUseProgramObjectARB(0);
 	}
-#endif /* USE_GLSL */
 
 	for(GeomList::const_iterator i=geoms.begin(); i!=geoms.end(); ++i)
 	{
@@ -230,8 +222,7 @@ RenderMethod_BumpMap::RenderMethod_BumpMap(const char* vert_file,
 	this->diffuse_map = diffuse_map;
 
 	add_geom(geom);
-		
-#ifdef USE_GLSL
+	
 	program = load_shaders(vert_file, frag_file);
 
 	// Set these uniforms only once when the effect is initialized
@@ -250,8 +241,6 @@ RenderMethod_BumpMap::RenderMethod_BumpMap(const char* vert_file,
 	tangent_attrib_slot = glGetAttribLocationARB(program, "Tangent");
 	
 	glUseProgramObjectARB(0);
-
-#endif /* USE_GLSL */
 }
 
 void RenderMethod_BumpMap::draw() const
@@ -278,13 +267,11 @@ void RenderMethod_BumpMap::draw() const
 	glBindTexture(GL_TEXTURE_2D, diffuse_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
-#ifdef USE_GLSL
 	if(app_is_glsl_enabled()) {
 		glUseProgramObjectARB(program);
 	} else {
 		glUseProgramObjectARB(0);
 	}
-#endif /* USE_GLSL */
 
 	for(GeomList::const_iterator i=geoms.begin(); i!=geoms.end(); ++i)
 	{
