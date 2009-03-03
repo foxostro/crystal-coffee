@@ -140,10 +140,11 @@ void RenderMethod_DiffuseTexture::draw() const
 }
 
 RenderMethod_Fresnel::RenderMethod_Fresnel(const char* vert_file,
-							 const char* frag_file,
-							 const Geometry *geom,
-							 const Material* mat,
-							 const Texture* env_map)
+							               const char* frag_file,
+							               const Geometry *geom,
+							               const Material* mat,
+							               const Texture* env_map,
+										   real_t refraction_index)
 {
 	GLint env_map_uniform, n_t;
 
@@ -165,7 +166,7 @@ RenderMethod_Fresnel::RenderMethod_Fresnel(const char* vert_file,
 	glUniform1iARB(env_map_uniform, 0);
 	
 	n_t = glGetUniformLocationARB(program, "n_t");
-	glUniform1fARB(n_t, (GLfloat)mat->refraction_index);
+	glUniform1fARB(n_t, (GLfloat)refraction_index);
 
 	glUseProgramObjectARB(0);
 #endif /* USE_GLSL */

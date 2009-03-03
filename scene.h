@@ -38,17 +38,18 @@ public:
 
     // the diffuse color
     Vec3 diffuse;
+
     // the phong specular color
     Vec3 phong;
+
     // the ambient color
     Vec3 ambient;
+
     // the specular reflection color (raytrace only)
     Vec3 specular;
+
     // the phong shininess
     real_t shininess;
-    // refractive index of material dielectric; 0 is special case for
-    // infinity, i.e. opaque (raytrace only)
-    real_t refraction_index;
 
     Material();
     ~Material();

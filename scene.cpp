@@ -28,8 +28,7 @@ Material::Material()
   phong(Vec3::Zero),
   ambient(Vec3::Ones),
   specular(Vec3::Zero),
-  shininess(0),
-  refraction_index(0)
+  shininess(0)
 {
 	// Do nothing
 }

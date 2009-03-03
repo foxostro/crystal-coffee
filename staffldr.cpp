@@ -44,7 +44,6 @@ static void ldr_load_scene00(Scene* scene)
     mat->phong = Vec3::Ones;
     mat->shininess = 18;
     mat->specular = Vec3(.1,.1,.1);
-	mat->refraction_index = 0;
 	scene->materials.push_back(mat);
 
 	// Earth diffuse texture
@@ -148,7 +147,6 @@ static void create_pool(Scene* scene)
     mat->phong = Vec3::Ones;
     mat->shininess = 40;
     mat->specular = Vec3(.2,.2,.2);
-    mat->refraction_index = 0;
     scene->materials.push_back(mat);
 
 	diffuse_map = new Texture("images/bricks2_diffuse_map.png");
@@ -264,7 +262,6 @@ static void ldr_load_scene01(Scene* scene)
     mat->phong = Vec3::Ones;
     mat->shininess = 20;
     mat->specular = Vec3::Ones;
-    mat->refraction_index = 1.33;
     scene->materials.push_back(mat);
 
     WaterSurface::WavePointList wave_points;
@@ -294,11 +291,13 @@ static void ldr_load_scene01(Scene* scene)
     scene->objects.push_back(water_surface);
     scene->updatable_objects.push_back(water_surface);
 
+	real_t refraction_index = 1.33;
 	RenderMethod* fresnel = new RenderMethod_Fresnel("shaders/fresnel_vert.glsl",
 	                                    "shaders/fresnel_frag.glsl",
 										water_surface,
 										mat,
-										spheremap);
+										spheremap,
+										refraction_index);
 	scene->effects.push_back(fresnel);
 
     mat = new Material();
@@ -307,7 +306,6 @@ static void ldr_load_scene01(Scene* scene)
     mat->phong = Vec3(1,.5,1);
     mat->shininess = 20;
     mat->specular = Vec3(.6,.6,.6);
-	mat->refraction_index = 0;
 	scene->materials.push_back(mat);
 
 	Texture *swirly_tex = new Texture("images/swirly.png");
@@ -333,7 +331,6 @@ static void ldr_load_scene01(Scene* scene)
     mat->phong = Vec3::Ones;
     mat->shininess = 100;
     mat->specular = Vec3::Ones;
-    mat->refraction_index = 2;
 	scene->materials.push_back(mat);
 
 	RenderMethod *plain = new RenderMethod_DiffuseTexture(NULL, mat, swirly_tex);
@@ -381,7 +378,6 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Bump-mapped Sphere
     mat->phong = Vec3::Ones;
     mat->shininess = 16;
     mat->specular = Vec3(0.2, 0.2, 0.2);
-    mat->refraction_index = 0;
     scene->materials.push_back(mat);
 
 	diffuse_map = new Texture("images/bricks2_diffuse_map.png");

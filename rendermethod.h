@@ -58,7 +58,8 @@ public:
 	              const char* frag_file,
 				  const Geometry *geom,
 				  const Material* mat,
-                  const Texture* env_map);
+				  const Texture* env_map,
+				  real_t refraction_index);
 
 	virtual void draw() const;
     

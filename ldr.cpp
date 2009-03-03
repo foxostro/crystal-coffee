@@ -42,7 +42,6 @@ static void ldr_load_example_scene(Scene* scene)
 	mat->phong = Vec3::Ones;
 	mat->shininess = 18;
 	mat->specular = Vec3(.1,.1,.1);
-	mat->refraction_index = 0;
 	scene->materials.push_back(mat);
 
 	// Earth diffuse texture
