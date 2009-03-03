@@ -19,7 +19,8 @@ static void ldr_load_example_scene(Scene* scene)
 {
 	Material* mat;
 	Texture *tex;
-	Effect *effect;
+	Geometry *sphere;
+	RenderMethod *effect;
 
 	// "Basic" Scene
 	Camera& cam = scene->camera;
@@ -48,11 +49,11 @@ static void ldr_load_example_scene(Scene* scene)
 	tex = new Texture("images/earth.png");
 	scene->textures.push_back(tex);
 
-	// Earth shader (diffuse texture)
-	effect = new DiffuseTextureEffect(mat, tex);
-	scene->effects.push_back(effect);
+	sphere = new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3);
+	scene->objects.push_back(sphere);
 
-	scene->objects.push_back(new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3, effect));
+	effect = new RenderMethod_DiffuseTexture(sphere, mat, tex);
+	scene->effects.push_back(effect);
 
 	Light light;
 	light.position = Vec3(.4, .7, .8) * 100;

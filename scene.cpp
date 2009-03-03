@@ -93,54 +93,16 @@ void Texture::load_texture()
 }
 
 Geometry::Geometry():
-    position(Vec3::Zero), orientation(Quat::Identity),
-    scale(Vec3::Ones), effect(0) {}
+    position(Vec3::Zero),
+	orientation(Quat::Identity),
+    scale(Vec3::Ones) { /* Do Nothing */ }
 
 Geometry::Geometry(const Vec3& pos,
 				   const Quat& ori,
-				   const Vec3& scl,
-				   Effect* efc):
-    position(pos), orientation(ori), scale(scl), effect(efc) {}
+				   const Vec3& scl):
+    position(pos), orientation(ori), scale(scl) { /* Do Nothing */ }
 
-Geometry::~Geometry() {}
-
-void Geometry::set_material() const
-{
-	if(effect)
-	{
-		effect->bind();
-	}
-	else
-	{
-#ifdef USE_GLSL
-		// Use the fixed function pipeline
-		glUseProgramObjectARB(0);
-#endif
-		// Disable texture unit 2 (TODO: Disable all texture units)
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-
-		// Disable texture unit 1 (TODO: Disable all texture units)
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-	
-		// Disable texture unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-
-		// Apply a default material
-		const GLfloat black[] = { 0, 0, 0, 1 };
-		const GLfloat white[] = { 1, 1, 1, 1 };
-		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)20.0);
-	}
-}
+Geometry::~Geometry() { /* Do Nothing */ }
 
 void Geometry::set_transformation() const
 {

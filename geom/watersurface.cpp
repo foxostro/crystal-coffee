@@ -20,8 +20,8 @@
 
 WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                            const WavePointList& wave_points,
-                           int resx, int resz, Effect* efc)
-: UpdatableGeometry(pos, ori, scl, efc),
+                           int resx, int resz)
+: UpdatableGeometry(pos, ori, scl),
   wave_points(wave_points), resx(resx), resz(resz),
   heightmap(0),
   vertices(0),
@@ -184,7 +184,6 @@ void WaterSurface::draw() const
 	glPushMatrix();
 
 	set_transformation();
-	set_material();
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);

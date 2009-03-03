@@ -26,8 +26,7 @@ public:
     Sphere(const Vec3& pos,
 		   const Quat& ori,
 		   const Vec3& scl,
-           real_t rad,
-		   Effect* efc=0);
+           real_t rad);
 
     virtual ~Sphere();
 

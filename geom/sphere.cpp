@@ -68,9 +68,8 @@ Sphere::Sphere()
 Sphere::Sphere(const Vec3& pos,
 			   const Quat& ori,
 			   const Vec3& scl,
-               real_t rad,
-			   Effect* efc)
-: Geometry(pos, ori, scl, efc),
+               real_t rad)
+: Geometry(pos, ori, scl),
   radius(rad),
   display_list(0)
 {
@@ -189,16 +188,16 @@ void Sphere::subdivide(const Vec3 &v1,
 		Vec3 normals[3] = { v1, v2, v3 };
 		Vec2 tcoords[3] = { st1, st2, st3 };
 		
-		if(effect && effect->areTangentsRequired())
+//		if(effect && effect->areTangentsRequired())
 		{
 			CalculateTriangleTangent(vertices, normals, tcoords, tangents);
 		}
 		
 		for(int i=0; i<3; ++i)
 		{
-			if(effect && effect->areTangentsRequired())
+//			if(effect && effect->areTangentsRequired())
 			{				
-				glVertexAttrib4dARB(effect->getTangentAttribSlot(),
+				glVertexAttrib4dARB(1, // effect->getTangentAttribSlot(),
 							        tangents[i].x,
 							        tangents[i].y,
 							        tangents[i].z,
@@ -247,7 +246,6 @@ void Sphere::draw() const
 	glPushMatrix();
 
 	set_transformation();
-	set_material();
 	
 	glScaled(radius, radius, radius);
 	glCallList(display_list);

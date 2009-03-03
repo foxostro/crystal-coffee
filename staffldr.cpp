@@ -22,7 +22,7 @@ static void ldr_load_scene00(Scene* scene)
 {
 	Material* mat;
 	Texture *tex;
-	Effect *effect;
+	RenderMethod *effect;
 
     // "Basic" Scene
     Camera& cam = scene->camera;
@@ -51,11 +51,13 @@ static void ldr_load_scene00(Scene* scene)
 	tex = new Texture("images/earth.png");
 	scene->textures.push_back(tex);
 
-	// Earth shader (diffuse texture)
-	effect = new DiffuseTextureEffect(mat, tex);
-	scene->effects.push_back(effect);
+	// Earth vertex stream
+	Geometry *sphere = new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3);
+	scene->objects.push_back(sphere);
 
-    scene->objects.push_back(new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3, effect));
+	// Renders the Earth
+	effect = new RenderMethod_DiffuseTexture(sphere, mat, tex);
+	scene->effects.push_back(effect);
 
     Light light;
     light.position = Vec3(.4, .7, .8) * 100;
@@ -74,8 +76,11 @@ static void ldr_load_scene00(Scene* scene)
 
 static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
                           const Vec3& corner, const Vec3& normal,
-                          const Vec2& tcoord_min, const Vec2& tcoord_unit, Effect* effect)
+                          const Vec2& tcoord_min, const Vec2& tcoord_unit,
+						  RenderMethod *effect)
 {
+	Triangle *triangle;
+
     Vec3 maxi = corner + xaxis + yaxis;
 
     Vec3 vertices[3];
@@ -101,9 +106,14 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
 	tcoords[2] = tcoord_min + Vec2(dist.x, 0) * tcoord_unit;
 #endif
 
-    scene->objects.push_back(
-        new Triangle(Vec3::Zero, Quat::Identity, Vec3::Ones,
-                     vertices, tcoords, normals, effect));
+	triangle = new Triangle(Vec3::Zero,
+	                        Quat::Identity,
+							Vec3::Ones,
+	                        vertices,
+							tcoords,
+							normals);
+    scene->objects.push_back(triangle);
+	effect->add_geom(triangle);
 
     vertices[0] = corner;
     vertices[1] = maxi;
@@ -117,10 +127,14 @@ static void create_square(Scene* scene, const Vec3& xaxis, const Vec3& yaxis,
 	tcoords[2] = tcoord_min + Vec2(0, dist.y) * tcoord_unit;
 #endif
 
-    scene->objects.push_back(
-        new Triangle(Vec3::Zero, Quat::Identity, Vec3::Ones,
-                     vertices, tcoords, normals, effect));
-
+	triangle = new Triangle(Vec3::Zero,
+	                        Quat::Identity,
+							Vec3::Ones,
+	                        vertices,
+							tcoords,
+							normals);
+	scene->objects.push_back(triangle);
+	effect->add_geom(triangle);
 }
 
 static void create_pool(Scene* scene)
@@ -147,8 +161,9 @@ static void create_pool(Scene* scene)
 	scene->textures.push_back(height_map);
 
 	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl",
+	RenderMethod* bump = new RenderMethod_BumpMap("shaders/bump_vert.glsl",
 	                                 "shaders/bump_frag.glsl",
+									 NULL,
 	                                 mat,
 	                                 diffuse_map,
 	                                 normal_map,
@@ -271,19 +286,20 @@ static void ldr_load_scene01(Scene* scene)
     p->timerate = -8*PI;
     p->period = 20*PI;
 
-	Effect* fresnel = new FresnelEffect("shaders/fresnel_vert.glsl",
-	                                    "shaders/fresnel_frag.glsl",
-										mat,
-										spheremap);
-	scene->effects.push_back(fresnel);
-
     WaterSurface* water_surface = new WaterSurface(Vec3(0, POY - 1, 0),
                                      Quat::Identity,
                                      Vec3(PIX, 0.4, PIZ),
                                      wave_points,
-                                     240, 240, fresnel);
+                                     240, 240);
     scene->objects.push_back(water_surface);
     scene->updatable_objects.push_back(water_surface);
+
+	RenderMethod* fresnel = new RenderMethod_Fresnel("shaders/fresnel_vert.glsl",
+	                                    "shaders/fresnel_frag.glsl",
+										water_surface,
+										mat,
+										spheremap);
+	scene->effects.push_back(fresnel);
 
     mat = new Material();
     mat->ambient = Vec3::Ones;
@@ -297,16 +313,19 @@ static void ldr_load_scene01(Scene* scene)
 	Texture *swirly_tex = new Texture("images/swirly.png");
 	scene->textures.push_back(swirly_tex);
 
-	Effect *swirly = new DiffuseTextureEffect(mat, swirly_tex);
+	RenderMethod *swirly = new RenderMethod_DiffuseTexture(NULL, mat, swirly_tex);
 	scene->effects.push_back(swirly);
 
     real_t rad = 2;
-    scene->objects.push_back(
-        new Sphere(Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2),
-                   Quat::Identity, Vec3::Ones, rad, swirly));
-    scene->objects.push_back(
-        new Sphere(Vec3(-(POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
-                   Quat::Identity, Vec3::Ones, rad, swirly));
+	Geometry *sphere;
+	
+	sphere = new Sphere(Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
+	swirly->add_geom(sphere);
+    scene->objects.push_back(sphere);
+
+	sphere = new Sphere(Vec3(-(POX+PIX)/2, POY+rad, -(POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
+	swirly->add_geom(sphere);
+    scene->objects.push_back(sphere);
 
     mat = new Material();
     mat->ambient = Vec3::Ones;
@@ -317,15 +336,16 @@ static void ldr_load_scene01(Scene* scene)
     mat->refraction_index = 2;
 	scene->materials.push_back(mat);
 
-	Effect *plain = new DiffuseTextureEffect(mat, swirly_tex);
+	RenderMethod *plain = new RenderMethod_DiffuseTexture(NULL, mat, swirly_tex);
 	scene->effects.push_back(plain);
 
-    scene->objects.push_back(
-        new Sphere(Vec3(-(POX+PIX)/2, POY+rad, (POZ+PIZ)/2),
-                   Quat::Identity, Vec3::Ones, rad, plain));
-    scene->objects.push_back(
-        new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2),
-                   Quat::Identity, Vec3::Ones, rad, plain));
+	sphere = new Sphere(Vec3(-(POX+PIX)/2, POY+rad, (POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
+	plain->add_geom(sphere);
+    scene->objects.push_back(sphere);
+
+	sphere = new Sphere(Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2), Quat::Identity, Vec3::Ones, rad);
+	plain->add_geom(sphere);
+    scene->objects.push_back(sphere);
 
     Light light;
     light.position = Vec3(-4, 8.5, 8) * 30;
@@ -335,6 +355,8 @@ static void ldr_load_scene01(Scene* scene)
 
 static void ldr_load_scene02(Scene* scene) // Andrew Fox: Bump-mapped Sphere
 {
+	RenderMethod *bump;
+	Geometry *sphere;
 	Material *mat;
 	Texture *diffuse_map;
 	Texture *normal_map;
@@ -371,17 +393,17 @@ static void ldr_load_scene02(Scene* scene) // Andrew Fox: Bump-mapped Sphere
 	height_map = new Texture("images/bricks2_height_map.png");
 	scene->textures.push_back(height_map);
 
-	// apply bump mapping to the pool
-	Effect* bump = new BumpMapEffect("shaders/bump_vert.glsl",
-	                                 "shaders/bump_frag.glsl",
-									 mat,
-									 diffuse_map,
-									 normal_map,
-									 height_map);
-	scene->effects.push_back(bump);
+	sphere = new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3);
+	scene->objects.push_back(sphere);
 
-    scene->objects.push_back(
-        new Sphere(Vec3::Zero, Quat::Identity, Vec3(-1,1,1), 3, bump));
+	bump = new RenderMethod_BumpMap("shaders/bump_vert.glsl",
+	                         "shaders/bump_frag.glsl",
+							 sphere,
+							 mat,
+							 diffuse_map,
+							 normal_map,
+							 height_map);
+	scene->effects.push_back(bump);
 
     Light light;
     light.position = Vec3(.4, .7, .8) * 100;

@@ -48,7 +48,7 @@ public:
      */
     WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                  const WavePointList& wave_points,
-                 int resx, int resz, Effect* efc=0);
+                 int resx, int resz);
 
     virtual ~WaterSurface();
 

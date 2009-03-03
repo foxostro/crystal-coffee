@@ -18,7 +18,7 @@
 #ifndef _SCENE_H_
 #define _SCENE_H_
 
-#include "effect.h"
+#include "rendermethod.h"
 #include "vec/vec.h"
 #include "vec/quat.h"
 #include <string>
@@ -87,11 +87,11 @@ private:
 	GLuint gltex_name;
 };
 
-class Geometry
+class Geometry // TODO: Replace with some kind of VertexStream class
 {
 public:
     Geometry();
-    Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl, Effect* efc);
+    Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl);
     virtual ~Geometry();
 
     /*
@@ -107,18 +107,9 @@ public:
     Quat orientation;
     // The world scale of the object.
     Vec3 scale;
-    // The shader program to use to render this object in opengl.
-    Effect* effect;
 
-    /**
-     * Renders this geometry using OpenGL in the local coordinate space.
-     */
-    virtual void draw() const = 0;
+	virtual void draw() const = 0; // TODO: Remove me
    
-protected:
-	/** Sets the object's material properties */
-	void set_material() const;
-
 	/** Sets the object's transformation */
 	void set_transformation() const;
 	
@@ -135,9 +126,10 @@ class UpdatableGeometry : public Geometry
 public:
     UpdatableGeometry() { /* Do Nothing */ }
 
-    UpdatableGeometry(const Vec3& pos, const Quat& ori,
-					  const Vec3& scl, Effect* efc)
-        : Geometry(pos, ori, scl, efc) { /* Do Nothing */ }
+    UpdatableGeometry(const Vec3& pos,
+	                  const Quat& ori,
+					  const Vec3& scl)
+        : Geometry(pos, ori, scl) { /* Do Nothing */ }
 
     virtual ~UpdatableGeometry() { /* Do Nothing */ }
 
@@ -240,7 +232,7 @@ public:
     typedef std::vector<UpdatableGeometry*> UpdatableGeometryList;
 	typedef std::vector<Material*> MaterialList;
 	typedef std::vector<Texture*> TextureList;
-    typedef std::vector<Effect*> EffectList;
+    typedef std::vector<RenderMethod*> EffectList;
 
     // the camera
     Camera camera;

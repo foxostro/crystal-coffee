@@ -28,8 +28,8 @@ Triangle::Triangle()
 
 Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
                    const Vec3 vertices[3], const Vec2 tcoords[3],
-                   const Vec3 normals[3], Effect* efc)
-    : Geometry(pos, ori, scl, efc)
+                   const Vec3 normals[3])
+    : Geometry(pos, ori, scl)
 {
     memcpy(this->vertices, vertices, sizeof this->vertices);
     memcpy(this->normals, normals, sizeof this->normals);
@@ -40,8 +40,8 @@ Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
 
 Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
                    const Vec3 vertices[3], const Vec2 tcoords[3],
-                   const Vec3& normal, Effect* efc)
-    : Geometry(pos, ori, scl, efc)
+                   const Vec3& normal)
+    : Geometry(pos, ori, scl)
 {
     memcpy(this->vertices, vertices, sizeof this->vertices);
     memcpy(this->tcoords, tcoords, sizeof this->tcoords);
@@ -58,15 +58,14 @@ void Triangle::draw() const
 	glPushMatrix();
 
 	set_transformation();
-	set_material();
 
 	glBegin(GL_TRIANGLES);
 
 	for(int i=0; i<3; ++i)
 	{
-		if(effect && effect->areTangentsRequired())
+//		if(effect && effect->areTangentsRequired())
 		{
-			glVertexAttrib4dARB(effect->getTangentAttribSlot(),
+			glVertexAttrib4dARB(1, //effect->getTangentAttribSlot(),
 			                    tangents[i].x,
 			                    tangents[i].y,
 			                    tangents[i].z,

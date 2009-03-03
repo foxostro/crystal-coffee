@@ -4,7 +4,7 @@
  *    @author Zeyang Li (zeyangl)
  */
 #include "glheaders.h"
-#include "effect.h"
+#include "rendermethod.h"
 #include "scene.h"
 #include "imageio.h"
 #include <iostream>
@@ -93,23 +93,20 @@ static GLhandleARB load_shaders(const char* vert_file, const char* frag_file)
 }
 #endif /* USE_GLSL */
 
-Effect::Effect(const char* vert_file, const char* frag_file)
-	: program(0)
-{
-	program = load_shaders(vert_file, frag_file);
-}
-
-DiffuseTextureEffect::DiffuseTextureEffect(Material *mat,
-										   Texture *diffuse_texture)
+RenderMethod_DiffuseTexture::RenderMethod_DiffuseTexture(const Geometry *geom,
+										   const Material *mat,
+										   const Texture *diffuse_texture)
 {
 	assert(mat);
 	assert(diffuse_texture);
 
 	this->mat = mat;
 	this->diffuse_texture = diffuse_texture;
+
+	add_geom(geom);
 }
 
-void DiffuseTextureEffect::bind()
+void RenderMethod_DiffuseTexture::draw() const
 {
 	assert(mat);
 	assert(diffuse_texture);
@@ -131,14 +128,22 @@ void DiffuseTextureEffect::bind()
 	glBindTexture(GL_TEXTURE_2D, diffuse_texture->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
+#ifdef USE_GLSL
 	glUseProgramObjectARB(0);
+#endif /* USE_GLSL */
+
+	for(GeomList::const_iterator i=geoms.begin(); i!=geoms.end(); ++i)
+	{
+//		(*i)->set_transformation();
+		(*i)->draw();
+	}
 }
 
-FresnelEffect::FresnelEffect(const char* vert_file,
+RenderMethod_Fresnel::RenderMethod_Fresnel(const char* vert_file,
 							 const char* frag_file,
+							 const Geometry *geom,
 							 const Material* mat,
 							 const Texture* env_map)
-: Effect(vert_file, frag_file)
 {
 	GLint env_map_uniform, n_t;
 
@@ -147,9 +152,13 @@ FresnelEffect::FresnelEffect(const char* vert_file,
 
 	this->mat = mat;
 	this->env_map = env_map;
-		
-	// Set these uniforms only once when the effect is initialized
+
+	add_geom(geom);
 	
+#ifdef USE_GLSL
+	program = load_shaders(vert_file, frag_file);
+
+	// Set these uniforms only once when the effect is initialized
 	glUseProgramObjectARB(program);
 	
 	env_map_uniform = glGetUniformLocationARB(program, "env_map");
@@ -159,41 +168,53 @@ FresnelEffect::FresnelEffect(const char* vert_file,
 	glUniform1fARB(n_t, (GLfloat)mat->refraction_index);
 
 	glUseProgramObjectARB(0);
+#endif /* USE_GLSL */
 }
 
-void FresnelEffect::bind()
+void RenderMethod_Fresnel::draw() const
 {
+	assert(mat);
+	assert(env_map);
+
 	mat->bind();
 
 	// Bind texture unit 2
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
-	
+
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
-	
+
 	// Bind texture unit 0
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, env_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
-			
+
+#ifdef USE_GLSL
 	if(app_is_glsl_enabled()) {
 		glUseProgramObjectARB(program);
 	} else {
 		glUseProgramObjectARB(0);
 	}
+#endif /* USE_GLSL */
+
+	for(GeomList::const_iterator i=geoms.begin(); i!=geoms.end(); ++i)
+	{
+//		(*i)->set_transformation();
+		(*i)->draw();
+	}
 }
 
-BumpMapEffect::BumpMapEffect(const char* vert_file,
+RenderMethod_BumpMap::RenderMethod_BumpMap(const char* vert_file,
 							 const char* frag_file,
-							 Material *mat,
+							 const Geometry *geom,
+							 const Material *mat,
 							 const Texture *diffuse_map,
 							 const Texture *normal_map,
 							 const Texture *height_map)
-: Effect(vert_file, frag_file)
 {
 	GLint diffuse_map_uniform, normal_map_uniform, height_map_uniform;
 
@@ -206,7 +227,12 @@ BumpMapEffect::BumpMapEffect(const char* vert_file,
 	this->normal_map = normal_map;
 	this->height_map = height_map;
 	this->diffuse_map = diffuse_map;
+
+	add_geom(geom);
 		
+#ifdef USE_GLSL
+	program = load_shaders(vert_file, frag_file);
+
 	// Set these uniforms only once when the effect is initialized
 	
 	glUseProgramObjectARB(program);
@@ -223,30 +249,45 @@ BumpMapEffect::BumpMapEffect(const char* vert_file,
 	tangent_attrib_slot = glGetAttribLocationARB(program, "Tangent");
 	
 	glUseProgramObjectARB(0);
+
+#endif /* USE_GLSL */
 }
 
-void BumpMapEffect::bind(void)
+void RenderMethod_BumpMap::draw() const
 {
+	assert(mat);
+	assert(normal_map);
+	assert(height_map);
+	assert(diffuse_map);
+
 	mat->bind();
 
 	// Bind texture unit 2
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, height_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
-	
+
 	// Bind texture unit 1
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normal_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
-	
+
 	// Bind texture unit 0
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, diffuse_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
+#ifdef USE_GLSL
 	if(app_is_glsl_enabled()) {
 		glUseProgramObjectARB(program);
 	} else {
 		glUseProgramObjectARB(0);
+	}
+#endif /* USE_GLSL */
+
+	for(GeomList::const_iterator i=geoms.begin(); i!=geoms.end(); ++i)
+	{
+//		(*i)->set_transformation();
+		(*i)->draw();
 	}
 }
