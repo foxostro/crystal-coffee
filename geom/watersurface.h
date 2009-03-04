@@ -16,13 +16,12 @@
 #define _WATERSURFACE_H_
 
 #include "scene.h"
+#include "BufferObject.h"
 #include <vector>
 
 class WaterSurface: public UpdatableGeometry
 {
 public:
-	typedef unsigned int index_t;
-
     /**
      * Structure containing information about a wave-emitting point.
      */
@@ -73,11 +72,10 @@ private:
     int resx, resz;
 
 	real_t * heightmap;
-	Vec3 * vertices;
-	Vec3 * normals;
-	unsigned int * indices;
-	unsigned int num_of_indices;
-	unsigned int num_of_vertices;
+
+	BufferObject<Vec3> vertex_buffer;
+	BufferObject<Vec3> normals_buffer;
+	BufferObject<index_t> index_buffer;
 	
 	// generate indices for the heightmap mesh
 	void generate_indices();
@@ -91,9 +89,9 @@ private:
 	// generate vertices for the mesh from the heightmap
 	void generate_vertices();
 	
-	void set_vertex(int x, int z, Vec3 v);
+	void set_vertex(Vec3 * vertices, int x, int z, Vec3 v);
 	
-	void set_normal(int x, int z, Vec3 n);
+	void set_normal(Vec3 * normals, int x, int z, Vec3 n);
 	
 	static Vec3 compute_normal(real_t *heightmap, int sx, int sz, int x, int z);
 };
