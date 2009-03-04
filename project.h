@@ -58,7 +58,7 @@ void app_exit();
 /* gui.cpp defines and prototypes */
 
 // uncomment for P2 to enable menu item to toggle glsl features
-#define GUI_ENABLE_GLSL_TOGGLE
+//#define GUI_ENABLE_GLSL_TOGGLE
 
 void gui_initialize(const char* screenshot_filename);
 
