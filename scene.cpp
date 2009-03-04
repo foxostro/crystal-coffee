@@ -7,14 +7,6 @@
  * @author Kristin Siu (kasiu)
  */
 
-/*
-    YOU ARE FREE TO MODIFY THIS FILE, as long as you do not change existing
-    constructor signatures or remove existing class members. The staff scene
-    loader requires all of those to be intact. You may, however, modify
-    anything else, including other function signatures and adding additional
-    members.
- */
-
 #include "vec/mat.h"
 #include "scene.h"
 #include "glheaders.h"
@@ -22,6 +14,103 @@
 #include <iostream>
 
 bool app_is_glsl_enabled();
+
+char* ShaderProgram::load_file(const char* file)
+{
+	std::ifstream infile;
+	infile.open(file);
+
+	if(infile.fail()){
+		fprintf(stderr, "ERROR: cannot open file %s\n", file);
+		infile.close();
+		exit(2);
+	}
+
+	infile.seekg(0, std::ios::end );
+	int length = infile.tellg();
+	infile.seekg(0, std::ios::beg );
+
+	char* buffer = new char[length];
+	infile.getline(buffer, length, '\0');
+
+	infile.close();
+
+	return buffer;
+}
+
+/**
+* Load a file as either a vertex shader or a fragment shader, and attach
+* it to a program 
+* @param file  The file to load
+* @param type  Either GL_VERTEX_SHADER_ARB, or GL_FRAGMENT_SHADER_ARB
+* @param program  The shading program to which the shaders are attached
+*/
+void ShaderProgram::load_shader(const char* file,
+								GLint type,
+								GLhandleARB& program)
+{    
+	int result;
+	char error_msg[1024];
+
+	const char* src = load_file(file);
+	// Create shader object
+	GLhandleARB shader = glCreateShaderObjectARB(type);
+
+	// Load Shader Sources
+	glShaderSourceARB(shader, 1, &src, NULL);
+	// Compile The Shaders
+	glCompileShaderARB(shader);
+	// Get compile result
+	glGetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, &result);
+	if(!result){
+		glGetInfoLogARB(shader, sizeof(error_msg), NULL, error_msg);
+		fprintf(stderr, "GLSL COMPILE ERROR(%s): %s\n", file, error_msg);
+		exit(2);
+	}
+
+	// Attach The Shader Objects To The Program Object
+	glAttachObjectARB(program, shader);
+}
+
+/**
+* Creates a program, loads the given shader programs into it, and returns it.
+*/  
+GLhandleARB ShaderProgram::load_shaders(const char* vert_file,
+										const char* frag_file)
+{
+	// Create shader program
+	GLhandleARB program  = glCreateProgramObjectARB();
+
+	// Load vertex shader
+	std::cout << "loading vertex shader " << vert_file << std::endl;
+	load_shader(vert_file, GL_VERTEX_SHADER_ARB, program);
+
+	// Load fragment shader
+	std::cout << "loading fragment shader " << frag_file << std::endl;
+	load_shader(frag_file, GL_FRAGMENT_SHADER_ARB, program);
+
+	glLinkProgramARB(program);
+
+	return program;
+}
+
+ShaderProgram::ShaderProgram(const char* _vert_file, const char* _frag_file)
+: program(0),
+  vert_file(_vert_file),
+  frag_file(_frag_file)
+{
+	program = load_shaders(vert_file, frag_file);
+}
+
+ShaderProgram::~ShaderProgram()
+{
+	glDeleteProgram(program);
+}
+
+void ShaderProgram::init()
+{
+	/* Do Nothing */
+}
 
 template<typename ELEMENT>
 BufferObject<ELEMENT>::~BufferObject() {
@@ -206,9 +295,8 @@ template class BufferObject<index_t>;
 
 Material::Material()
 : diffuse(Vec3::Ones),
-  phong(Vec3::Zero),
   ambient(Vec3::Ones),
-  specular(Vec3::Zero),
+  specular(Vec3::Ones),
   shininess(0)
 {
 	// Do nothing

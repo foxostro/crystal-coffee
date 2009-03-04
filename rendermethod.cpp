@@ -16,85 +16,8 @@ bool app_is_glsl_enabled();
 
 using namespace std;
 
-static char* load_file(const char* file)
-{
-    std::ifstream infile;
-    infile.open(file);
-
-    if(infile.fail()){
-        fprintf(stderr, "ERROR: cannot open file %s\n", file);
-        infile.close();
-        exit(2);
-    }
-
-    infile.seekg(0, std::ios::end );
-    int length = infile.tellg();
-    infile.seekg(0, std::ios::beg );
-
-    char* buffer = new char[length];
-    infile.getline(buffer, length, '\0');
-
-    infile.close();
-
-    return buffer;
-}
-
-/**
- * Load a file as either a vertex shader or a fragment shader, and attach
- * it to a program 
- * @param file  The file to load
- * @param type  Either GL_VERTEX_SHADER_ARB, or GL_FRAGMENT_SHADER_ARB
- * @param program  The shading program to which the shaders are attached
- */
-static void load_shader(const char* file, GLint type, GLhandleARB& program)
-{    
-    int result;
-    char error_msg[1024];
-
-     const char* src = load_file(file);
-    // Create shader object
-    GLhandleARB shader = glCreateShaderObjectARB(type);
-
-    // Load Shader Sources
-    glShaderSourceARB(shader, 1, &src, NULL);
-    // Compile The Shaders
-    glCompileShaderARB(shader);
-    // Get compile result
-    glGetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, &result);
-    if(!result){
-        glGetInfoLogARB(shader, sizeof(error_msg), NULL, error_msg);
-        fprintf(stderr, "GLSL COMPILE ERROR(%s): %s\n", file, error_msg);
-        exit(2);
-    }
-
-    // Attach The Shader Objects To The Program Object
-    glAttachObjectARB(program, shader);
-}
-
-/**
- * Creates a program, loads the given shader programs into it, and returns it.
- */  
-static GLhandleARB load_shaders(const char* vert_file, const char* frag_file)
-{
-    // Create shader program
-    GLhandleARB program  = glCreateProgramObjectARB();
-
-    // Load vertex shader
-    std::cout << "loading vertex shader " << vert_file << std::endl;
-    load_shader(vert_file, GL_VERTEX_SHADER_ARB, program);
-
-    // Load fragment shader
-    std::cout << "loading fragment shader " << frag_file << std::endl;
-    load_shader(frag_file, GL_FRAGMENT_SHADER_ARB, program);
-
-    glLinkProgramARB(program);
-
-    return program;
-}
-
 RenderMethod_DiffuseTexture::
-RenderMethod_DiffuseTexture(const Mat4 transform,
-                            const BufferObject<Vec3> * vertices_buffer,
+RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
                             const BufferObject<Vec3> * normals_buffer,
                             const BufferObject<Vec2> * tcoords_buffer,
                             const Material * mat,
@@ -106,7 +29,6 @@ RenderMethod_DiffuseTexture(const Mat4 transform,
 	assert(mat);
 	assert(diffuse_texture);
 
-	this->transform = transform;
 	this->vertices_buffer = vertices_buffer;
 	this->normals_buffer = normals_buffer;
 	this->tcoords_buffer = tcoords_buffer;
@@ -114,7 +36,7 @@ RenderMethod_DiffuseTexture(const Mat4 transform,
 	this->diffuse_texture = diffuse_texture;
 }
 
-void RenderMethod_DiffuseTexture::draw() const
+void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 {	
 	assert(vertices_buffer);
 	assert(normals_buffer);
@@ -171,11 +93,9 @@ void RenderMethod_DiffuseTexture::draw() const
 }
 
 RenderMethod_Fresnel::
-RenderMethod_Fresnel(const char * vert_file,
-	                 const char * frag_file,
-                     const Mat4 transform,
-                     const BufferObject<Vec3> * vertices_buffer,
-                     const BufferObject<Vec3> * normals_buffer,
+RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
+					 const BufferObject<Vec3> * normals_buffer,
+					 const ShaderProgram * shader,
 				     const Material * mat,
 				     const Texture * env_map,
 				     real_t refraction_index)
@@ -184,16 +104,17 @@ RenderMethod_Fresnel(const char * vert_file,
 
 	assert(vertices_buffer);
 	assert(normals_buffer);
+	assert(shader);
 	assert(mat);
 	assert(env_map);
 
-	this->transform = transform;
 	this->vertices_buffer = vertices_buffer;
 	this->normals_buffer = normals_buffer;
+	this->shader = shader;
 	this->mat = mat;
 	this->env_map = env_map;
-	
-	program = load_shaders(vert_file, frag_file);
+
+	GLhandleARB program = shader->get_program();
 
 	// Set these uniforms only once when the effect is initialized
 	glUseProgramObjectARB(program);
@@ -207,14 +128,16 @@ RenderMethod_Fresnel(const char * vert_file,
 	glUseProgramObjectARB(0);
 }
 
-void RenderMethod_Fresnel::draw() const
+void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
+	assert(shader);
 	assert(mat);
 	assert(env_map);
 
 	mat->bind();
+	GLhandleARB program = shader->get_program();
 
 	// Disable texture unit 2
 	glActiveTexture(GL_TEXTURE2);
@@ -268,13 +191,11 @@ void RenderMethod_Fresnel::draw() const
 }
 
 RenderMethod_BumpMap::
-RenderMethod_BumpMap(const char *vert_file,
-                     const char *frag_file,
-                     const Mat4 transform,
-                     const BufferObject<Vec3> * vertices_buffer,
+RenderMethod_BumpMap(const BufferObject<Vec3> * vertices_buffer,
                      const BufferObject<Vec3> * normals_buffer,
                      const BufferObject<Vec4> * tangents_buffer,
-                     const BufferObject<Vec2> * tcoords_buffer,
+					 const BufferObject<Vec2> * tcoords_buffer,
+					 const ShaderProgram * shader,
 				     const Material * mat,
 				     const Texture * diffuse_map,
                      const Texture * normal_map,
@@ -286,24 +207,25 @@ RenderMethod_BumpMap(const char *vert_file,
 	assert(normals_buffer);
 	assert(tangents_buffer);
 	assert(tcoords_buffer);
+	assert(shader);
 	assert(mat);
 	assert(normal_map);
 	assert(height_map);
 	assert(diffuse_map);
 
-	this->transform = transform;
 	this->vertices_buffer = vertices_buffer;
 	this->normals_buffer = normals_buffer;
 	this->tangents_buffer = tangents_buffer;
 	this->tcoords_buffer = tcoords_buffer;
+	this->shader = shader;
 	this->mat = mat;
 	this->normal_map = normal_map;
 	this->height_map = height_map;
 	this->diffuse_map = diffuse_map;
-	
-	program = load_shaders(vert_file, frag_file);
 
 	// Set these uniforms only once when the effect is initialized
+
+	GLhandleARB program = shader->get_program();
 	
 	glUseProgramObjectARB(program);
 	
@@ -321,7 +243,7 @@ RenderMethod_BumpMap(const char *vert_file,
 	glUseProgramObjectARB(0);
 }
 
-void RenderMethod_BumpMap::draw() const
+void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
@@ -333,6 +255,7 @@ void RenderMethod_BumpMap::draw() const
 	assert(diffuse_map);
 
 	mat->bind();
+	GLhandleARB program = shader->get_program();
 
 	// Bind texture unit 2
 	glActiveTexture(GL_TEXTURE2);

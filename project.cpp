@@ -23,7 +23,7 @@ static int num_gl_lights=8;
 void set_light_positions(const Scene::LightList & lights);
 void init_light_properties(const Scene::LightList & lights);
 
-void draw(RenderMethod *o)
+void draw(RenderInstance *o)
 {
 	assert(o);
 	o->draw();
@@ -178,6 +178,6 @@ void prj_render(Scene* scene)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	for_each(scene->rendermethods.begin(), scene->rendermethods.end(), &draw);
+	for_each(scene->instances.begin(), scene->instances.end(), &draw);
 }
 

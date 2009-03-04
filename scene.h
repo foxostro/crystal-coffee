@@ -27,9 +27,59 @@
 class SceneResource
 {
 public:
-	SceneResource() { /* Do Nothing */ }
-	virtual ~SceneResource() { /* Do Nothing */ }
 	virtual void init(void) { /* Do Nothing */ }
+	virtual ~SceneResource() { /* Do Nothing */ }
+
+protected:
+	SceneResource() { /* Do Nothing */ }
+};
+
+class RenderInstance
+{
+public:
+	~RenderInstance(void) { /* Do Nothing */ }
+
+	RenderInstance(const Mat4 &_transform, const RenderMethod *_rendermethod)
+		: transform(_transform),
+		  rendermethod(_rendermethod)
+	{
+		assert(rendermethod);
+	}
+
+	void draw(void) const
+	{
+		assert(rendermethod);
+		rendermethod->draw(transform);
+	}
+
+private:
+	const Mat4 transform;
+	const RenderMethod *rendermethod;
+};
+
+class ShaderProgram : public SceneResource
+{
+public:
+	ShaderProgram(const char* vert_file, const char* frag_file);
+
+	virtual ~ShaderProgram();
+
+	virtual void init();
+
+	inline GLhandleARB get_program() const
+	{
+		return program;
+	}
+
+private:
+	char* load_file(const char* file);
+	void load_shader(const char* file, GLint type, GLhandleARB& program);
+	GLhandleARB load_shaders(const char* vert_file, const char* frag_file);
+
+private:
+	GLhandleARB program;
+	const char* vert_file;
+	const char* frag_file;
 };
 
 enum BUFFER_USAGE {
@@ -176,13 +226,10 @@ public:
     // the diffuse color
     Vec3 diffuse;
 
-    // the phong specular color
-    Vec3 phong;
-
     // the ambient color
     Vec3 ambient;
 
-    // the specular reflection color (raytrace only)
+    // the specular reflection color
     Vec3 specular;
 
     // the phong shininess
@@ -322,13 +369,15 @@ class Scene
 public:
     typedef std::vector<Light> LightList;
     typedef std::vector<SceneResource*> SceneResourceList;
-    typedef std::vector<RenderMethod*> RenderMethodList;
+	typedef std::vector<RenderMethod*> RenderMethodList;
+	typedef std::vector<RenderInstance*> RenderInstanceList;
 
     Camera camera;
     Vec3 ambient_light;
     LightList lights;
 	SceneResourceList resources;
-    RenderMethodList rendermethods;
+	RenderMethodList rendermethods;
+	RenderInstanceList instances;
 
     // the absolute time at which to start updates for ths scene.
     real_t start_time;
