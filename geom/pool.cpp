@@ -2,6 +2,7 @@
 * @file pool.cpp
 * @brief Generates pool geometry for the water pool scene
 *
+* @author Eric Butler (edbutler)
 * @author Andrew Fox (arfox)
 */
 
