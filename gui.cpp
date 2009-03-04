@@ -13,6 +13,8 @@
 #include "imageio.h"
 #include "project.h"
 #include "scene.h"
+#include "searchfile.h"
+#include "string_helper.h"
 #include <cassert>
 #include <iostream>
 
@@ -124,6 +126,30 @@ static int menu_id;
 /* the mouse state */
 static MouseState mouse;
 
+static std::string gen_screenshot_filename(const std::string &prefix) {
+	int highestNumber = 0;
+
+	const std::string ext = std::string(".png");
+
+	std::vector<std::string> files = SearchFile("./", ext);
+
+	for(std::vector<std::string>::const_iterator iter=files.begin();
+		iter!=files.end();
+		++iter) {
+			const std::string &fileName = *iter;
+			const std::string strNum = fileName.substr(prefix.length(), fileName.length() - prefix.length() - ext.length());
+			const int number = stoi(strNum);
+
+			if (number>highestNumber) {
+				highestNumber = number;
+			}
+	}
+
+	std::string numberPart = justify_string_in_field(itos(++highestNumber), '0', 5, JUSTIFY_RIGHT);
+
+	return prefix + numberPart + ext;
+}
+
 /**
  * Menu callback for glut.
  */
@@ -146,11 +172,12 @@ static void menu_callback(int menu_item)
     case MENU_SCREENSHOT:
         // write a screenshot out to a file
         if (gui_screenshot_filename) {
-            if (imageio_save_screenshot(gui_screenshot_filename))
+			std::string filename = gen_screenshot_filename(gui_screenshot_filename);
+            if (imageio_save_screenshot(filename.c_str()))
                 std::cout << "Saved screenshot to '";
             else
                 std::cerr << "Error: could not save screenshot to '";
-            std::cout << gui_screenshot_filename << "'.\n";
+            std::cout << filename << "'.\n";
         }
         break;
     case MENU_TOGGLE_SCENE:

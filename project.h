@@ -28,7 +28,7 @@ class Scene;
 // default scene number to load on program start
 #define DEFAULT_INITIAL_SCENE 1
 // default filename to save screenshots in
-#define DEFAULT_SCREENSHOT_FILENAME "shot.png"
+#define DEFAULT_SCREENSHOT_FILENAME "sshot"
 
 /**
  * Enumeration to distinguish which render we are currently performing.
