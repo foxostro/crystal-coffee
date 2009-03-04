@@ -11,10 +11,11 @@
 #include "geom/sphere.h"
 #include "geom/trianglesoup.h"
 #include "geom/watersurface.h"
+#include "geom/pool.h"
 
 #include <iostream>
 
-static RenderMethod * create_earth(Scene * scene)
+static RenderMethod * create_tex_sphere(Scene * scene, const char * tex)
 {
 	Material * mat;
 	Texture * diffuse_texture;
@@ -29,16 +30,17 @@ static RenderMethod * create_earth(Scene * scene)
 	scene->resources.push_back(mat);
 
 	// Earth diffuse texture
-	diffuse_texture = new Texture("images/earth.png");
+	diffuse_texture = new Texture(tex);
 	scene->resources.push_back(diffuse_texture);
 	
 	// Generate sphere geometry
-	TriangleSoup sphere = gen_sphere(4);
+	TriangleSoup sphere = gen_sphere(scene, 4);
 	
 	// Put it all together to make the "Earth" object
 	rendermethod = new RenderMethod_DiffuseTexture(sphere.vertices_buffer,
 		                                           sphere.normals_buffer,
 		                                           sphere.tcoords_buffer,
+												   NULL, // no indices
 		                                           mat,
 		                                           diffuse_texture);
 	scene->rendermethods.push_back(rendermethod);
@@ -71,11 +73,12 @@ static RenderMethod * create_fresnel_sphere(Scene * scene)
 	scene->resources.push_back(fresnel_shader);
 
 	// Generate sphere geometry
-	TriangleSoup sphere = gen_sphere(4);
+	TriangleSoup sphere = gen_sphere(scene, 4);
 
 	// Put it all together
 	rendermethod = new RenderMethod_Fresnel(sphere.vertices_buffer,
 	                                        sphere.normals_buffer,
+										    NULL, // no indices
 											fresnel_shader,
 											mat,
 											env_map,
@@ -97,7 +100,7 @@ static RenderMethod * create_bumpy_sphere(Scene * scene)
 	// Base material
 	mat = new Material();
 	mat->ambient = Vec3(0.2, 0.2, 0.2);
-	mat->diffuse = Vec3(0.2, 0.2, 0.2);
+	mat->diffuse = Vec3::Ones;
 	mat->shininess = 16;
 	mat->specular = Vec3(0.1, 0.1, 0.1);
 	scene->resources.push_back(mat);
@@ -118,13 +121,67 @@ static RenderMethod * create_bumpy_sphere(Scene * scene)
 	scene->resources.push_back(parallax_bump_shader);
 
 	// Generate sphere geometry
-	TriangleSoup sphere = gen_sphere(4);
+	TriangleSoup sphere = gen_sphere(scene, 4);
 
 	// Put it all together
 	rendermethod = new RenderMethod_BumpMap(sphere.vertices_buffer,
 	                                        sphere.normals_buffer,
 	                                        sphere.tangents_buffer,
-	                                        sphere.tcoords_buffer,
+											sphere.tcoords_buffer,
+											NULL, // no indices
+	                                        parallax_bump_shader,
+	                                        mat,
+	                                        diffuse_map,
+	                                        normal_map,
+	                                        height_map);
+	scene->rendermethods.push_back(rendermethod);
+
+	return rendermethod;
+}
+
+static RenderMethod * create_pool(Scene * scene)
+{
+	Material * mat;
+	Texture * diffuse_map;
+	Texture * normal_map;
+	Texture * height_map;
+	ShaderProgram * parallax_bump_shader;
+	RenderMethod * rendermethod;
+
+	assert(scene);
+
+	// Base material
+	mat = new Material();
+	mat->ambient = Vec3(0.2, 0.2, 0.2);
+	mat->diffuse = Vec3::Ones;
+	mat->shininess = 16;
+	mat->specular = Vec3(0.1, 0.1, 0.1);
+	scene->resources.push_back(mat);
+
+	// Create texture resources
+	diffuse_map = new Texture("images/bricks2_diffuse_map.png");
+	scene->resources.push_back(diffuse_map);
+
+	normal_map = new Texture("images/bricks2_normal_map.png");
+	scene->resources.push_back(normal_map);
+
+	height_map = new Texture("images/bricks2_height_map.png");
+	scene->resources.push_back(height_map);
+
+	// Load and compile the shader
+	parallax_bump_shader = new ShaderProgram("shaders/bump_vert.glsl",
+	                                         "shaders/bump_frag.glsl");
+	scene->resources.push_back(parallax_bump_shader);
+
+	// Generate sphere geometry
+	TriangleSoup pool = gen_pool_geometry(scene);
+
+	// Put it all together
+	rendermethod = new RenderMethod_BumpMap(pool.vertices_buffer,
+	                                        pool.normals_buffer,
+	                                        pool.tangents_buffer,
+											pool.tcoords_buffer,
+											NULL, // no indices
 	                                        parallax_bump_shader,
 	                                        mat,
 	                                        diffuse_map,
@@ -144,7 +201,7 @@ static void ldr_load_example_scene(Scene * scene)
 	                                                 0.0, 3.0, 0.0, 0.0,
 													 0.0, 0.0, 3.0, 0.0,
 													 0.0, 0.0, 0.0, 1.0),
-	                                            create_earth(scene));
+	                                            create_tex_sphere(scene, "images/earth.png"));
 	scene->instances.push_back(earth);
 
 	// Add a light to the scene too
@@ -163,11 +220,11 @@ static void ldr_load_example_scene(Scene * scene)
 	camera.far_clip = 100.0;
 }
 
-static void ldr_load_scene_fresnel_sphere(Scene * scene)
+static void ldr_load_fresnel_sphere_scene(Scene * scene)
 {
 	scene->ambient_light = Vec3(.1, .1, .1);
 
-	// Create an instance of the Earth object
+	// Create an instance of the object
 	RenderInstance * fresnel = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
 	                                                   0.0, 3.0, 0.0, 0.0,
 													   0.0, 0.0, 3.0, 0.0,
@@ -191,16 +248,137 @@ static void ldr_load_scene_fresnel_sphere(Scene * scene)
 	cam.far_clip = 100.0;
 }
 
-static void ldr_load_scene_bumpy_sphere(Scene * scene)
+RenderMethod * create_water(Scene * scene)
+{
+	Material * mat;
+	Texture * spheremap;
+	ShaderProgram * fresnel;
+	RenderMethod * water;
+
+
+	mat = new Material();
+	mat->ambient = Vec3(0.0, 0.2, 0.3);
+	mat->diffuse = Vec3(0.0, 0.2, 0.3); // blue water
+	mat->shininess = 20;
+	mat->specular = Vec3::Ones;
+	scene->resources.push_back(mat);
+
+
+	spheremap = new Texture("images/spheremap_stpeters.png");
+	scene->resources.push_back(spheremap);
+
+
+	fresnel = new ShaderProgram("shaders/fresnel_vert.glsl",
+	                            "shaders/fresnel_frag.glsl");
+	scene->resources.push_back(fresnel);
+
+
+	/************************************************************************/
+	WaterSurface::WavePointList wave_points;
+	WaterSurface::WavePoint* p;
+
+	wave_points.push_back(WaterSurface::WavePoint());
+	p = &wave_points.back();
+	p->position = Vec2(.42,.56);
+	p->falloff = 2;
+	p->coefficient = .3;
+	p->timerate = -6*PI;
+	p->period = 16*PI;
+
+	wave_points.push_back(WaterSurface::WavePoint());
+	p = &wave_points.back();
+	p->position = Vec2(-.58,-.30);
+	p->falloff = 2;
+	p->coefficient = .3;
+	p->timerate = -8*PI;
+	p->period = 20*PI;
+
+	WaterSurface water_surface(scene, wave_points, 240, 240);
+
+	/************************************************************************/
+
+	water = new RenderMethod_Fresnel(water_surface.vertices_buffer,
+	                                 water_surface.normals_buffer,
+									 water_surface.indices_buffer,
+								     fresnel,
+								     mat,
+								     spheremap,
+								     1.33);
+	scene->rendermethods.push_back(water);
+
+	return water;
+}
+
+static void ldr_load_pool_scene(Scene * scene)
+{
+	RenderMethod * pool = create_pool(scene);
+	RenderMethod * earth = create_tex_sphere(scene, "images/earth.png");
+	RenderMethod * water = create_water(scene);
+	RenderMethod * fresnel_sphere = create_fresnel_sphere(scene);
+	RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
+
+	scene->instances.push_back(new RenderInstance(Mat4::Identity, pool));
+
+	scene->instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
+	                                                   0.0, 0.4, 0.0, POY - 1.0,
+													   0.0, 0.0, PIZ, 0.0,
+													   0.0, 0.0, 0.0, 1.0),
+												  water));
+
+	const real_t rad = 2.0;
+
+	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+	                                                   0.0, rad, 0.0, POY+rad,
+													   0.0, 0.0, rad, (POZ+PIZ)/2,
+													   0.0, 0.0, 0.0, 1.0),
+													   earth));
+
+	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+	                                                   0.0, rad, 0.0, POY+rad,
+													   0.0, 0.0, rad, -(POZ+PIZ)/2,
+													   0.0, 0.0, 0.0, 1.0),
+												  fresnel_sphere));
+
+	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+	                                                   0.0, rad, 0.0, POY+rad,
+													   0.0, 0.0, rad, (POZ+PIZ)/2,
+													   0.0, 0.0, 0.0, 1.0),
+												  swirly_sphere));
+
+	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+	                                                   0.0, rad, 0.0, POY+rad,
+													   0.0, 0.0, rad, -(POZ+PIZ)/2,
+													   0.0, 0.0, 0.0, 1.0),
+												  swirly_sphere));
+
+	// Set up a light
+	Light light;
+	light.position = Vec3(-4, 8.5, 8) * 30;
+	light.color = Vec3(.7,.7,.7);
+	scene->lights.push_back(light);
+
+	// Set up the camera
+	Camera& cam = scene->camera;
+	cam.orientation = Quat(-0.0946664, -0.00690199, 0.970616, 0.22112);
+	cam.position = Vec3(-2.62381,6.01017,-12.4194);
+	cam.focus_dist = 14.0444;
+	cam.fov = PI / 3.0;
+	cam.near_clip = 1;
+	cam.far_clip = 1000.0;
+
+	scene->ambient_light = Vec3(.2,.2,.2);
+}
+
+static void ldr_load_bumpy_sphere_scene(Scene * scene)
 {
 	scene->ambient_light = Vec3(.1, .1, .1);
 
 	// Create an instance of the Earth object
 	RenderInstance * bumpy = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
-		0.0, 3.0, 0.0, 0.0,
-		0.0, 0.0, 3.0, 0.0,
-		0.0, 0.0, 0.0, 1.0),
-		create_bumpy_sphere(scene));
+	                                                 0.0, 3.0, 0.0, 0.0,
+												     0.0, 0.0, 3.0, 0.0,
+												     0.0, 0.0, 0.0, 1.0),
+												create_bumpy_sphere(scene));
 	scene->instances.push_back(bumpy);
 
 	// Add a light to the scene too
@@ -227,18 +405,22 @@ static void ldr_load_scene_bumpy_sphere(Scene * scene)
  */
 bool ldr_load_scene(Scene* scene, int num)
 {
-    switch (num)
+    switch(num)
     {
 	case 0:
 		ldr_load_example_scene(scene);
 		break;
 
 	case 1:
-		ldr_load_scene_fresnel_sphere(scene);
+		ldr_load_pool_scene(scene);
 		break;
 
 	case 2:
-		ldr_load_scene_bumpy_sphere(scene);
+		ldr_load_fresnel_sphere_scene(scene);
+		break;
+
+	case 3:
+		ldr_load_bumpy_sphere_scene(scene);
 		break;
 
     default:

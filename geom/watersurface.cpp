@@ -14,23 +14,37 @@
 #include <iostream>
 #include <cstring>
 
-WaterSurface::WaterSurface(const WavePointList& wave_points,
+WaterSurface::WaterSurface(Scene * scene,
+						   const WavePointList& wave_points,
                            int resx, int resz)
 : wave_points(wave_points), resx(resx), resz(resz),
-  heightmap(0)
+  heightmap(0),
+  vertices_buffer(0),
+  normals_buffer(0),
+  indices_buffer(0)
 {
+	assert(scene);
+
 	const size_t num_of_vertices = (resx+1) * (resz+1);
 
 	// Create the heightmap buffer and clear it
 	heightmap = new real_t[num_of_vertices];
 	memset(heightmap, 0, sizeof(real_t) * num_of_vertices);
 
-	vertex_buffer.create(num_of_vertices, DYNAMIC_DRAW);
-	normals_buffer.create(num_of_vertices, DYNAMIC_DRAW);
+	// Create the vertices buffer
+	vertices_buffer = new BufferObject<Vec3>();
+	vertices_buffer->create(num_of_vertices, DYNAMIC_DRAW);
+	scene->resources.push_back(vertices_buffer);
 
-	// Create the indices buffer and define the mesh topology
+	// Create the normals buffer
+	normals_buffer = new BufferObject<Vec3>();
+	normals_buffer->create(num_of_vertices, DYNAMIC_DRAW);
+	scene->resources.push_back(normals_buffer);
+
+	// Create the indices buffer to define the mesh topology
 	{
 		const size_t num_of_indices = resx * resz * 6;
+
 		index_t * indices = new index_t[num_of_indices];
 
 		size_t idx;
@@ -55,7 +69,11 @@ WaterSurface::WaterSurface(const WavePointList& wave_points,
 			}
 		}
 
-		index_buffer.recreate(num_of_indices, indices, STATIC_DRAW);
+		// Create the indices buffer
+		indices_buffer = new BufferObject<index_t>();
+		indices_buffer->recreate(num_of_indices, indices, STATIC_DRAW);
+		scene->resources.push_back(indices_buffer);
+
 		delete [] indices;
 	}
 
@@ -126,7 +144,9 @@ Vec3 WaterSurface::compute_normal(real_t *heightmap,
 
 void WaterSurface::generate_normals()
 {
-	Vec3 * normals = (Vec3 *)normals_buffer.lock();
+	assert(normals_buffer);
+
+	Vec3 * normals = normals_buffer->lock();
 
 	for(int x=0; x<=resx; x++)
 	{
@@ -137,7 +157,7 @@ void WaterSurface::generate_normals()
 		}
 	}
 
-	normals_buffer.unlock();
+	normals_buffer->unlock();
 }
 
 void WaterSurface::generate_vertices()
@@ -145,7 +165,9 @@ void WaterSurface::generate_vertices()
 #define NX(x) ((real_t)(x)/resx*2-1)
 #define NZ(z) ((real_t)(z)/resz*2-1)
 
-	Vec3 * vertices = (Vec3 *)vertex_buffer.lock();
+	assert(vertices_buffer);
+
+	Vec3 * vertices = vertices_buffer->lock();
 
 	// fill in vertices
 	for(int x=0; x <=resx; x++)
@@ -161,7 +183,7 @@ void WaterSurface::generate_vertices()
 		}
 	}
 
-	vertex_buffer.unlock();
+	vertices_buffer->unlock();
 	
 #undef NX
 #undef NZ

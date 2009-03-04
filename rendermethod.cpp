@@ -20,7 +20,8 @@ using namespace std;
 RenderMethod_DiffuseTexture::
 RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
                             const BufferObject<Vec3> * normals_buffer,
-                            const BufferObject<Vec2> * tcoords_buffer,
+							const BufferObject<Vec2> * tcoords_buffer,
+							const BufferObject<index_t> * indices_buffer,
                             const Material * mat,
 	                        const Texture * diffuse_texture)
 {
@@ -33,6 +34,7 @@ RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
 	this->vertices_buffer = vertices_buffer;
 	this->normals_buffer = normals_buffer;
 	this->tcoords_buffer = tcoords_buffer;
+	this->indices_buffer = indices_buffer;
 	this->mat = mat;
 	this->diffuse_texture = diffuse_texture;
 }
@@ -82,8 +84,15 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 	tcoords_buffer->bind();
 	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
 
-	// Actually draw the triangles
-	glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	// Actually draw the triangles	
+	if(indices_buffer) {
+		// Draw using the index buffer
+		GLsizei count = indices_buffer->getNumber();
+		indices_buffer->bind();
+		glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
+	} else {
+		glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	}
 
 	// Clean up
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -96,6 +105,7 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 RenderMethod_Fresnel::
 RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
 					 const BufferObject<Vec3> * normals_buffer,
+					 const BufferObject<index_t> * indices_buffer,
 					 const ShaderProgram * shader,
 				     const Material * mat,
 				     const Texture * env_map,
@@ -111,6 +121,7 @@ RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
 
 	this->vertices_buffer = vertices_buffer;
 	this->normals_buffer = normals_buffer;
+	this->indices_buffer = indices_buffer;
 	this->shader = shader;
 	this->mat = mat;
 	this->env_map = env_map;
@@ -174,15 +185,15 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 	normals_buffer->bind();
 	glNormalPointer(GL_DOUBLE, 0, 0);
 
-	// Actually draw the triangles
-	glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
-	
-	/*
-	// Draw using the index buffer
-	GLsizei count = index_buffer.getNumber();
-	index_buffer.bind();
-	glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
-	*/
+	// Actually draw the triangles	
+	if(indices_buffer) {
+		// Draw using the index buffer
+		GLsizei count = indices_buffer->getNumber();
+		indices_buffer->bind();
+		glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
+	} else {
+		glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	}
 	
 	// Clean up
 	glDisableClientState(GL_NORMAL_ARRAY);
@@ -196,6 +207,7 @@ RenderMethod_BumpMap(const BufferObject<Vec3> * vertices_buffer,
                      const BufferObject<Vec3> * normals_buffer,
                      const BufferObject<Vec4> * tangents_buffer,
 					 const BufferObject<Vec2> * tcoords_buffer,
+					 const BufferObject<index_t> * indices_buffer,
 					 const ShaderProgram * shader,
 				     const Material * mat,
 				     const Texture * diffuse_map,
@@ -218,6 +230,7 @@ RenderMethod_BumpMap(const BufferObject<Vec3> * vertices_buffer,
 	this->normals_buffer = normals_buffer;
 	this->tangents_buffer = tangents_buffer;
 	this->tcoords_buffer = tcoords_buffer;
+	this->indices_buffer = indices_buffer;
 	this->shader = shader;
 	this->mat = mat;
 	this->normal_map = normal_map;
@@ -305,8 +318,15 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 	tcoords_buffer->bind();
 	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
 
-	// Actually draw the triangles
-	glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	// Actually draw the triangles	
+	if(indices_buffer) {
+		// Draw using the index buffer
+		GLsizei count = indices_buffer->getNumber();
+		indices_buffer->bind();
+		glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
+	} else {
+		glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	}
 
 	// Clean up
 	glDisableVertexAttribArrayARB(tangent_attrib_slot);

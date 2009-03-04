@@ -15,8 +15,8 @@ class TriangleSoup
 {
 public:
 	TriangleSoup(void);
-	TriangleSoup(const std::vector<Face> &faces);
-	void create(const std::vector<Face> &faces);
+	TriangleSoup(Scene * scene, const std::vector<Face> &faces);
+	void create(Scene * scene, const std::vector<Face> &faces);
 
 public:
 	BufferObject<Vec4> * tangents_buffer;

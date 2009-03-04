@@ -35,10 +35,10 @@ public:
      * @param wave_points The list of wave-emitting points.
      * @param resx The mesh resolution along the local x axis.
      * @param resz The mesh resolution along the local z azis.
-     * @param efc The shader effect to use for gl rendering.
      */
-    WaterSurface(const WavePointList& wave_points,
-                 int resx, int resz);
+    WaterSurface(Scene * scene,
+	             const WavePointList& wave_points,
+				 int resx, int resz);
 
     virtual ~WaterSurface();
 
@@ -53,9 +53,9 @@ public:
 
     virtual void update(real_t time);
 
-	BufferObject<Vec3> vertex_buffer;
-	BufferObject<Vec3> normals_buffer;
-	BufferObject<index_t> index_buffer;
+	BufferObject<Vec3> * vertices_buffer;
+	BufferObject<Vec3> * normals_buffer;
+	BufferObject<index_t> * indices_buffer;
 
 private:
     // list of all wave-emitting points.

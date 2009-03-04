@@ -77,7 +77,7 @@ static const Vec3 vertices[24] =
 	Vec3( 1,  0, -1).normalize(), // Bottom, South, 3
 };
 
-TriangleSoup gen_sphere(int num_of_divisions)
+TriangleSoup gen_sphere(Scene * scene, int num_of_divisions)
 {
 	std::vector<Face> faces;
 	
@@ -90,7 +90,7 @@ TriangleSoup gen_sphere(int num_of_divisions)
 		          num_of_divisions);
 	}
 	
-	return TriangleSoup(faces);
+	return TriangleSoup(scene, faces);
 }
                
 static void texmap_theta(const Vec3 &v1,

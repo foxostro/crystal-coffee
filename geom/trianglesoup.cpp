@@ -17,22 +17,30 @@ tcoords_buffer(0)
 	// Do Nothing
 }
 
-TriangleSoup::TriangleSoup( const std::vector<Face> &faces ) : vertices_buffer(0),
+TriangleSoup::TriangleSoup(Scene * scene, const std::vector<Face> &faces)
+: vertices_buffer(0),
 normals_buffer(0),
 tangents_buffer(0),
 tcoords_buffer(0)
 {
-	create(faces);
+	create(scene, faces);
 }
 
-void TriangleSoup::create( const std::vector<Face> &faces )
+void TriangleSoup::create(Scene * scene, const std::vector<Face> &faces)
 {
+	assert(scene);
+
 	size_t num_of_vertices = faces.size()*3;
 
 	vertices_buffer = new BufferObject<Vec3>();
 	normals_buffer = new BufferObject<Vec3>();
 	tangents_buffer = new BufferObject<Vec4>();
 	tcoords_buffer = new BufferObject<Vec2>();
+
+	scene->resources.push_back(vertices_buffer);
+	scene->resources.push_back(normals_buffer);
+	scene->resources.push_back(tangents_buffer);
+	scene->resources.push_back(tcoords_buffer);
 
 	// Create buffer objects from the vector of faces
 

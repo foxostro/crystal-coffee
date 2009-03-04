@@ -16,6 +16,6 @@
  *  @param num_of_divisions Number of times to subdivide the initial solid.
  *  @return Container holding the geometry buffers.
  */
-TriangleSoup gen_sphere(int num_of_divisions);
+TriangleSoup gen_sphere(Scene * scene, int num_of_divisions);
 
 #endif

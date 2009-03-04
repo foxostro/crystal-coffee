@@ -34,7 +34,8 @@ class RenderMethod_DiffuseTexture : public RenderMethod
 public:
 	RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
                                 const BufferObject<Vec3> * normals_buffer,
-                                const BufferObject<Vec2> * tcoords_buffer,
+								const BufferObject<Vec2> * tcoords_buffer,
+								const BufferObject<index_t> * indices_buffer,
                                 const Material * mat,
 	                            const Texture * diffuse_texture);
 
@@ -44,6 +45,7 @@ private:
 	const BufferObject<Vec3> * vertices_buffer;
 	const BufferObject<Vec3> * normals_buffer;
 	const BufferObject<Vec2> * tcoords_buffer;
+	const BufferObject<index_t> * indices_buffer;
 	const Material *mat;
 	const Texture *diffuse_texture;
 };
@@ -53,6 +55,7 @@ class RenderMethod_Fresnel : public RenderMethod
 public:
     RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
                          const BufferObject<Vec3> * normals_buffer,
+                         const BufferObject<index_t> * indices_buffer,
 						 const ShaderProgram * shader,
 				         const Material * mat,
 				         const Texture * env_map,
@@ -63,6 +66,7 @@ public:
 private:
 	const BufferObject<Vec3> * vertices_buffer;
 	const BufferObject<Vec3> * normals_buffer;
+	const BufferObject<index_t> * indices_buffer;
 	const ShaderProgram * shader;
 	const Material* mat;
 	const Texture* env_map;
@@ -75,6 +79,7 @@ public:
                          const BufferObject<Vec3> * normals_buffer,
                          const BufferObject<Vec4> * tangents_buffer,
 						 const BufferObject<Vec2> * tcoords_buffer,
+						 const BufferObject<index_t> * indices_buffer,
 						 const ShaderProgram * shader,
 				         const Material * mat,
 				         const Texture * diffuse_map,
@@ -90,6 +95,7 @@ private:
 	const BufferObject<Vec3> * normals_buffer;
 	const BufferObject<Vec4> * tangents_buffer;
 	const BufferObject<Vec2> * tcoords_buffer;
+	const BufferObject<index_t> * indices_buffer;
 	const ShaderProgram * shader;
 	const Material * mat;
 	const Texture * normal_map;
