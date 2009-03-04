@@ -5,10 +5,7 @@
  *
  * @author Eric Butler (edbutler)
  * @author Frank Palermo (fpalermo)
- */
-
-/*
-    YOU ARE FREE TO EDIT THIS FILE.
+ * @author Andrew Fox (arfox)
  */
 
 #ifndef _PROJECT_H_
@@ -62,18 +59,13 @@ void app_exit();
 
 // uncomment for P2 to enable menu item to toggle glsl features
 #define GUI_ENABLE_GLSL_TOGGLE
-// uncomment for P3/P4 to enable menu item for raytracing
-//#define GUI_ENABLE_RAYTRACE
 
 void gui_initialize(const char* screenshot_filename);
 
 
 /* ldr.cpp and staffldr.cpp defines and prototypes */
 
-#define MAX_STAFF_SCENE_NUM 10
-
 bool ldr_load_scene(Scene* scene, int num);
-bool ldr_load_staff_scene(Scene* scene, int num);
 
 
 /* project.cpp defines and prototypes */
@@ -83,11 +75,4 @@ void prj_update(Scene* scene, double time);
 void prj_render(Scene* scene);
 
 
-/* raytrace.cpp defines and prototypes */
-
-bool rt_raytrace(Scene* scene, int width, int height,
-              unsigned char* buffer, bool new_trace);
-
-
 #endif /* _PROJECT_H_ */
-

@@ -5,11 +5,7 @@
  * @author Kristin Siu (kasiu)
  * @author Eric Butler (edbutler)
  * @author Frank Palermo (fpalermo)
- */
-
-/*
-    EDIT THIS FILE FOR P1. However, do not change existing constructor
-    signatures. The staff scene loader requires all of those to be intact.
+ * @author Andrew Fox (arfox)
  */
 
 #include "vec/mat.h"

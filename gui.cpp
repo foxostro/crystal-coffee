@@ -6,6 +6,7 @@
  * @author Eric Butler (edbutler)
  * @author Frank Palermo (fpalermo)
  * @author Zeyang Li (zeyangl)
+ * @author Andrew Fox (arfox)
  */
 
 #include "glheaders.h"

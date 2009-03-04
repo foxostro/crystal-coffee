@@ -5,6 +5,7 @@
  * @author Kristin Siu (kasiu)
  * @author Eric Butler (edbutler)
  * @author Frank Palermo (fpalermo)
+ * @author Andrew Fox (arfox)
  */
 
 #ifndef _WATERSURFACE_H_

@@ -3,6 +3,7 @@
  *
  *  @author Zeyang Li (zeyangl)
  *  @author Eric Butler (edbutler)
+ *  @author Andrew Fox (arfox)
  */
 
 #ifndef _EFFECT_H_

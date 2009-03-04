@@ -5,6 +5,7 @@
  *
  * @author Eric Butler (edbutler)
  * @author Kristin Siu (kasiu)
+ * @author Andrew Fox (arfox)
  */
 
 #include "vec/mat.h"

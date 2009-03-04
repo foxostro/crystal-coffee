@@ -1,9 +1,10 @@
 /**
  * @file sphere.cpp
- * @brief Function defnitions for the Sphere class.
+ * @brief Sphere generator
  *
  * @author Kristin Siu (kasiu)
  * @author Eric Butler (edbutler)
+ * @author Andrew Fox (arfox)
  */
 
 #include "vec/mat.h"
@@ -11,14 +12,6 @@
 #include "glheaders.h"
 #include <memory.h>
 #include <iostream>
-
-struct Face
-{
-	Vec3 vertices[3];
-	Vec3 normals[3];
-	Vec4 tangents[3];
-	Vec2 tcoords[3];	
-};
 
 /** Subdivides a triangle on the icosphere, recursively.
  *  @param v1 Triangle Vertex 1
@@ -84,7 +77,7 @@ static const Vec3 vertices[24] =
 	Vec3( 1,  0, -1).normalize(), // Bottom, South, 3
 };
 
-Sphere gen_sphere(int num_of_divisions)
+TriangleSoup gen_sphere(int num_of_divisions)
 {
 	std::vector<Face> faces;
 	
@@ -97,47 +90,7 @@ Sphere gen_sphere(int num_of_divisions)
 		          num_of_divisions);
 	}
 	
-	Sphere sphere;
-	
-	sphere.vertices_buffer = new BufferObject<Vec3>();
-	sphere.normals_buffer = new BufferObject<Vec3>();
-	sphere.tangents_buffer = new BufferObject<Vec4>();
-	sphere.tcoords_buffer = new BufferObject<Vec2>();
-	
-	size_t num_of_vertices = faces.size()*3;
-	
-	// Create buffer objects from the vector of faces
-	
-	sphere.vertices_buffer->create(num_of_vertices, STATIC_DRAW);
-	sphere.normals_buffer->create(num_of_vertices, STATIC_DRAW);
-	sphere.tangents_buffer->create(num_of_vertices, STATIC_DRAW);
-	sphere.tcoords_buffer->create(num_of_vertices, STATIC_DRAW);
-	
-	Vec3 * vertices = sphere.vertices_buffer->lock();
-	Vec3 * normals = sphere.normals_buffer->lock();
-	Vec4 * tangents = sphere.tangents_buffer->lock();
-	Vec2 * tcoords = sphere.tcoords_buffer->lock();
-	
-	for(std::vector<Face>::const_iterator i=faces.begin();
-	    i != faces.end(); ++i)
-	{
-		memcpy(vertices, (*i).vertices, sizeof(Vec3)*3);
-		memcpy(normals, (*i).normals, sizeof(Vec3)*3);
-		memcpy(tangents, (*i).tangents, sizeof(Vec4)*3);
-		memcpy(tcoords, (*i).tcoords, sizeof(Vec2)*3);
-		
-		vertices += 3;
-		normals += 3;
-		tangents += 3;
-		tcoords += 3;
-	}
-	
-	sphere.vertices_buffer->unlock();
-	sphere.normals_buffer->unlock();
-	sphere.tangents_buffer->unlock();
-	sphere.tcoords_buffer->unlock();
-	
-	return sphere;
+	return TriangleSoup(faces);
 }
                
 static void texmap_theta(const Vec3 &v1,

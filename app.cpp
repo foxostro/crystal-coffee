@@ -6,10 +6,7 @@
  * @author Eric Butler (edbutler)
  * @author Frank Palermo (fpalermo)
  * @author Zeyang Li (zeyangl)
- */
-
-/*
-    YOU DO NOT NEED TO EDIT THIS FILE, though you may do so if you wish.
+ * @author Andrew Fox (arfox)
  */
 
 #ifdef _MSC_VER

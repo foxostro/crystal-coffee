@@ -3,12 +3,13 @@
  * @brief contains main scene loading function and student-created scenes.
  *
  * @author Eric Butler (edbutler)
+ * @author Andrew Fox (arfox)
  */
 
 #include "project.h"
 #include "scene.h"
 #include "geom/sphere.h"
-#include "geom/triangle.h"
+#include "geom/trianglesoup.h"
 #include "geom/watersurface.h"
 
 #include <iostream>
@@ -32,7 +33,7 @@ static RenderMethod * create_earth(Scene * scene)
 	scene->resources.push_back(diffuse_texture);
 	
 	// Generate sphere geometry
-	Sphere sphere = gen_sphere(4);
+	TriangleSoup sphere = gen_sphere(4);
 	
 	// Put it all together to make the "Earth" object
 	rendermethod = new RenderMethod_DiffuseTexture(sphere.vertices_buffer,
@@ -40,6 +41,45 @@ static RenderMethod * create_earth(Scene * scene)
 		                                           sphere.tcoords_buffer,
 		                                           mat,
 		                                           diffuse_texture);
+	scene->rendermethods.push_back(rendermethod);
+
+	return rendermethod;
+}
+
+static RenderMethod * create_fresnel_sphere(Scene * scene)
+{
+	Material * mat;
+	Texture * env_map;
+	ShaderProgram * fresnel_shader;
+	RenderMethod * rendermethod;
+
+	// Base material
+	mat = new Material();
+	mat->ambient = Vec3(0.2, 0.2, 0.2);
+	mat->diffuse = Vec3(0.0, 0.2, 0.3); // blue
+	mat->shininess = 16;
+	mat->specular = Vec3(0.1, 0.1, 0.1);
+	scene->resources.push_back(mat);
+
+	// Create texture resources
+	env_map = new Texture("images/spheremap_stpeters.png");
+	scene->resources.push_back(env_map);
+
+	// Load and compile the shader
+	fresnel_shader = new ShaderProgram("shaders/fresnel_vert.glsl",
+	                                   "shaders/fresnel_frag.glsl");
+	scene->resources.push_back(fresnel_shader);
+
+	// Generate sphere geometry
+	TriangleSoup sphere = gen_sphere(4);
+
+	// Put it all together
+	rendermethod = new RenderMethod_Fresnel(sphere.vertices_buffer,
+	                                        sphere.normals_buffer,
+											fresnel_shader,
+											mat,
+											env_map,
+											1.33);
 	scene->rendermethods.push_back(rendermethod);
 
 	return rendermethod;
@@ -57,7 +97,7 @@ static RenderMethod * create_bumpy_sphere(Scene * scene)
 	// Base material
 	mat = new Material();
 	mat->ambient = Vec3(0.2, 0.2, 0.2);
-	mat->diffuse = Vec3::Ones;
+	mat->diffuse = Vec3(0.2, 0.2, 0.2);
 	mat->shininess = 16;
 	mat->specular = Vec3(0.1, 0.1, 0.1);
 	scene->resources.push_back(mat);
@@ -78,18 +118,18 @@ static RenderMethod * create_bumpy_sphere(Scene * scene)
 	scene->resources.push_back(parallax_bump_shader);
 
 	// Generate sphere geometry
-	Sphere sphere = gen_sphere(4);
+	TriangleSoup sphere = gen_sphere(4);
 
 	// Put it all together
 	rendermethod = new RenderMethod_BumpMap(sphere.vertices_buffer,
 	                                        sphere.normals_buffer,
-											sphere.tangents_buffer,
-											sphere.tcoords_buffer,
-											parallax_bump_shader,
-											mat,
-											diffuse_map,
-											normal_map,
-											height_map);
+	                                        sphere.tangents_buffer,
+	                                        sphere.tcoords_buffer,
+	                                        parallax_bump_shader,
+	                                        mat,
+	                                        diffuse_map,
+	                                        normal_map,
+	                                        height_map);
 	scene->rendermethods.push_back(rendermethod);
 
 	return rendermethod;
@@ -123,16 +163,44 @@ static void ldr_load_example_scene(Scene * scene)
 	camera.far_clip = 100.0;
 }
 
-static void ldr_load_scene_1(Scene * scene)
+static void ldr_load_scene_fresnel_sphere(Scene * scene)
+{
+	scene->ambient_light = Vec3(.1, .1, .1);
+
+	// Create an instance of the Earth object
+	RenderInstance * fresnel = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
+	                                                   0.0, 3.0, 0.0, 0.0,
+													   0.0, 0.0, 3.0, 0.0,
+													   0.0, 0.0, 0.0, 1.0),
+												create_fresnel_sphere(scene));
+	scene->instances.push_back(fresnel);
+
+	// Add a light to the scene too
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
+
+	// Set the camera
+	Camera& cam = scene->camera;
+	cam.orientation = Quat::Identity;
+	cam.position = Vec3(0,0,10);
+	cam.focus_dist = 10;
+	cam.fov = PI / 3.0;
+	cam.near_clip = .1;
+	cam.far_clip = 100.0;
+}
+
+static void ldr_load_scene_bumpy_sphere(Scene * scene)
 {
 	scene->ambient_light = Vec3(.1, .1, .1);
 
 	// Create an instance of the Earth object
 	RenderInstance * bumpy = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
-	                                                 0.0, 3.0, 0.0, 0.0,
-													 0.0, 0.0, 3.0, 0.0,
-													 0.0, 0.0, 0.0, 1.0),
-												create_bumpy_sphere(scene));
+		0.0, 3.0, 0.0, 0.0,
+		0.0, 0.0, 3.0, 0.0,
+		0.0, 0.0, 0.0, 1.0),
+		create_bumpy_sphere(scene));
 	scene->instances.push_back(bumpy);
 
 	// Add a light to the scene too
@@ -166,7 +234,11 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
 	case 1:
-		ldr_load_scene_1(scene);
+		ldr_load_scene_fresnel_sphere(scene);
+		break;
+
+	case 2:
+		ldr_load_scene_bumpy_sphere(scene);
 		break;
 
     default:

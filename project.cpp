@@ -13,7 +13,7 @@
 #include <iostream>
 using namespace std;
 
-#define PERIOD 0.01
+#define PERIOD (0.01)
 
 // current absolute simulation time for the current scene
 static real_t sim_time;
@@ -180,4 +180,3 @@ void prj_render(Scene* scene)
 	
 	for_each(scene->instances.begin(), scene->instances.end(), &draw);
 }
-

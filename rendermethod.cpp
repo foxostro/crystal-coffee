@@ -2,6 +2,7 @@
  *  @brief The shader classes. Each shader should have a corresponding class
  *  in this file to communicate with OpenGL
  *  @author Zeyang Li (zeyangl)
+ *  @author Andrew Fox (arfox)
  */
 
 #include "glheaders.h"

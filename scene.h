@@ -5,14 +5,7 @@
  *
  * @author Eric Butler (edbutler)
  * @author Kristin Siu (kasiu)
- */
-
-/*
-    YOU ARE FREE TO MODIFY THIS FILE, as long as you do not change existing
-    constructor signatures or remove existing class members. The staff scene
-    loader requires all of those to be intact. You may, however, modify
-    anything else, including other function signatures and adding additional
-    members.
+ * @author Andrew Fox (arfox)
  */
 
 #ifndef _SCENE_H_
@@ -23,6 +16,14 @@
 #include "vec/quat.h"
 #include <string>
 #include <vector>
+
+struct Face
+{
+	Vec3 vertices[3];
+	Vec3 normals[3];
+	Vec4 tangents[3];
+	Vec2 tcoords[3];
+};
 
 class SceneResource
 {
