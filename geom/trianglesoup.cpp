@@ -8,6 +8,7 @@
 #include "vec/mat.h"
 #include "trianglesoup.h"
 #include "glheaders.h"
+#include <memory.h>
 
 TriangleSoup::TriangleSoup( void ) : vertices_buffer(0),
 normals_buffer(0),

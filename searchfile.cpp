@@ -100,9 +100,9 @@ std::vector<std::string> SearchFile(const std::string &_searchDirectory,
 	DIR *directory = opendir(searchDirectory.c_str());
 	
 	while ((directoryEntry = readdir(directory)) != 0) {
-		FileName name(directoryEntry->d_name);
+		std::string name(directoryEntry->d_name);
 	
-		if (name.getExtension() == fileExtension) {
+		if (getFileExtension(name) == fileExtension) {
 			filesFound.push_back(name);
 		}
 	}

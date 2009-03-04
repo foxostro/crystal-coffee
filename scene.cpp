@@ -105,7 +105,7 @@ ShaderProgram::ShaderProgram(const char* _vert_file, const char* _frag_file)
 
 ShaderProgram::~ShaderProgram()
 {
-	glDeleteProgram(program);
+	glDeleteProgramsARB(1, &program);
 }
 
 void ShaderProgram::init()
