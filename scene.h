@@ -24,10 +24,147 @@
 #include <string>
 #include <vector>
 
+class SceneResource
+{
+public:
+	SceneResource() { /* Do Nothing */ }
+	virtual ~SceneResource() { /* Do Nothing */ }
+	virtual void init(void) { /* Do Nothing */ }
+};
+
+enum BUFFER_USAGE {
+	STREAM_DRAW,
+	STREAM_READ,
+	STREAM_COPY,
+	STATIC_DRAW,
+	STATIC_READ,
+	STATIC_COPY,
+	DYNAMIC_DRAW,
+	DYNAMIC_READ,
+	DYNAMIC_COPY
+};
+
+/**
+Contains a buffer of graphically related data such as an index array or a
+vertex array. This data may be stored in memory on the graphics device after
+being submitted.
+*/
+template<typename ELEMENT>
+class BufferObject : public SceneResource {
+public:
+	/** Destructor */
+	virtual ~BufferObject();
+	
+	/** Default Constructor */
+	BufferObject();
+	
+	/**
+	Constructor
+	@param numElements Number of elements in the buffer
+	@param buffer Readable on the client-side.  Buffer is copied here and
+	no ownership is passed. If null is passed for the 'buffer' parameter
+	then a buffer is allocated internally (accessible through lock) but
+	it will be uninitialized upon construction.
+	*/
+	BufferObject(int numElements, const ELEMENT *buffer);
+	
+	/**
+	Copy constructor. Copies the contents of a given buffer.
+	@param copyMe Buffer to clone
+	*/
+	BufferObject(const BufferObject &copyMe);
+	
+	/**
+	Creates a copy of this buffer.
+	The copy is created on the heap with new, and it is the responsibility of
+	the caller to free it.
+	@return New object with copy of this buffer
+	*/
+	BufferObject<ELEMENT> * clone(void) const;
+
+	void create(int numElements, BUFFER_USAGE usage)
+	{
+		recreate(numElements, NULL, usage);
+	}
+
+	void create(int numElements, const ELEMENT *buffer, BUFFER_USAGE usage)
+	{
+		recreate(numElements, buffer, usage);
+	}
+	
+	/**
+	Reallocates memory for the buffer
+	@param numElements Number of elements in the buffer.  Must be greater
+	than zero unless both numElements=0 and buffer=0
+	@param buffer Readable on the client-side.  Buffer is copied here and
+	no ownership is passed. If null is passed for the 'buffer' parameter
+	then a buffer is allocated internally (accessible through lock) but
+	it will be uninitialized upon construction.
+	@param usage Enumerant describing how the buffer will be used.  This
+	is a hint to the graphics driver as to how the buffer should be stored
+	in memory.
+	*/
+	void recreate(int numElements, const ELEMENT *buffer, BUFFER_USAGE usage);
+	
+	/**
+	Gets the number of elements in the buffer
+	@return Number of elements in the buffer
+	*/
+	int getNumber() const;
+	
+	/** Binds the buffer for use on the GPU */
+	void bind() const;
+	
+	/**
+	Locks the buffer to allow read-write access by the client.
+	@return elements array
+	*/
+	ELEMENT* lock();
+	
+	/**
+	Obtaind read access to the buffer. Do not rely on write access.
+	@return elements array
+	*/
+	ELEMENT* read_lock();
+	
+	/**
+	Unlocks the buffer and removes memory maps.
+	Only call on locked buffers.
+	*/
+	void unlock() const;
+	
+private:
+	void create_cpu_buffer(int numElements, const ELEMENT * buffer);
+	
+	void create_gpu_buffer(int numElements,
+	                       const ELEMENT * buffer,
+	                       GLenum usage);
+	                       
+	static GLenum getTarget();
+	
+	static GLenum getGLUsageToken(BUFFER_USAGE usage);
+	
+private:
+	/** Indicates that the buffer is currently locked */
+	mutable bool locked;
+	
+	/** Number of elements in the buffer */
+	int numElements;
+	
+	/** Buffer, stored on the client-side */
+	ELEMENT *buffer;
+	
+	/** OpenGL buffer object name */
+	GLuint handle;
+	
+	/** Store this so if we are cloned, the copy can set usage properly */
+	BUFFER_USAGE usage;
+};
+
 /**
  * Represents a material property for a geometry or part of a geometry.
  */
-class Material
+class Material : public SceneResource
 {
 public:
     /**
@@ -52,7 +189,7 @@ public:
     real_t shininess;
 
     Material();
-    ~Material();
+    virtual ~Material();
 
 	void bind() const;
 
@@ -65,20 +202,22 @@ private:
 /**
  * Represents a single texture unit and associated settings.
  */
-class Texture
+class Texture : public SceneResource
 {
 public:
 	Texture(const std::string &texture_name);
 
-	~Texture();
+	virtual ~Texture();
 
 	GLuint get_gltex_name() const {
 		return gltex_name;
 	}
-
-	void load_texture();
+	
+	virtual void init(void) { load_texture(); }
 
 private:
+	void load_texture();
+	
 	// no meaningful assignment or copy
 	Texture(const Texture &r);
 	Texture& operator=(const Texture &r);
@@ -88,58 +227,11 @@ private:
 	GLuint gltex_name;
 };
 
-class Geometry // TODO: Replace with some kind of VertexStream class
-{
-public:
-    Geometry();
-    Geometry(const Vec3& pos, const Quat& ori, const Vec3& scl);
-    virtual ~Geometry();
-
-    /*
-       World transformation are applied in the following order:
-       1. Scale
-       2. Orientation
-       3. Position
-    */
-
-    // The world position of the object.
-    Vec3 position;
-    // The world orientation of the object.
-    Quat orientation;
-    // The world scale of the object.
-    Vec3 scale;
-
-	virtual void draw() const = 0; // TODO: Remove me
-   
-	/** Sets the object's transformation */
-	void set_transformation() const;
-	
-	/** Calculate the tangents for one triangle */
-	static void CalculateTriangleTangent(const Vec3 *vertices,
-                                         const Vec3 *normals,
-	                                     const Vec2 *tcoords,
-	                                     Vec4 *tangents);
-
-};
-
-class UpdatableGeometry : public Geometry
-{
-public:
-    UpdatableGeometry() { /* Do Nothing */ }
-
-    UpdatableGeometry(const Vec3& pos,
-	                  const Quat& ori,
-					  const Vec3& scl)
-        : Geometry(pos, ori, scl) { /* Do Nothing */ }
-
-    virtual ~UpdatableGeometry() { /* Do Nothing */ }
-
-    /**
-     * Updates this Geometry to the given time.
-     * @param time The absolute world time.
-     */
-    virtual void update(real_t time) = 0;
-};
+/** Calculate the tangents for one triangle */
+void calculate_triangle_tangent(const Vec3 *vertices,
+                                const Vec3 *normals,
+	                            const Vec2 *tcoords,
+	                            Vec4 *tangents);
 
 /**
  * Stores position data of the camera.
@@ -229,39 +321,17 @@ class Scene
 {
 public:
     typedef std::vector<Light> LightList;
-    typedef std::vector<Geometry*> GeometryList;
-    typedef std::vector<UpdatableGeometry*> UpdatableGeometryList;
-	typedef std::vector<Material*> MaterialList;
-	typedef std::vector<Texture*> TextureList;
-    typedef std::vector<RenderMethod*> EffectList;
+    typedef std::vector<SceneResource*> SceneResourceList;
+    typedef std::vector<RenderMethod*> RenderMethodList;
 
-    // the camera
     Camera camera;
-
-    // the amibient light of the scene
     Vec3 ambient_light;
+    LightList lights;
+	SceneResourceList resources;
+    RenderMethodList rendermethods;
 
     // the absolute time at which to start updates for ths scene.
     real_t start_time;
-
-    // list of all lights in the scene
-    LightList lights;
-
-    // list of all geometry (includes updatable geometry). deleted in dctor
-    GeometryList geoms;
-
-    // list of all updatable geometry
-    UpdatableGeometryList updatable_objects;
-
-    // list of all materials used by the objects/effects. deleted in dctor
-    MaterialList materials;
-
-	// list of all textures used by the scene. deleted in dctor
-	TextureList textures;
-
-    // list of all effects used by objects. deleted in deconstructor
-    // (USED STARTING P2)
-    EffectList render_methods;
 
     /**
      * Creates a new empty scene.

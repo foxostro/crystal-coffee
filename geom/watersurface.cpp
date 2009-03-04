@@ -18,11 +18,9 @@
 #include <iostream>
 #include <cstring>
 
-WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
-                           const WavePointList& wave_points,
+WaterSurface::WaterSurface(const WavePointList& wave_points,
                            int resx, int resz)
-: UpdatableGeometry(pos, ori, scl),
-  wave_points(wave_points), resx(resx), resz(resz),
+: wave_points(wave_points), resx(resx), resz(resz),
   heightmap(0)
 {
 	const size_t num_of_vertices = (resx+1) * (resz+1);
@@ -31,29 +29,8 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
 	heightmap = new real_t[num_of_vertices];
 	memset(heightmap, 0, sizeof(real_t) * num_of_vertices);
 
-	// Create the vertex buffer, and clear it
-	{
-		Vec3 * vertices = new Vec3[num_of_vertices];
-		memset(vertices, 0, sizeof(Vec3) * num_of_vertices);
-		vertex_buffer.recreate(num_of_vertices, vertices, DYNAMIC_DRAW);
-		delete [] vertices;
-	}
-	
-	// Create the normals buffer, and clear it
-	{
-		Vec3 * normals = new Vec3[num_of_vertices];
-		memset(normals, 0, sizeof(Vec3) * num_of_vertices);
-		normals_buffer.recreate(num_of_vertices, normals, DYNAMIC_DRAW);
-		delete [] normals;
-	}
-
-	// Create the normals buffer, and clear it
-	{
-		Vec3 * normals = new Vec3[num_of_vertices];
-		memset(normals, 0, sizeof(Vec3) * num_of_vertices);
-		normals_buffer.recreate(num_of_vertices, normals, DYNAMIC_DRAW);
-		delete [] normals;
-	}
+	vertex_buffer.create(num_of_vertices, DYNAMIC_DRAW);
+	normals_buffer.create(num_of_vertices, DYNAMIC_DRAW);
 
 	// Create the indices buffer and define the mesh topology
 	{
@@ -199,34 +176,6 @@ void WaterSurface::update(real_t time)
 	generate_heightmap(time);
 	generate_normals();
 	generate_vertices();
-}
-
-void WaterSurface::draw() const
-{
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-
-	set_transformation();
-
-	// Bind the normals buffer
-	glEnableClientState(GL_NORMAL_ARRAY);
-	normals_buffer.bind();
-	glNormalPointer(GL_DOUBLE, 0, 0);
-
-	// Bind the vertex buffer
-	glEnableClientState(GL_VERTEX_ARRAY);
-	vertex_buffer.bind();
-	glVertexPointer(3, GL_DOUBLE, 0, 0);
-
-	// And actually render the batch using the element buffer object's indices
-	GLsizei count = index_buffer.getNumber();
-	index_buffer.bind();
-	glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
-
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
-
-	glPopMatrix();
 }
 
 void WaterSurface::set_vertex(Vec3 * vertices, int x, int z, Vec3 v)

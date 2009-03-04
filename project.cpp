@@ -3,11 +3,6 @@
  * @brief The rendering/update code.
  *
  * @author Andrew Fox (arfox)
- * @bug Unimplemented.
- */
-
-/*
-    EDIT THIS FILE FOR P1.
  */
 
 #include "vec/mat.h"
@@ -34,10 +29,10 @@ void draw(RenderMethod *o)
 	o->draw();
 }
 
-void init_texture(Texture *texture)
+void init_resource(SceneResource * resource)
 {
-	assert(texture);
-	texture->load_texture();
+	assert(resource);
+	resource->init();
 }
 
 /**
@@ -66,15 +61,15 @@ void prj_initialize(Scene* scene, bool is_gl_context)
 		glEnable(GL_LIGHTING);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_NORMALIZE);
-		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_CULL_FACE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glGetIntegerv(GL_MAX_LIGHTS, &num_gl_lights);
     }
     
-    // Initialize scene objects
-	for_each(scene->textures.begin(),
-	         scene->textures.end(),
-	         &init_texture);
+    // Initialize scene resources
+	for_each(scene->resources.begin(),
+	         scene->resources.end(),
+	         &init_resource);
 	         
 	init_light_properties(scene->lights);	         
 }
@@ -92,10 +87,12 @@ void prj_update(Scene* scene, double delta_time)
 	
     // increment time and update all updatable geometries
     sim_time += PERIOD;
+    /*
     Scene::UpdatableGeometryList& list = scene->updatable_objects;
     for (Scene::UpdatableGeometryList::iterator i = list.begin();
             i != list.end(); ++i)
         (*i)->update(sim_time);
+	*/
 }
 
 static void set_camera(const Camera &camera) {
@@ -181,6 +178,6 @@ void prj_render(Scene* scene)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	for_each(scene->render_methods.begin(), scene->render_methods.end(), &draw);
+	for_each(scene->rendermethods.begin(), scene->rendermethods.end(), &draw);
 }
 

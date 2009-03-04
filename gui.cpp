@@ -8,10 +8,6 @@
  * @author Zeyang Li (zeyangl)
  */
 
-/*
-    YOU DO NOT NEED TO EDIT THIS FILE, though you may do so if you wish.
- */
-
 #include "glheaders.h"
 #include "imageio.h"
 #include "project.h"
@@ -27,7 +23,6 @@ enum
 {
     MENU_QUIT,
     MENU_PAUSE,
-    MENU_RAYTRACE,
     MENU_SCREENSHOT,
     MENU_TOGGLE_SCENE,
     MENU_TOGGLE_GLSL,
@@ -35,9 +30,6 @@ enum
 
 static const char *MENU_QUIT_MSG = "Quit";
 static const char *MENU_PAUSE_MSG = "Play/Pause";
-#ifdef GUI_ENABLE_RAYTRACE
-static const char *MENU_RAYTRACE_MSG = "Raytrace";
-#endif /* GUI_ENABLE_RAYTRACE */
 static const char *MENU_SCREENSHOT_MSG = "Screenshot";
 static const char *MENU_TOGGLE_SCENE_MSG = "Toggle Scene";
 #ifdef GUI_ENABLE_GLSL_TOGGLE
@@ -128,22 +120,8 @@ struct MouseState
 
 /* the glut id of the menu */
 static int menu_id;
-/* the scene state when we started the last raytrace */
-static SceneState state_at_rt_start = SCENE_PLAYING;
 /* the mouse state */
 static MouseState mouse;
-
-/**
- * Stops a raytrace.
- */
-static void disable_raytrace()
-{
-    if (app_get_render_state() == RENDER_RT) {
-        app_abort_raytrace();
-        app_set_render_state(RENDER_GL);
-        app_set_scene_state(state_at_rt_start);
-    }
-}
 
 /**
  * Menu callback for glut.
@@ -163,18 +141,6 @@ static void menu_callback(int menu_item)
             app_set_scene_state(SCENE_PLAYING);
         else
             app_set_scene_state(SCENE_PAUSED);
-        break;
-    case MENU_RAYTRACE:
-        // if already raytracing, abort and go back to scene, playing if it
-        // was playing before we started the trace
-        if (rstate == RENDER_RT) {
-            disable_raytrace();
-        } else {
-            state_at_rt_start = sstate;
-            app_set_scene_state(SCENE_PAUSED);
-            app_start_raytrace();
-            app_set_render_state(RENDER_RT);
-        }
         break;
     case MENU_SCREENSHOT:
         // write a screenshot out to a file
@@ -207,9 +173,6 @@ static void apply_control(CameraControl cc, int delta)
     // if nothing, just return
     if (cc == CC_NONEE)
         return;
-
-    // automatically stop raytracing if the camera is moved
-    disable_raytrace();
 
     assert(app_get_scene());
     Camera& cam = app_get_scene()->camera;
@@ -319,9 +282,6 @@ void gui_initialize(const char* screenshot_filename)
     glutSetMenu(menu_id);
 
     glutAddMenuEntry(MENU_PAUSE_MSG, MENU_PAUSE);
-#ifdef GUI_ENABLE_RAYTRACE
-    glutAddMenuEntry(MENU_RAYTRACE_MSG, MENU_RAYTRACE);
-#endif /* GUI_ENABLE_RAYTRACE */
     glutAddMenuEntry(MENU_SCREENSHOT_MSG, MENU_SCREENSHOT);
 #ifdef GUI_ENABLE_GLSL_TOGGLE
     glutAddMenuEntry(MENU_TOGGLE_GLSL_MSG, MENU_TOGGLE_GLSL);

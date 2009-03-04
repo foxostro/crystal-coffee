@@ -15,33 +15,18 @@
 
 #include "scene.h"
 
-class Triangle : public Geometry
+class Triangle
 {
 public:
-    Triangle();
-
     // construct a triangle with different materials/normals at each vertex
-    Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
-             const Vec3 vertices[3], const Vec2 tcoords[3],
+    Triangle(const Vec3 vertices[3],
+             const Vec2 tcoords[3],
              const Vec3 normals[3]);
-
-    // construct a triangle with same material/normal at each vertex
-    Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
-             const Vec3 vertices[3], const Vec2 tcoords[3],
-             const Vec3& normal);
-
-    virtual ~Triangle();
-
-    // the vertices of this triangle (in local space).
-    Vec3 vertices[3];
-    // the texture coordinates at each vertex.
-    Vec2 tcoords[3];
-    // the normals of each vertex (in local space).
-    Vec3 normals[3];
-    // the tangents of each vertex (in local space).
-    Vec4 tangents[3];
-
-    virtual void draw() const;
+    
+    BufferObject<Vec4> tangents_buffer;
+    BufferObject<Vec3> normals_buffer;
+    BufferObject<Vec3> vertices_buffer;
+    BufferObject<Vec2> tcoords_buffer;
     
 private:
 	void calculate_tangents();

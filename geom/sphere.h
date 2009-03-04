@@ -16,62 +16,21 @@
 
 #include "scene.h"
 
-class Sphere : public Geometry
+class Sphere
 {
 public:
-	void init_sphere();
+	Sphere() : vertices_buffer(0),
+	           normals_buffer(0),
+	           tangents_buffer(0),
+	           tcoords_buffer(0) {}
 	
-    Sphere();
-
-    Sphere(const Vec3& pos,
-		   const Quat& ori,
-		   const Vec3& scl,
-           real_t rad);
-
-    virtual ~Sphere();
-
-    // the radius of this sphere.
-    real_t radius;
-
-    virtual void draw() const;
-    
-private:
-	/** Draws a unit isosphere.
-	  * @param num_of_divisions Number of times to subdivide the icosphere.
-	  */
-	void draw_ico_sphere(int num_of_divisions);
-	
-	/** Subdivides a triangle on the icosphere, recursively.
-	 *  @param v1 Triangle Vertex 1
-	 *  @param v2 Triangle Vertex 2
-	 *  @param v3 Triangle Vertex 3
-	 *  @param depth Recursive depth subdivision
-	 */
-	void subdivide(const Vec3 &v1,
-                   const Vec3 &v2,
-                   const Vec3 &v3,
-                   int depth);
-                          
-	/** Generates spherical theta angles for a triangle.
-	 *  The dicontinity of atan is handled so that these angles will be suitable
-	 *  for direct conversion to texture coordinates.
-	 *  @param v1 Triangle Vertex 1
-	 *  @param v2 Triangle Vertex 2
-	 *  @param v3 Triangle Vertex 3
-	 *  @param theta1 Returns the theta of vertex 1 (radian longitude)
-	 *  @param theta2 Returns the theta of vertex 2 (radian longitude)
-	 *  @param theta3 Returns the theta of vertex 3 (radian longitude)
-	 */
-	static void texmap_theta(const Vec3 &v1,
-                             const Vec3 &v2,
-                             const Vec3 &v3,
-                             real_t &theta1,
-                             real_t &theta2,
-                             real_t &theta3);
-        
-    static Vec3 vertices[];
-	GLuint display_list;
+	BufferObject<Vec3> * vertices_buffer;
+	BufferObject<Vec3> * normals_buffer;
+	BufferObject<Vec4> * tangents_buffer;
+	BufferObject<Vec2> * tcoords_buffer;
 };
+
+Sphere gen_sphere(int num_of_divisions);
 
 #endif
 

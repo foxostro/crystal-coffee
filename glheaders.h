@@ -27,5 +27,14 @@
 #include <GL/glext.h>
 #endif /* _OS_X_ */
 
+#define MESH_INDEX_FORMAT_IS_UINT 1
+#if MESH_INDEX_FORMAT_IS_UINT
+#define MESH_INDEX_FORMAT (GLenum)(GL_UNSIGNED_INT)
+typedef unsigned int index_t;
+#else
+#define MESH_INDEX_FORMAT (GLenum)(GL_UNSIGNED_SHORT)
+typedef unsigned short index_t;
+#endif
+
 #endif /* _GLHEADERS_H_ */
 

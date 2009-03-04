@@ -5,11 +5,6 @@
  * @author Eric Butler (edbutler)
  */
 
-/*
-    EDIT THIS FILE FOR P1. However, do not change existing constructor
-    signatures. The staff scene loader requires all of those to be intact.
- */
-
 #include "vec/mat.h"
 #include "triangle.h"
 #include "glheaders.h"
@@ -18,66 +13,17 @@
 #include <iostream>
 using namespace std;
 
-Triangle::Triangle()
-{
-    memset(vertices, 0, sizeof vertices);
-    memset(normals, 0, sizeof normals);
-    memset(tcoords, 0, sizeof tcoords);
-    memset(tangents, 0, sizeof tangents);
-}
-
-Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
-                   const Vec3 vertices[3], const Vec2 tcoords[3],
+Triangle::Triangle(const Vec3 vertices[3],
+                   const Vec2 tcoords[3],
                    const Vec3 normals[3])
-    : Geometry(pos, ori, scl)
 {
-    memcpy(this->vertices, vertices, sizeof this->vertices);
-    memcpy(this->normals, normals, sizeof this->normals);
-    memcpy(this->tcoords, tcoords, sizeof this->tcoords);
-    
-    CalculateTriangleTangent(vertices, normals, tcoords, tangents);
+	vertices_buffer.create(3, vertices, STATIC_DRAW);
+	normals_buffer.create(3, normals, STATIC_DRAW);
+	tcoords_buffer.create(3, tcoords, STATIC_DRAW);
+	
+	// Generate triangle tangents
+	Vec4 tangents[3];
+    calculate_triangle_tangent(vertices, normals, tcoords, tangents);
+	tangents_buffer.create(3, tangents, STATIC_DRAW);
 }
 
-Triangle::Triangle(const Vec3& pos, const Quat& ori, const Vec3& scl,
-                   const Vec3 vertices[3], const Vec2 tcoords[3],
-                   const Vec3& normal)
-    : Geometry(pos, ori, scl)
-{
-    memcpy(this->vertices, vertices, sizeof this->vertices);
-    memcpy(this->tcoords, tcoords, sizeof this->tcoords);
-    normals[0] = normals[1] = normals[2] = normal;
-    
-    CalculateTriangleTangent(vertices, normals, tcoords, tangents);
-}
-
-Triangle::~Triangle() { /* Do Nothing */ }
-
-void Triangle::draw() const
-{
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-
-	set_transformation();
-
-	glBegin(GL_TRIANGLES);
-
-	for(int i=0; i<3; ++i)
-	{
-//		if(effect && effect->areTangentsRequired())
-		{
-			glVertexAttrib4dARB(1, //effect->getTangentAttribSlot(),
-			                    tangents[i].x,
-			                    tangents[i].y,
-			                    tangents[i].z,
-			                    tangents[i].w);
-		}
-		
-		glTexCoord2d(tcoords[i].x, tcoords[i].y);
-		glNormal3d(normals[i].x, normals[i].y, normals[i].z);
-		glVertex3d(vertices[i].x, vertices[i].y, vertices[i].z);
-	}
-
-	glEnd();
-
-	glPopMatrix();
-}

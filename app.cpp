@@ -45,8 +45,6 @@ struct GlutState
     /* period of updates, in seconds */
     float period;
 
-    /* buffer used for the raytraced scene. */
-    unsigned char *raytrace_buffer;
     /* size of allocated buffer. may differ from window size if window was
      * resized.
      */
@@ -54,13 +52,6 @@ struct GlutState
 
     SceneState scene_state;
     RenderState render_state;
-
-    /* true if a raytrace is currently being executed. this should only
-     * ever happen when the scene is paused
-     */
-    bool raytracing;
-    /* boolean that is passed as new_trace to raytrace */
-    bool new_trace;
 
     /* boolean to control GLSL state */
     bool glsl_enabled;
@@ -85,11 +76,7 @@ static void update_camera_aspect()
  */
 static bool load_scene(Scene* scene, int num)
 {
-    // scenes [0, MAX_STAFF_SCENE_NUM) are reserved for staff.
-    if (num >= 0 && num < MAX_STAFF_SCENE_NUM)
-        return ldr_load_staff_scene(scene, num);
-    else
-        return ldr_load_scene(scene, num);
+    return ldr_load_scene(scene, num);
 }
 
 /**
@@ -130,38 +117,6 @@ int app_get_screen_height()
 }
 
 /**
- * Start a new ray trace. Leaves render state unaffected. May fail if there
- * is insufficient memory.
- */
-void app_start_raytrace()
-{
-    // can't start a raytrace if playing
-    if (state.scene_state == SCENE_PLAYING)
-        return;
-
-    state.raytracing = false;
-    state.new_trace = true;
-    /* if buffer is null or wrong size, recreate it */
-    if (!state.raytrace_buffer || state.width*state.height!=state.buffer_size) {
-        delete [] state.raytrace_buffer; // will have no effect if null
-        state.buffer_size = state.width*state.height;
-        state.raytrace_buffer = new unsigned char[
-                state.buffer_size * COLOR_SIZE];
-    }
-    // only preceed if the allocation was successful
-    if (state.raytrace_buffer)
-        state.raytracing = true;
-}
-
-/**
- * Stops a current raytrace.
- */
-void app_abort_raytrace()
-{
-    state.raytracing = false;
-}
-
-/**
  * Returns the current scene state.
  */
 SceneState app_get_scene_state()
@@ -170,14 +125,10 @@ SceneState app_get_scene_state()
 }
 
 /**
- * Sets the current scene state. If the scene is set to play, it may cause a
- * current raytrace to be terminated.
+ * Sets the current scene state.
  */
 void app_set_scene_state(SceneState s)
 {
-    // if switching to playing, have to kill the current raytrace.
-    if (s == SCENE_PLAYING)
-        app_abort_raytrace();
     state.scene_state = s;
 }
 
@@ -220,7 +171,6 @@ void app_set_glsl_enabled(bool enabled)
 void app_exit()
 {
     // clean up resources
-    delete [] state.raytrace_buffer; // will have no effect if null
     delete state.scene;
 
     // this is the only way to terminate GLUT without extensions.
@@ -238,23 +188,9 @@ static void timer_callback(int millis)
     glutTimerFunc(millis, &timer_callback, millis);
 
     if (state.scene_state == SCENE_PLAYING) {
-        assert(!state.raytracing); // we should never be doing both
         // invoke user scene update function
         prj_update(state.scene, state.period);
         glutPostRedisplay();
-    }
-    else if (state.raytracing) {
-        // if window size changed, abort raytrace
-        if (state.width * state.height != state.buffer_size) {
-            state.raytracing = false;
-        } else {
-            // invoke user raytrace update function until finished.
-            state.raytracing =
-                !rt_raytrace(state.scene, state.width, state.height,
-                             state.raytrace_buffer, state.new_trace);
-            state.new_trace = false;
-            glutPostRedisplay();
-        }
     }
 }
 
@@ -265,43 +201,8 @@ static void display_callback()
 {
     assert(state.scene);
 
-    // only draw RT if the buffer exists and if window size didn't change
-    if (state.render_state == RENDER_RT && state.raytrace_buffer &&
-            state.width * state.height == state.buffer_size) {
-        // back up all state, set everything to identity
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        glPushAttrib(GL_ALL_ATTRIB_BITS);
-        // disable anything and everything remotely likely to be enabled
-        // that would mess up RasterPos or DrawPixels.
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_BLEND);
-        glDisable(GL_LIGHTING);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_ALPHA_TEST);
-        glDisable(GL_STENCIL_TEST);
-        glDisable(GL_SCISSOR_TEST);
-        // reset the color
-        glColor4d(1.0, 1.0, 1.0, 1.0);
-
-        glRasterPos2d(-1, -1);
-        glDrawPixels(state.width, state.height, GL_RGBA,
-                     GL_UNSIGNED_BYTE, state.raytrace_buffer);
-
-        // pop back state
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix();
-        glPopAttrib();
-    } else {
-        // invoke user render function
-        prj_render(state.scene);
-    }
+	// invoke user render function
+	prj_render(state.scene);
 
     // flush and swap the buffer
     glFlush();
@@ -331,8 +232,6 @@ static void print_usage(const char* progname)
         "\t\tLoads the given scene number as the initial scene.\n" \
         "\t-o / --output [FILENAME]\n" \
         "\t\tSets the filename used for screenshots.\n" \
-        "\t-r / --raytrace\n" \
-        "\t\tRaytraces the scene and saves to the output file without\n" \
         "\t\tloading a window. This is useful for tracing scenes in the\n" \
         "\t\tbackground or on machines without a display available.\n" \
         "\t-gldebug\n\t\tAfter processing callbacks and/or events, check if\n" \
@@ -359,8 +258,6 @@ static int getarg(int argc, char *argv[], int optc, const char* optv[])
 // the command line options
 const char* OPT_HP[] = { "-h", "--help" };
 #define OPTLEN_HP 2
-const char* OPT_RT[] = { "-r", "--raytrace" };
-#define OPTLEN_RT 2
 const char* OPT_SN[] = { "-s", "--scene" };
 #define OPTLEN_SN 2
 const char* OPT_OP[] = { "-o", "--output" };
@@ -404,67 +301,14 @@ static void app_initialize(int argc, char *argv[],
         }
     }
 
-    // search for raytrace argument which would preclude loading glut.
-    // if found, raytrace one scene and output the result to a file.
-    if ((index = getarg(argc, argv, OPTLEN_RT, OPT_RT)) != -1) {
-        FILE* file;
-        Scene scene;
-        bool new_trace = true;
-        unsigned char* buffer = 0;
-
-        // load the scene
-        if (!load_scene(&scene, state.scene_index)) {
-            std::cerr << "Error: scene load failed.\n";
-            return;
-        }
-        prj_initialize(&scene, false);
-        scene.camera.aspect = real_t(width)/real_t(height);
-
-        // create the buffer
-        buffer = new unsigned char[COLOR_SIZE * width * height];
-        if (!buffer) {
-            std::cerr << "Error: could not create buffer.\n";
-            return;
-        }
-
-        // check file writiability before we waste time with the render
-        file = fopen(screenshot_filename, "ab");
-        if (!file || fclose(file) != 0) {
-            std::cerr << "Error: cannot open file for writing\n";
-            return;
-        }
-
-        // raytrace the scene
-        std::cout << "Starting trace of scene....\n";
-        // invoke user raytrace update function until finished.
-        while (!rt_raytrace(&scene, width, height, buffer, new_trace)) {
-            new_trace = false;
-        }
-
-        // write to file
-        std::cout << "Trace completed, writing to file...\n";
-        if (!imageio_save_image(screenshot_filename, buffer, width, height)) {
-            std::cerr << "Error: wrting to file failed.\n";
-            return;
-        }
-
-        // clean up and return
-        std::cout << "Trace written to '" << screenshot_filename << "'.\n";
-        delete [] buffer;
-        exit(0);
-    }
-
     // init glut and parse out other args
     glutInit(&argc, argv);
 
     // initialize the application state
     state.width = width;
     state.height = height;
-    // raytrace buffer is RGBA 32-bit format
-    state.raytrace_buffer = 0;
     state.scene_state = SCENE_PLAYING;
     state.render_state = RENDER_GL;
-    state.raytracing = false;
     state.glsl_enabled = true;
 
     // create a window with double buffering and depth testing

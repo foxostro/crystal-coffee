@@ -7,19 +7,13 @@
  * @author Frank Palermo (fpalermo)
  */
 
-/*
-    EDIT THIS FILE FOR P1. However, do not change existing constructor
-    signatures. The staff scene loader requires all of those to be intact.
- */
-
 #ifndef _WATERSURFACE_H_
 #define _WATERSURFACE_H_
 
 #include "scene.h"
-#include "BufferObject.h"
 #include <vector>
 
-class WaterSurface: public UpdatableGeometry
+class WaterSurface
 {
 public:
     /**
@@ -37,16 +31,12 @@ public:
 
     /**
      * Construct a new watersurface.
-     * @param pos The world position.
-     * @param ori The world orientation.
-     * @param scl The world scale.
      * @param wave_points The list of wave-emitting points.
      * @param resx The mesh resolution along the local x axis.
      * @param resz The mesh resolution along the local z azis.
      * @param efc The shader effect to use for gl rendering.
      */
-    WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
-                 const WavePointList& wave_points,
+    WaterSurface(const WavePointList& wave_points,
                  int resx, int resz);
 
     virtual ~WaterSurface();
@@ -62,7 +52,9 @@ public:
 
     virtual void update(real_t time);
 
-	virtual void draw() const;
+	BufferObject<Vec3> vertex_buffer;
+	BufferObject<Vec3> normals_buffer;
+	BufferObject<index_t> index_buffer;
 
 private:
     // list of all wave-emitting points.
@@ -72,10 +64,6 @@ private:
     int resx, resz;
 
 	real_t * heightmap;
-
-	BufferObject<Vec3> vertex_buffer;
-	BufferObject<Vec3> normals_buffer;
-	BufferObject<index_t> index_buffer;
 	
 	// generate indices for the heightmap mesh
 	void generate_indices();
