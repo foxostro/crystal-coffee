@@ -23,27 +23,68 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
                            int resx, int resz)
 : UpdatableGeometry(pos, ori, scl),
   wave_points(wave_points), resx(resx), resz(resz),
-  heightmap(0),
-  vertices(0),
-  normals(0),
-  indices(0),
-  num_of_indices(0),
-  num_of_vertices(0)
+  heightmap(0)
 {
-	num_of_vertices = (resx+1) * (resz+1);
+	const size_t num_of_vertices = (resx+1) * (resz+1);
+
+	// Create the heightmap buffer and clear it
 	heightmap = new real_t[num_of_vertices];
-	vertices = new Vec3[num_of_vertices];
-	normals = new Vec3[num_of_vertices];
-
-	num_of_indices = resx * resz * 6;
-	indices = new index_t[num_of_indices];
-
 	memset(heightmap, 0, sizeof(real_t) * num_of_vertices);
-	memset(vertices, 0, sizeof(Vec3) * num_of_vertices);
-	memset(normals, 0, sizeof(Vec3) * num_of_vertices);
-	memset(indices, 0, sizeof(index_t) * num_of_indices);
 
-	generate_indices();
+	// Create the vertex buffer, and clear it
+	{
+		Vec3 * vertices = new Vec3[num_of_vertices];
+		memset(vertices, 0, sizeof(Vec3) * num_of_vertices);
+		vertex_buffer.recreate(num_of_vertices, vertices, DYNAMIC_DRAW);
+		delete [] vertices;
+	}
+	
+	// Create the normals buffer, and clear it
+	{
+		Vec3 * normals = new Vec3[num_of_vertices];
+		memset(normals, 0, sizeof(Vec3) * num_of_vertices);
+		normals_buffer.recreate(num_of_vertices, normals, DYNAMIC_DRAW);
+		delete [] normals;
+	}
+
+	// Create the normals buffer, and clear it
+	{
+		Vec3 * normals = new Vec3[num_of_vertices];
+		memset(normals, 0, sizeof(Vec3) * num_of_vertices);
+		normals_buffer.recreate(num_of_vertices, normals, DYNAMIC_DRAW);
+		delete [] normals;
+	}
+
+	// Create the indices buffer and define the mesh topology
+	{
+		const size_t num_of_indices = resx * resz * 6;
+		index_t * indices = new index_t[num_of_indices];
+
+		size_t idx;
+		int x, z;
+
+		for(idx = 0, x = 0; x < resx; x++)
+		{
+			for(z = 0; z < resz; z++)
+			{
+				// triangle 1
+				indices[idx+0] = (x+0)*(resz+1) + (z+1);
+				indices[idx+1] = (x+1)*(resz+1) + (z+0);
+				indices[idx+2] = (x+0)*(resz+1) + (z+0);
+
+				// triangle 2
+				indices[idx+3] = (x+0)*(resz+1) + (z+1);
+				indices[idx+4] = (x+1)*(resz+1) + (z+1);
+				indices[idx+5] = (x+1)*(resz+1) + (z+0);
+
+				idx+=6;
+				assert(idx <= num_of_indices);
+			}
+		}
+
+		index_buffer.recreate(num_of_indices, indices, STATIC_DRAW);
+		delete [] indices;
+	}
 
 	update(0.0);
 }
@@ -51,9 +92,6 @@ WaterSurface::WaterSurface(const Vec3& pos, const Quat& ori, const Vec3& scl,
 WaterSurface::~WaterSurface()
 {
 	delete [] heightmap;
-	delete [] vertices;
-	delete [] normals;
-	delete [] indices;
 }
 
 real_t WaterSurface::get_height(const Vec2& pos, real_t time)
@@ -69,30 +107,6 @@ real_t WaterSurface::get_height(const Vec2& pos, real_t time)
     }
 
     return h;
-}
-
-void WaterSurface::generate_indices()
-{
-	int idx, x, z;
-	
-	for(idx = 0, x = 0; x < resx; x++)
-	{
-		for(z = 0; z < resz; z++)
-		{
-			// triangle 1
-			indices[idx+0] = (x+0)*(resz+1) + (z+1);
-			indices[idx+1] = (x+1)*(resz+1) + (z+0);
-			indices[idx+2] = (x+0)*(resz+1) + (z+0);
-
-			// triangle 2
-			indices[idx+3] = (x+0)*(resz+1) + (z+1);
-			indices[idx+4] = (x+1)*(resz+1) + (z+1);
-			indices[idx+5] = (x+1)*(resz+1) + (z+0);
-
-			idx+=6;
-			assert((unsigned)idx <= num_of_indices);
-		}
-	}
 }
 
 void WaterSurface::generate_heightmap(real_t time)
@@ -138,20 +152,27 @@ Vec3 WaterSurface::compute_normal(real_t *heightmap,
 }
 
 void WaterSurface::generate_normals()
-{	
+{
+	Vec3 * normals = (Vec3 *)normals_buffer.lock();
+
 	for(int x=0; x<=resx; x++)
 	{
 		for(int z=0; z<=resz; z++)
 		{
-			set_normal(x, z, compute_normal(heightmap, resx, resz, x, z));
+			set_normal(normals, x, z,
+			           compute_normal(heightmap, resx, resz, x, z));
 		}
 	}
+
+	normals_buffer.unlock();
 }
 
 void WaterSurface::generate_vertices()
 {
 #define NX(x) ((real_t)(x)/resx*2-1)
 #define NZ(z) ((real_t)(z)/resz*2-1)
+
+	Vec3 * vertices = (Vec3 *)vertex_buffer.lock();
 
 	// fill in vertices
 	for(int x=0; x <=resx; x++)
@@ -163,9 +184,11 @@ void WaterSurface::generate_vertices()
 			v.x = NX(x);
 			v.z = NZ(z);
 			v.y = heightmap[x*resz + z];
-			set_vertex(x, z, v);
+			set_vertex(vertices, x, z, v);
 		}
 	}
+
+	vertex_buffer.unlock();
 	
 #undef NX
 #undef NZ
@@ -185,15 +208,20 @@ void WaterSurface::draw() const
 
 	set_transformation();
 
-	glEnableClientState(GL_VERTEX_ARRAY);
+	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_DOUBLE, 0, normals);
-	glVertexPointer(3, GL_DOUBLE, 0, vertices);
+	normals_buffer.bind();
+	glNormalPointer(GL_DOUBLE, 0, 0);
 
-	glDrawElements(GL_TRIANGLES,
-	               num_of_indices,
-				   GL_UNSIGNED_INT,
-				   indices);
+	// Bind the vertex buffer
+	glEnableClientState(GL_VERTEX_ARRAY);
+	vertex_buffer.bind();
+	glVertexPointer(3, GL_DOUBLE, 0, 0);
+
+	// And actually render the batch using the element buffer object's indices
+	GLsizei count = index_buffer.getNumber();
+	index_buffer.bind();
+	glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
@@ -201,7 +229,7 @@ void WaterSurface::draw() const
 	glPopMatrix();
 }
 
-void WaterSurface::set_vertex(int x, int z, Vec3 v)
+void WaterSurface::set_vertex(Vec3 * vertices, int x, int z, Vec3 v)
 {
 	assert(x <= resx);
 	assert(x >= 0);
@@ -210,7 +238,7 @@ void WaterSurface::set_vertex(int x, int z, Vec3 v)
 	vertices[x*(resz+1)+z] = v;
 }
 
-void WaterSurface::set_normal(int x, int z, Vec3 n)
+void WaterSurface::set_normal(Vec3 * normals, int x, int z, Vec3 n)
 {
 	assert(x <= resx);
 	assert(x >= 0);
