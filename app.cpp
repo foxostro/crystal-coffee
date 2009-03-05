@@ -107,7 +107,7 @@ void app_toggle_scene()
     state.scene = new Scene();
     load_scene(state.scene, state.scene_index);
     update_camera_aspect();
-    prj_initialize(state.scene, true);
+    prj_initialize(state.scene);
 }
 
 /**
@@ -469,9 +469,7 @@ static void app_initialize(int argc, char *argv[],
     }
     update_camera_aspect();
 
-    prj_initialize(state.scene, true);
-
-    // TODO: initialize the gui
+    prj_initialize(state.scene);
 
     // set the frame rate (fixed time-step)
     period = static_cast<int>(1000.0/fps); // frame period in milliseconds

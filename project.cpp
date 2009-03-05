@@ -21,16 +21,16 @@ static real_t sim_time;
 
 static int num_gl_lights=8;
 
-void set_light_positions(const Scene::LightList & lights);
-void init_light_properties(const Scene::LightList & lights);
+static void set_light_positions(const Scene::LightList & lights);
+static void init_light_properties(const Scene::LightList & lights);
 
-void draw(RenderInstance *o)
+static void draw(RenderInstance *o)
 {
 	assert(o);
 	o->draw();
 }
 
-void init_resource(SceneResource * resource)
+static void init_resource(SceneResource * resource)
 {
 	assert(resource);
 	resource->init();
@@ -39,33 +39,26 @@ void init_resource(SceneResource * resource)
 /**
  * Initializes all state for the given scene.
  * @param scene The next scene that will be drawn.
- * @param is_gl_context True if there is a valid opengl context. If false, then
- *  no opengl calls should be made. Only state for raytracing should be set up.
- * @remark Unless you plan on using the --raytrace command line option, you may
- *  ignore is_gl_context. It will always be true when the program is run without
- *  that argument.
  */
-void prj_initialize(Scene* scene, bool is_gl_context)
+void prj_initialize( Scene* scene )
 {
 	assert(scene);
 	
     // reset scene time
     sim_time = scene->start_time;
 
-    if (is_gl_context) {
-		GLfloat lmodel_ambient[] = { (GLfloat)scene->ambient_light.x,
-		                             (GLfloat)scene->ambient_light.y,
-		                             (GLfloat)scene->ambient_light.z, 1 };
-		glClearColor(0, 0, 0, 1);
-		glShadeModel(GL_SMOOTH);
-		glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-		glEnable(GL_LIGHTING);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_NORMALIZE);
-		glEnable(GL_CULL_FACE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glGetIntegerv(GL_MAX_LIGHTS, &num_gl_lights);
-    }
+	GLfloat lmodel_ambient[] = { (GLfloat)scene->ambient_light.x,
+	                             (GLfloat)scene->ambient_light.y,
+	                             (GLfloat)scene->ambient_light.z, 1 };
+	glClearColor(0, 0, 0, 1);
+	glShadeModel(GL_SMOOTH);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_CULL_FACE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glGetIntegerv(GL_MAX_LIGHTS, &num_gl_lights);
     
     // Initialize scene resources
 	for_each(scene->resources.begin(),
@@ -122,7 +115,7 @@ static void set_camera(const Camera &camera) {
 			  upx, upy, upz);
 }
 
-void set_light_positions(const Scene::LightList & lights)
+static void set_light_positions(const Scene::LightList & lights)
 {
 	for(int i=0; i<num_gl_lights && i < (int)lights.size(); ++i)
 	{
@@ -134,7 +127,7 @@ void set_light_positions(const Scene::LightList & lights)
 	}
 }
 
-void init_light_properties(const Scene::LightList & lights)
+static void init_light_properties(const Scene::LightList & lights)
 {
 	const GLfloat catt = 1;
 	const GLfloat latt = 0;

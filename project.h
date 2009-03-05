@@ -69,7 +69,7 @@ bool ldr_load_scene(Scene* scene, int num);
 
 /* project.cpp defines and prototypes */
 
-void prj_initialize(Scene* scene, bool is_gl_context);
+void prj_initialize(Scene* scene);
 void prj_update(Scene* scene, double time);
 void prj_render(Scene* scene);
 
