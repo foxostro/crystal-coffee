@@ -11,12 +11,16 @@ solution "crystal-coffee"
             		"glu32",
             		"glut32",
             		"glew32",
-            		"libpng" }
+            		"DevIL",
+            		"ILU",
+            		"ILUT" }
                     
         configuration "linux"
         	links { "GL",
                     "GLU",
-                    "png",
+            		"il",
+            		"ilu",
+            		"ilut",
                     "glut" }
                     
         configuration "gmake"

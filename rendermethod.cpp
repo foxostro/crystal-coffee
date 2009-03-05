@@ -8,7 +8,6 @@
 #include "glheaders.h"
 #include "rendermethod.h"
 #include "scene.h"
-#include "imageio.h"
 #include <iostream>
 #include <fstream>
 #include <cstdlib>

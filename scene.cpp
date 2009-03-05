@@ -11,7 +11,7 @@
 #include "vec/mat.h"
 #include "scene.h"
 #include "glheaders.h"
-#include "imageio.h"
+#include "devil_wrapper.h"
 #include <iostream>
 
 bool app_is_glsl_enabled();
@@ -336,29 +336,11 @@ Texture::~Texture()
 
 void Texture::load_texture()
 {
-	unsigned char* texture;
-	int tex_width, tex_height;
-
 	// don't load texture if already loaded or filename is blank
-	if(gltex_name || texture_name.empty())
-		return;
-
-	std::cout << "loading texture " << texture_name << "...\n";
-	texture = imageio_load_image(texture_name.c_str(),
-	                             &tex_width,
-	                             &tex_height);
-
-	// Create an OpenGL texture        
-	glGenTextures(1, &gltex_name);
-	glBindTexture(GL_TEXTURE_2D, gltex_name);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0,
-	             GL_RGBA, GL_UNSIGNED_BYTE, texture);
-
-	free(texture);
+	if(!gltex_name && !texture_name.empty()) {
+		std::clog << "loading texture " << texture_name << std::endl;
+		gltex_name = ilutGLLoadImage(const_cast<char*>(texture_name.c_str()));
+	}
 }
 
 void calculate_triangle_tangent(const Vec3 *vertices,

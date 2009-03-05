@@ -13,49 +13,8 @@
 #include <iostream>
 #include <errno.h>
 
+#include "string_helper.h"
 #include "searchfile.h"
-
-/**
-Finds the extension marker in a string.
-findExtensionDelimeter determines the index of the extension delimiter
-character in a given fileName, when possible. For example, calling with
-the fileName = "image.jpeg" will return 5 and "data/text.txt" will
-return 9.  Also be aware that "data/text.txt.bak" will return 13, as
-this is the last string that is clearly identifiable as a file
-extension.
-@param fileName Name of the file
-@return Index of the extension delimiter character in the fileName.
-If there is no extension, then the length of the filename is returned.
-*/
-static size_t findExtensionDelimeter(const std::string &fileName)
-{
-	for (size_t i=0; i<fileName.length(); ++i) {
-		char c = fileName[fileName.length() - i - 1];
-
-		if (c == '.') {
-			// Found the delimiter, return its index
-			return fileName.length() - i - 1;
-		}
-
-		if (c == '\\' || c == '/') {
-			// Found that there was no delimiter, return the index of the end of the string
-			return fileName.length();
-		}
-	}
-
-	// Found that there was no delimiter, return the index of the end of the string
-	return fileName.length();
-}
-
-/**
-Gets the file extension from a file path
-@param fileName The name of the file to extract the extension from
-@return Returns the file extension
-*/
-static std::string getFileExtension(const std::string &fileName)
-{
-	return fileName.substr(findExtensionDelimeter(fileName), fileName.length());
-}
 
 std::vector<std::string> SearchFile(const std::string &_searchDirectory,
                             const std::string &fileExtension) {

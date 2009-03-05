@@ -10,7 +10,7 @@
  */
 
 #include "glheaders.h"
-#include "imageio.h"
+#include "devil_wrapper.h"
 #include "project.h"
 #include "scene.h"
 #include "searchfile.h"
@@ -173,11 +173,21 @@ static void menu_callback(int menu_item)
         // write a screenshot out to a file
         if (gui_screenshot_filename) {
 			std::string filename = gen_screenshot_filename(gui_screenshot_filename);
+#if 0
             if (imageio_save_screenshot(filename.c_str()))
                 std::cout << "Saved screenshot to '";
             else
-                std::cerr << "Error: could not save screenshot to '";
-            std::cout << filename << "'.\n";
+				std::cerr << "Error: could not save screenshot to '";
+			std::cout << filename << "'.\n";
+#else
+			ILuint handle=0;
+			ilGenImages(1, &handle);
+			ilBindImage(handle);
+			ilutGLScreen();
+			ilSaveImage(const_cast<char*>(filename.c_str()));
+			ilDeleteImages(1, &handle);
+			std::cout << "Saved screenshot to '" << filename << "'.\n";
+#endif
         }
         break;
     case MENU_TOGGLE_SCENE:

@@ -14,10 +14,10 @@
 #endif
 
 #include "glheaders.h"
-#include "imageio.h"
 #include "project.h"
 #include "scene.h"
 #include "treelib.h"
+#include "devil_wrapper.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -321,6 +321,9 @@ static void app_initialize(int argc, char *argv[],
 
 	// Initialize TreeLib once for the entire application
 	treelib_init();
+
+	// Initialize DevIL once for the entire application
+	devil_init();
 
     // load first scene
     state.scene = new Scene();

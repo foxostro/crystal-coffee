@@ -6,6 +6,31 @@
 #include <cmath>
 #include "string_helper.h"
 
+size_t findExtensionDelimeter(const std::string &fileName)
+{
+	for (size_t i=0; i<fileName.length(); ++i) {
+		char c = fileName[fileName.length() - i - 1];
+
+		if (c == '.') {
+			// Found the delimiter, return its index
+			return fileName.length() - i - 1;
+		}
+
+		if (c == '\\' || c == '/') {
+			// Found that there was no delimiter, return the index of the end of the string
+			return fileName.length();
+		}
+	}
+
+	// Found that there was no delimiter, return the index of the end of the string
+	return fileName.length();
+}
+
+std::string getFileExtension(const std::string &fileName)
+{
+	return fileName.substr(findExtensionDelimeter(fileName), fileName.length());
+}
+
 int stoi(const std::string &s) {
 	if (s.empty())
 		throw std::runtime_error("stoi: cannot convert an empty string");
