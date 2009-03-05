@@ -1,7 +1,6 @@
 solution "crystal-coffee"
     configurations { "Debug", "Release" }
 
-    -- A project defines one build target
     project "crystal-coffee"
         kind "ConsoleApp"
         language "C++"
@@ -20,14 +19,17 @@ solution "crystal-coffee"
                     "png",
                     "glut" }
                     
-        configuration "vs2008"
-            includedirs { "$(ProjectDir)", "$(ProjectDir)include" }
-            libdirs { "$(ProjectDir)lib" }
-            linkoptions { "/NODEFAULTLIB:MSVCRT", "/NODEFAULTLIB:LIBCMT" }
-                    
         configuration "gmake"
             includedirs { "$(pwd)", path.join("$(pwd)", "include") }
             libdirs { path.join("$(pwd)", "lib") }
+                    
+        configuration "vs2008"
+            includedirs { "$(ProjectDir)", "$(ProjectDir)include" }
+            libdirs { "$(ProjectDir)lib" }
+            linkoptions { "/NODEFAULTLIB:LIBCMT" }
+            
+        configuration { "vs2008", "Debug" } 
+            linkoptions { "/NODEFAULTLIB:MSVCRT" }
         
         configuration "Debug"
             defines { "DEBUG" }
@@ -36,5 +38,5 @@ solution "crystal-coffee"
         
         configuration "Release"
             defines { "NDEBUG" }
-            flags { "Optimize" }
+            flags { "OptimizeSpeed" }
             targetname "crystal-coffee"
