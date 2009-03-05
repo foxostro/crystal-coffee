@@ -77,7 +77,7 @@ WaterSurface::WaterSurface(Scene * scene,
 		delete [] indices;
 	}
 
-	update(0.0);
+	tick(0.0);
 }
 
 WaterSurface::~WaterSurface()
@@ -189,7 +189,7 @@ void WaterSurface::generate_vertices()
 #undef NZ
 }
 
-void WaterSurface::update(real_t time)
+void WaterSurface::tick(real_t time)
 {
 	generate_heightmap(time);
 	generate_normals();

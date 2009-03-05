@@ -17,6 +17,16 @@
 #include <string>
 #include <vector>
 
+class Tickable
+{
+public:
+	virtual ~Tickable() { /* Do Nothing */ }
+	virtual void tick(real_t time) = 0;
+
+protected:
+	Tickable()  { /* Do Nothing */ }
+};
+
 struct Face
 {
 	Vec3 vertices[3];
@@ -372,6 +382,7 @@ public:
     typedef std::vector<SceneResource*> SceneResourceList;
 	typedef std::vector<RenderMethod*> RenderMethodList;
 	typedef std::vector<RenderInstance*> RenderInstanceList;
+	typedef std::vector<Tickable*> TickableList;
 
     Camera camera;
     Vec3 ambient_light;
@@ -379,6 +390,7 @@ public:
 	SceneResourceList resources;
 	RenderMethodList rendermethods;
 	RenderInstanceList instances;
+	TickableList tickables;
 
     // the absolute time at which to start updates for ths scene.
     real_t start_time;

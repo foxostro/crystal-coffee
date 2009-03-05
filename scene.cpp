@@ -517,16 +517,9 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-	for(SceneResourceList::iterator i=resources.begin();
-	    i!=resources.end(); ++i)
-	{
-		delete *i;
-	}
-    
-    for(RenderMethodList::iterator i=rendermethods.begin();
-        i!=rendermethods.end(); ++i)
-    {
-		delete *i;
-	}
+	for(SceneResourceList::iterator  i=resources.begin();     i!=resources.end();     ++i) delete *i;    
+	for(RenderMethodList::iterator   i=rendermethods.begin(); i!=rendermethods.end(); ++i) delete *i;
+	for(RenderInstanceList::iterator i=instances.begin();     i!=instances.end();     ++i) delete *i;
+	for(TickableList::iterator       i=tickables.begin();     i!=tickables.end();     ++i) delete *i;
 }
 

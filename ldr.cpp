@@ -248,32 +248,9 @@ static void ldr_load_fresnel_sphere_scene(Scene * scene)
 	cam.far_clip = 100.0;
 }
 
-RenderMethod * create_water(Scene * scene)
+static WaterSurface * gen_water_surface(Scene * scene)
 {
-	Material * mat;
-	Texture * spheremap;
-	ShaderProgram * fresnel;
-	RenderMethod * water;
-
-
-	mat = new Material();
-	mat->ambient = Vec3(0.0, 0.2, 0.3);
-	mat->diffuse = Vec3(0.0, 0.2, 0.3); // blue water
-	mat->shininess = 20;
-	mat->specular = Vec3::Ones;
-	scene->resources.push_back(mat);
-
-
-	spheremap = new Texture("images/spheremap_stpeters.png");
-	scene->resources.push_back(spheremap);
-
-
-	fresnel = new ShaderProgram("shaders/fresnel_vert.glsl",
-	                            "shaders/fresnel_frag.glsl");
-	scene->resources.push_back(fresnel);
-
-
-	/************************************************************************/
+	WaterSurface * watergeom;
 	WaterSurface::WavePointList wave_points;
 	WaterSurface::WavePoint* p;
 
@@ -293,18 +270,56 @@ RenderMethod * create_water(Scene * scene)
 	p->timerate = -8*PI;
 	p->period = 20*PI;
 
-	WaterSurface water_surface(scene, wave_points, 240, 240);
+	watergeom = new WaterSurface(scene, wave_points, 240, 240);
 
-	/************************************************************************/
+	scene->tickables.push_back(watergeom);
+	
+	return watergeom;
+}
 
-	water = new RenderMethod_Fresnel(water_surface.vertices_buffer,
-	                                 water_surface.normals_buffer,
-									 water_surface.indices_buffer,
+RenderMethod * create_water(Scene * scene)
+{
+	Material * mat;
+	Texture * spheremap;
+	WaterSurface * watergeom;
+	ShaderProgram * fresnel;
+	RenderMethod * water;
+
+
+
+	mat = new Material();
+	mat->ambient = Vec3(0.0, 0.2, 0.3);
+	mat->diffuse = Vec3(0.0, 0.2, 0.3); // blue water
+	mat->shininess = 20;
+	mat->specular = Vec3::Ones;
+	scene->resources.push_back(mat);
+
+
+
+	spheremap = new Texture("images/spheremap_stpeters.png");
+	scene->resources.push_back(spheremap);
+
+
+
+	fresnel = new ShaderProgram("shaders/fresnel_vert.glsl", "shaders/fresnel_frag.glsl");
+	scene->resources.push_back(fresnel);
+
+
+
+	watergeom = gen_water_surface(scene);
+
+
+
+	water = new RenderMethod_Fresnel(watergeom->vertices_buffer,
+	                                 watergeom->normals_buffer,
+									 watergeom->indices_buffer,
 								     fresnel,
 								     mat,
 								     spheremap,
 								     1.33);
 	scene->rendermethods.push_back(water);
+
+
 
 	return water;
 }

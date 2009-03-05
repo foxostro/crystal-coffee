@@ -87,12 +87,10 @@ void prj_update(Scene* scene, double delta_time)
 	
     // increment time and update all updatable geometries
     sim_time += PERIOD;
-    /*
-    Scene::UpdatableGeometryList& list = scene->updatable_objects;
-    for (Scene::UpdatableGeometryList::iterator i = list.begin();
+    Scene::TickableList& list = scene->tickables;
+    for (Scene::TickableList::iterator i = list.begin();
             i != list.end(); ++i)
-        (*i)->update(sim_time);
-	*/
+        (*i)->tick(sim_time);
 }
 
 static void set_camera(const Camera &camera) {

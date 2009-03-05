@@ -14,7 +14,7 @@
 #include "scene.h"
 #include <vector>
 
-class WaterSurface
+class WaterSurface : public Tickable
 {
 public:
     /**
@@ -51,8 +51,9 @@ public:
      */
     real_t get_height(const Vec2& pos, real_t time);
 
-    virtual void update(real_t time);
+    virtual void tick(real_t time);
 
+public:
 	BufferObject<Vec3> * vertices_buffer;
 	BufferObject<Vec3> * normals_buffer;
 	BufferObject<index_t> * indices_buffer;
