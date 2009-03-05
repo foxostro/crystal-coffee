@@ -9,6 +9,7 @@
 #include "glheaders.h"
 #include "project.h"
 #include "scene.h"
+#include "treelib.h"
 #include "geom/sphere.h"
 #include <iostream>
 using namespace std;
@@ -71,7 +72,7 @@ void prj_initialize(Scene* scene, bool is_gl_context)
 	         scene->resources.end(),
 	         &init_resource);
 	         
-	init_light_properties(scene->lights);	         
+	init_light_properties(scene->lights);
 }
 
 /**
@@ -177,4 +178,6 @@ void prj_render(Scene* scene)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	for_each(scene->instances.begin(), scene->instances.end(), &draw);
+
+	treelib_render();
 }

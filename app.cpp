@@ -17,6 +17,7 @@
 #include "imageio.h"
 #include "project.h"
 #include "scene.h"
+#include "treelib.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -317,6 +318,9 @@ static void app_initialize(int argc, char *argv[],
     // use glew for windows to load extension libraries
     glewInit();
 #endif
+
+	// Initialize TreeLib once for the entire application
+	treelib_init();
 
     // load first scene
     state.scene = new Scene();

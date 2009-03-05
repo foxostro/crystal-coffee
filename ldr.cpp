@@ -8,12 +8,20 @@
 
 #include "project.h"
 #include "scene.h"
+#include "treelib.h"
 #include "geom/sphere.h"
 #include "geom/trianglesoup.h"
 #include "geom/watersurface.h"
 #include "geom/pool.h"
 
 #include <iostream>
+
+static RenderMethod * create_tree(Scene * scene)
+{
+	RenderMethod * rendermethod = new RenderMethod_TreeLib(gen_tree());
+	scene->rendermethods.push_back(rendermethod);
+	return rendermethod;
+}
 
 static RenderMethod * create_tex_sphere(Scene * scene, const char * tex)
 {
@@ -331,6 +339,7 @@ static void ldr_load_pool_scene(Scene * scene)
 	RenderMethod * water = create_water(scene);
 	RenderMethod * fresnel_sphere = create_fresnel_sphere(scene);
 	RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
+	RenderMethod * tree = create_tree(scene);
 
 	scene->instances.push_back(new RenderInstance(Mat4::Identity, pool));
 
@@ -354,11 +363,11 @@ static void ldr_load_pool_scene(Scene * scene)
 													   0.0, 0.0, 0.0, 1.0),
 												  fresnel_sphere));
 
-	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
-	                                                   0.0, rad, 0.0, POY+rad,
-													   0.0, 0.0, rad, (POZ+PIZ)/2,
+	scene->instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
+	                                                   0.0, 1.0, 0.0, POY,
+													   0.0, 0.0, 1.0, (POZ+PIZ)/2,
 													   0.0, 0.0, 0.0, 1.0),
-												  swirly_sphere));
+												  tree));
 
 	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
 	                                                   0.0, rad, 0.0, POY+rad,
@@ -368,7 +377,7 @@ static void ldr_load_pool_scene(Scene * scene)
 
 	// Set up a light
 	Light light;
-	light.position = Vec3(-4, 8.5, 8) * 30;
+	light.position = Vec3(-4, 8.5, -8) * 30;
 	light.color = Vec3(.7,.7,.7);
 	scene->lights.push_back(light);
 
