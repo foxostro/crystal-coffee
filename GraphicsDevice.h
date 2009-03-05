@@ -33,7 +33,9 @@ public:
 	/** Creates a window for OpenGL rendering */
 	GraphicsDevice(const ivec2 &windowSize,
 	               bool fullscreen,
-				   const std::string title);
+				   bool resizable,
+				   bool showcursor,
+				   const char * title);
 	
 	/** Gets the OpenGL projection matrix */
 	static Mat4 getProjectionMatrix();

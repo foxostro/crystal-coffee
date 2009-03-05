@@ -1,6 +1,6 @@
 /**
  * @file glheaders.h
- * @brief Includes the correct opengl and glut header files depending on the
+ * @brief Includes the correct opengl header files depending on the
  *  platform. Use this file to include any gl header files.
  */
 

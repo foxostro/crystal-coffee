@@ -1,6 +1,6 @@
 /**
  * @file app.cpp
- * @brief The application entry point, glut code, and application state
+ * @brief The application entry point
  *  management code.
  *
  * @author Eric Butler (edbutler)
@@ -18,6 +18,7 @@
 #include "project.h"
 #include "scene.h"
 #include "timer.h"
+#include "SDLinput.h"
 #include "treelib.h"
 #include "devil_wrapper.h"
 #include "graphicsdevice.h"
@@ -28,6 +29,13 @@
 
 /* the number of array elements per color */
 #define COLOR_SIZE 4
+
+#define CAMERA_TRANSLATION_SCALE_FACTOR (0.01)
+#define CAMERA_ROTATION_SCALE_FACTOR (0.01)
+
+#define MOUSE_LEFT_BUTTON (0)
+#define MOUSE_MIDDLE_BUTTON (1)
+#define MOUSE_RIGHT_BUTTON (2)
 
 Timer g_timer;
 GraphicsDevice *g_graphicsdevice = 0;
@@ -56,6 +64,7 @@ struct AppState
 
     SceneState scene_state;
     RenderState render_state;
+	SDLinput * input;
 };
 
 /**
@@ -156,21 +165,188 @@ void app_set_render_state(RenderState s)
 void app_exit()
 {
     // clean up resources
+	delete state.input;
     delete state.scene;
 
-    // this is the only way to terminate GLUT without extensions.
     exit(0);
 }
 
-/**
- * The glut window resize callback.
- */
-static void window_resize_callback(int width, int height)
+static void window_resize_callback(const ivec2 &dimensions)
 {
     // update window information
-    state.width = width;
-    state.height = height;
+    state.width = dimensions.x;
+    state.height = dimensions.y;
     update_camera_aspect();
+}
+
+/* different camera operations controlled with the mouse */
+enum CameraControl
+{
+	CC_NONEE, // represents event of doing nothing
+	CC_FOCUS_PITCH,
+	CC_FOCUS_YAW,
+	CC_FOCUS_ZOOM,
+	CC_TRANSLATE_X,
+	CC_TRANSLATE_Y,
+	CC_TRANSLATE_Z,
+	CC_ROLL,
+	CC_PITCH,
+	CC_YAW
+};
+
+/*
+Camera controls:
+left-click, x-axis yaws around focus
+left-click, y-axis pitches around focus
+middle-click, y-axis zooms toward/away from focus
+
+ctrl + left-click, x-axis controls translation along local x-axis
+ctrl + left-click, y-axis controls translation along local y-axis
+ctrl + middle-click, y-axis controls translation along local z-axis
+
+shift + left-click, x-axis controls yaw
+shift + left-click, y-axis controls pitch
+shift + middle-click, y-axis controls roll
+
+array elements are indexed by
+control_map[modifier key state][button][mouse axis]
+*/
+static const CameraControl control_map[3][2][2] = {
+	{
+		{ CC_FOCUS_YAW  , CC_FOCUS_PITCH },
+		{ CC_NONEE      , CC_FOCUS_ZOOM  }
+	},
+	{
+		{ CC_TRANSLATE_X, CC_TRANSLATE_Y },
+		{ CC_NONEE      , CC_TRANSLATE_Z }
+	},
+	{
+		{ CC_YAW        , CC_PITCH       },
+		{ CC_NONEE      , CC_ROLL,       }
+	}
+};
+
+/**
+* The current state of the mouse.
+*/
+struct MouseState
+{
+	/* mouse position as of last callback */
+	int x, y;
+
+	bool button_state[3];
+
+	/* The current camera control state of the x and y screen axes. */
+	CameraControl camera_control[2];
+
+	MouseState() : x(0), y(0)
+	{
+		button_state[0] = false; // left
+		button_state[1] = false; // middle
+		button_state[2] = false; // right
+		camera_control[0] = CC_NONEE;
+		camera_control[1] = CC_NONEE;
+	}
+};
+
+/* the mouse state */
+static MouseState mouse;
+
+/**
+* Applies the given control to the current scene's camera.
+* @param cc The control to apply.
+* @param delta The distance of mouse movement.
+*/
+static void apply_control(CameraControl cc, int delta)
+{
+	// if nothing, just return
+	if (cc == CC_NONEE)
+		return;
+
+	assert(app_get_scene());
+	Camera& cam = app_get_scene()->camera;
+	real_t angle = CAMERA_ROTATION_SCALE_FACTOR * delta;
+	real_t distance = CAMERA_TRANSLATION_SCALE_FACTOR * delta;
+	real_t new_focus_dist;
+
+	switch (cc)
+	{
+	case CC_FOCUS_YAW:
+		cam.yaw_about_focus(-angle);
+		break;
+	case CC_FOCUS_PITCH:
+		cam.pitch_about_focus(-angle);
+		break;
+	case CC_FOCUS_ZOOM:
+		// change focus based on an exponential scale
+		new_focus_dist = pow(2, distance) * cam.focus_dist;
+		cam.translate(Vec3::UnitZ * (new_focus_dist - cam.focus_dist));
+		cam.focus_dist = new_focus_dist;
+		break;
+	case CC_TRANSLATE_X:
+		cam.translate(-Vec3::UnitX * distance);
+		break;
+	case CC_TRANSLATE_Y:
+		cam.translate(Vec3::UnitY * distance);
+		break;
+	case CC_TRANSLATE_Z:
+		cam.translate(Vec3::UnitZ * distance);
+		break;
+	case CC_ROLL:
+		cam.roll(angle);
+		break;
+	case CC_PITCH:
+		cam.pitch(angle);
+		break;
+	case CC_YAW:
+		cam.yaw(angle);
+		break;
+	default:
+		break;
+	}
+}
+
+static void mouse_button_handler(int button, bool down, int x, int y)
+{
+	mouse.button_state[button] = down;
+
+	// left and middle button control camera
+	if (button!=MOUSE_RIGHT_BUTTON) {
+		// if either is released, cancel controls
+		if(!down) {
+			mouse.camera_control[0] = CC_NONEE;
+			mouse.camera_control[1] = CC_NONEE;
+		} else {
+			/*
+			int modifiers = glutGetModifiers();
+			int modifier_index;
+			if (modifiers & GLUT_ACTIVE_CTRL)
+				modifier_index = MODIFIER_CTRL;
+			else if (modifiers & GLUT_ACTIVE_SHIFT)
+				modifier_index = MODIFIER_SHIFT;
+			else
+				modifier_index = MODIFIER_NONE;
+			*/
+			int modifier_index = 0;
+
+			mouse.camera_control[0] = control_map[modifier_index][button][0];
+			mouse.camera_control[1] = control_map[modifier_index][button][1];
+		}
+	}
+}
+
+static void mouse_button_left_down(int x, int y)  { mouse_button_handler(MOUSE_LEFT_BUTTON, true, x, y);   }
+static void mouse_button_left_up(int x, int y)    { mouse_button_handler(MOUSE_LEFT_BUTTON, false, x, y);  }
+static void mouse_button_right_down(int x, int y) { mouse_button_handler(MOUSE_RIGHT_BUTTON, true, x, y);  }
+static void mouse_button_right_up(int x, int y)   { mouse_button_handler(MOUSE_RIGHT_BUTTON, false, x, y); }
+
+static void mouse_motion_callback(int x, int y, int xrel, int yrel)
+{
+	mouse.x = x;
+	mouse.y = y;
+
+	if(xrel != 0) { apply_control(mouse.camera_control[0], xrel); }
+	if(yrel != 0) { apply_control(mouse.camera_control[1], yrel); }
 }
 
 /**
@@ -264,7 +440,20 @@ static void app_initialize(int argc, char *argv[],
     state.render_state = RENDER_GL;
 
     // create a window and an OpenGL context
-	g_graphicsdevice = new GraphicsDevice(ivec2(width, height), false, title);
+	g_graphicsdevice = new GraphicsDevice(ivec2(width, height),
+	                                      false, // windowed
+										  true,  // resizable window
+										  true,  // show the mouse cursor
+										  title);
+
+	// initialize input devices
+	state.input = new SDLinput(false); // do not grab the mouse
+	state.input->callback_video_resize = &window_resize_callback;
+	state.input->callback_mouse_motion = &mouse_motion_callback;
+	state.input->callback_mouse_button_left_down = &mouse_button_left_down;
+	state.input->callback_mouse_button_left_up = &mouse_button_left_up;
+	state.input->callback_mouse_button_right_down = &mouse_button_right_down;
+	state.input->callback_mouse_button_right_up = &mouse_button_right_up;
 
 	// Initialize TreeLib once for the entire application
 	treelib_init();
@@ -290,6 +479,10 @@ static void app_initialize(int argc, char *argv[],
 
 	while(true) {
 		assert(state.scene);
+		assert(state.input);
+
+		// poll for input events
+		state.input->poll();
 
 		if (state.scene_state == SCENE_PLAYING) {
 			// invoke user scene update function
