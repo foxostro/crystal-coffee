@@ -1,1 +1,1 @@
-premake --target vs2008 --os windows
+premake4 vs2008
