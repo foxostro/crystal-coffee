@@ -2,12 +2,13 @@
 #include <boost/lexical_cast.hpp>
 #endif
 
+#include <stdexcept>
 #include <cmath>
 #include "string_helper.h"
 
 int stoi(const std::string &s) {
 	if (s.empty())
-		return -1;
+		throw std::runtime_error("stoi: cannot convert an empty string");
 
 	return atoi(s.c_str());
 }
@@ -15,7 +16,7 @@ int stoi(const std::string &s) {
 std::string itos(int i) {
 #ifdef _WIN32
 	char buffer[64] = {0};
-	_itoa_s(i, buffer, 10);
+	_itoa_s(i, buffer, 64, 10);
 	return std::string(buffer);
 #else
 	return boost::lexical_cast<std::string>(i);

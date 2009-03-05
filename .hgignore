@@ -15,6 +15,7 @@ obj/*
 Debug/*
 Release/*
 *.ilk
+*.idb
 *.ncb
 *.suo
 *.sln
