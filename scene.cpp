@@ -14,8 +14,6 @@
 #include "devil_wrapper.h"
 #include <iostream>
 
-bool app_is_glsl_enabled();
-
 char* ShaderProgram::load_file(const char* file)
 {
 	std::ifstream infile;
@@ -310,9 +308,9 @@ Material::~Material()
 
 void Material::bind() const
 {
-	const GLfloat c_a[] = { ambient.x, ambient.y, ambient.z, 1 };
-	const GLfloat c_d[] = { diffuse.x, diffuse.y, diffuse.z, 1 };
-	const GLfloat c_s[] = { specular.x, specular.y, specular.z, 1 };
+	const GLfloat c_a[] = { (GLfloat)ambient.x, (GLfloat)ambient.y, (GLfloat)ambient.z, 1 };
+	const GLfloat c_d[] = { (GLfloat)diffuse.x, (GLfloat)diffuse.y, (GLfloat)diffuse.z, 1 };
+	const GLfloat c_s[] = { (GLfloat)specular.x, (GLfloat)specular.y, (GLfloat)specular.z, 1 };
 	const GLfloat black[] = { 0, 0, 0, 1 };
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT, c_a);

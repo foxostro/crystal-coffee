@@ -13,11 +13,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <SDL/SDL.h>
 #include "glheaders.h"
 #include "project.h"
 #include "scene.h"
+#include "timer.h"
 #include "treelib.h"
 #include "devil_wrapper.h"
+#include "graphicsdevice.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -26,10 +29,13 @@
 /* the number of array elements per color */
 #define COLOR_SIZE 4
 
+Timer g_timer;
+GraphicsDevice *g_graphicsdevice = 0;
+
 /**
  * All the global state needed to run the application.
  */
-struct GlutState
+struct AppState
 {
     // the array of scenes
     Scene* scene;
@@ -41,7 +47,7 @@ struct GlutState
     /* actual window height */
     int height;
     /* period of updates, in seconds */
-    float period;
+    real_t period;
 
     /* size of allocated buffer. may differ from window size if window was
      * resized.
@@ -50,15 +56,12 @@ struct GlutState
 
     SceneState scene_state;
     RenderState render_state;
-
-    /* boolean to control GLSL state */
-    bool glsl_enabled;
 };
 
 /**
  * The application state.
  */
-static GlutState state;
+static AppState state;
 
 /**
  * Updates the scene's camera's aspect ratio. Should invoke this when
@@ -147,22 +150,6 @@ void app_set_render_state(RenderState s)
 }
 
 /**
- * Returns the current state of the glsl toggle flag.
- */
-bool app_is_glsl_enabled()
-{
-    return state.glsl_enabled;
-}
-
-/**
- * Set the current state of the glsl toggle flag.
- */
-void app_set_glsl_enabled(bool enabled)
-{
-    state.glsl_enabled = enabled;
-}
-
-/**
  * Finalizes the scene and terminates the application. User code should prefer
  * app_exit over a different method of terminating the application.
  */
@@ -173,38 +160,6 @@ void app_exit()
 
     // this is the only way to terminate GLUT without extensions.
     exit(0);
-}
-
-/**
- * The glut timer callback.
- */
-static void timer_callback(int millis)
-{
-    assert(state.scene);
-
-    // set the next timer callback to occur after the period has elapsed
-    glutTimerFunc(millis, &timer_callback, millis);
-
-    if (state.scene_state == SCENE_PLAYING) {
-        // invoke user scene update function
-        prj_update(state.scene, state.period);
-        glutPostRedisplay();
-    }
-}
-
-/**
- * The glut dispaly callback.
- */
-static void display_callback()
-{
-    assert(state.scene);
-
-	// invoke user render function
-	prj_render(state.scene);
-
-    // flush and swap the buffer
-    glFlush();
-    glutSwapBuffers();
 }
 
 /**
@@ -299,25 +254,17 @@ static void app_initialize(int argc, char *argv[],
         }
     }
 
-    // init glut and parse out other args
-    glutInit(&argc, argv);
+    // initialize SDL
+	SDL_Init(SDL_INIT_EVERYTHING);
 
     // initialize the application state
     state.width = width;
     state.height = height;
     state.scene_state = SCENE_PLAYING;
     state.render_state = RENDER_GL;
-    state.glsl_enabled = true;
 
-    // create a window with double buffering and depth testing
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(width, height);
-    glutCreateWindow(title);
-
-#if defined WIN32
-    // use glew for windows to load extension libraries
-    glewInit();
-#endif
+    // create a window and an OpenGL context
+	g_graphicsdevice = new GraphicsDevice(ivec2(width, height), false, title);
 
 	// Initialize TreeLib once for the entire application
 	treelib_init();
@@ -332,28 +279,37 @@ static void app_initialize(int argc, char *argv[],
         return;
     }
     update_camera_aspect();
+
     prj_initialize(state.scene, true);
 
-    // change the pixel alignment so our buffer is the correct size
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    // TODO: initialize the gui
 
-    // initialize the gui
-    gui_initialize(screenshot_filename);
-
-    // callback for rendering
-    glutDisplayFunc(display_callback);
-    // callback for window size changes
-    glutReshapeFunc(window_resize_callback);
-    // start the "update loop" by hacking the timer callback
+    // set the frame rate (fixed time-step)
     period = static_cast<int>(1000.0/fps); // frame period in milliseconds
     state.period = 1.0/fps;
-    glutTimerFunc(period, &timer_callback, period);
 
-    // start main loop, this will never return
-    glutMainLoop();
+	while(true) {
+		assert(state.scene);
 
-  FAIL:
+		if (state.scene_state == SCENE_PLAYING) {
+			// invoke user scene update function
+			prj_update(state.scene, state.period);
+		}
+
+		// invoke user render function
+		prj_render(state.scene);
+
+		// flush and swap the buffer
+		glFlush();
+		SDL_GL_SwapBuffers();
+
+		// Finish processing and possibly stall to maintain constant rate
+		while (g_timer.getElapsedTimeMS() < state.period);
+
+		g_timer.update();
+	}
+
+FAIL:
     print_usage(argv[0]);
     return;
 }

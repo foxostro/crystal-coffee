@@ -53,9 +53,9 @@ void prj_initialize(Scene* scene, bool is_gl_context)
     sim_time = scene->start_time;
 
     if (is_gl_context) {
-		GLfloat lmodel_ambient[] = { scene->ambient_light.x,
-		                             scene->ambient_light.y,
-		                             scene->ambient_light.z, 1 };
+		GLfloat lmodel_ambient[] = { (GLfloat)scene->ambient_light.x,
+		                             (GLfloat)scene->ambient_light.y,
+		                             (GLfloat)scene->ambient_light.z, 1 };
 		glClearColor(0, 0, 0, 1);
 		glShadeModel(GL_SMOOTH);
 		glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
@@ -127,7 +127,9 @@ void set_light_positions(const Scene::LightList & lights)
 	for(int i=0; i<num_gl_lights && i < (int)lights.size(); ++i)
 	{
 		const Light & light = lights[i];
-		const GLfloat position[] = { light.position.x, light.position.y, light.position.z, 1 };
+		const GLfloat position[] = { (GLfloat)light.position.x,
+		                             (GLfloat)light.position.y,
+									 (GLfloat)light.position.z, 1 };
 		glLightfv(GL_LIGHT0 + i, GL_POSITION, position);
 	}
 }
@@ -149,13 +151,15 @@ void init_light_properties(const Scene::LightList & lights)
 	{
 		const Light & light = lights[i];
 
-		const GLfloat color[] = { light.color.x, light.color.y, light.color.z, 1 };
+		const GLfloat color[] = { (GLfloat)light.color.x,
+		                          (GLfloat)light.color.y,
+								  (GLfloat)light.color.z, 1 };
 
 		glLightfv(GL_LIGHT0 + i, GL_AMBIENT, black);
 		glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, color);
 		glLightfv(GL_LIGHT0 + i, GL_SPECULAR, white);
 
-		glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION,  catt * light.intensity);
+		glLightf(GL_LIGHT0 + i, GL_CONSTANT_ATTENUATION,  catt * (GLfloat)light.intensity);
 		glLightf(GL_LIGHT0 + i, GL_LINEAR_ATTENUATION,    latt);
 		glLightf(GL_LIGHT0 + i, GL_QUADRATIC_ATTENUATION, qatt);
 

@@ -12,12 +12,16 @@ solution "crystal-coffee"
             		"glut32",
             		"glew32",
             		"DevIL",
+            		"SDL",
+            		"SDLmain",
             		"ILU",
             		"ILUT" }
                     
         configuration "linux"
         	links { "GL",
                     "GLU",
+            		"SDL",
+            		"SDLmain",
             		"il",
             		"ilu",
             		"ilut",

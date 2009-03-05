@@ -12,8 +12,6 @@
 #include <fstream>
 #include <cstdlib>
 
-bool app_is_glsl_enabled();
-
 using namespace std;
 
 RenderMethod_DiffuseTexture::
@@ -163,11 +161,7 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 	glBindTexture(GL_TEXTURE_2D, env_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
-	if(app_is_glsl_enabled()) {
-		glUseProgramObjectARB(program);
-	} else {
-		glUseProgramObjectARB(0);
-	}
+	glUseProgramObjectARB(program);
 	
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -285,11 +279,7 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 	glBindTexture(GL_TEXTURE_2D, diffuse_map->get_gltex_name());
 	glEnable(GL_TEXTURE_2D);
 
-	if(app_is_glsl_enabled()) {
-		glUseProgramObjectARB(program);
-	} else {
-		glUseProgramObjectARB(0);
-	}
+	glUseProgramObjectARB(program);
 	
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();

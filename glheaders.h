@@ -9,23 +9,16 @@
 
 #define GL_GLEXT_PROTOTYPES
 
-#ifdef _OS_X_
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
-#else
-
 // fixes bizarre header errors with windows.h
 #ifdef _WIN32
 #define NOMINMAX
 #include <iostream>
+#include <windows.h>
 #include <GL/glew.h>
 #endif /* WIN32 */
 
 #include <cstdlib>
-#include <GL/glut.h>
 #include <GL/glext.h>
-#endif /* _OS_X_ */
 
 #define MESH_INDEX_FORMAT_IS_UINT 1
 #if MESH_INDEX_FORMAT_IS_UINT

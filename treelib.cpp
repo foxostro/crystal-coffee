@@ -500,17 +500,17 @@ void RenderMethod_TreeLib::draw(const Mat4 &transform) const
 {
 	float right[3], up[3], position[3];
 
-	right[0] = transform._m[0][0];
-	right[1] = transform._m[0][1];
-	right[2] = transform._m[0][2];
+	right[0] = (float)transform._m[0][0];
+	right[1] = (float)transform._m[0][1];
+	right[2] = (float)transform._m[0][2];
 
-	up[0] = transform._m[1][0];
-	up[1] = transform._m[1][1];
-	up[2] = transform._m[1][2];
+	up[0] = (float)transform._m[1][0];
+	up[1] = (float)transform._m[1][1];
+	up[2] = (float)transform._m[1][2];
 
-	position[0] = transform._m[3][0];
-	position[1] = transform._m[3][1];
-	position[2] = transform._m[3][2];
+	position[0] = (float)transform._m[3][0];
+	position[1] = (float)transform._m[3][1];
+	position[2] = (float)transform._m[3][2];
 
 	TreeLib::putTree(tree, position, up, right);
 }

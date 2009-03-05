@@ -50,7 +50,6 @@ SceneState app_get_scene_state();
 void app_set_scene_state(SceneState s);
 RenderState app_get_render_state();
 void app_set_render_state(RenderState s);
-bool app_is_glsl_enabled();
 void app_set_glsl_enabled(bool enabled);
 void app_exit();
 

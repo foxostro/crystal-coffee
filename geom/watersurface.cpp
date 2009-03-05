@@ -123,11 +123,11 @@ Vec3 WaterSurface::compute_normal(real_t *heightmap,
 {
 	assert(heightmap);
 	
-	const float y11 = heightmap[(x+0)*sz + (z+0)];
-	const float y20 = (x + 1 < sx) ? (heightmap[(x+1)*sz + (z+0)]) : y11;
-	const float y02 = (z + 1 < sz) ? (heightmap[(x+0)*sz + (z+1)]) : y11;
-	const float y01 = (x - 1 >= 0) ? (heightmap[(x-1)*sz + (z+0)]) : y11;
-	const float y10 = (z - 1 >= 0) ? (heightmap[(x+0)*sz + (z-1)]) : y11;
+	const real_t y11 = heightmap[(x+0)*sz + (z+0)];
+	const real_t y20 = (x + 1 < sx) ? (heightmap[(x+1)*sz + (z+0)]) : y11;
+	const real_t y02 = (z + 1 < sz) ? (heightmap[(x+0)*sz + (z+1)]) : y11;
+	const real_t y01 = (x - 1 >= 0) ? (heightmap[(x-1)*sz + (z+0)]) : y11;
+	const real_t y10 = (z - 1 >= 0) ? (heightmap[(x+0)*sz + (z-1)]) : y11;
 	
 	Vec3 nv;
 	nv.x = y01 - y20;
