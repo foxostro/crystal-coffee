@@ -14,8 +14,10 @@
 #include "rendermethod.h"
 #include "vec/vec.h"
 #include "vec/quat.h"
+#include "treelib.h"
 #include <string>
 #include <vector>
+#include <list>
 
 class Tickable
 {
@@ -294,7 +296,7 @@ void calculate_triangle_tangent(const Vec3 *vertices,
 /**
  * Stores position data of the camera.
  */
-class Camera
+class Camera : public SceneResource
 {
 public:
     Camera();
@@ -371,26 +373,42 @@ public:
     real_t intensity;
 };
 
-/**
- * The container class for information used to render a scene composed of
- * Geometries.
- */
+typedef std::vector<Light> LightList;
+class Scene;
+
+class Pass
+{
+public:
+	Camera camera;
+	typedef std::vector<RenderInstance*> RenderInstanceList;
+	RenderInstanceList instances;
+
+public:
+	virtual ~Pass();
+
+	virtual void render(const Scene * scene) = 0;
+
+protected:
+	Pass(void);
+	void set_camera(void);
+	void set_light_positions(const LightList & lights);
+};
+
 class Scene
 {
 public:
-    typedef std::vector<Light> LightList;
     typedef std::vector<SceneResource*> SceneResourceList;
 	typedef std::vector<RenderMethod*> RenderMethodList;
-	typedef std::vector<RenderInstance*> RenderInstanceList;
 	typedef std::vector<Tickable*> TickableList;
+	typedef std::list<Pass*> PassList;
 
-    Camera camera;
+	Camera * primary_camera;
     Vec3 ambient_light;
     LightList lights;
 	SceneResourceList resources;
 	RenderMethodList rendermethods;
-	RenderInstanceList instances;
 	TickableList tickables;
+	PassList passes;
 
     // the absolute time at which to start updates for ths scene.
     real_t start_time;
@@ -405,6 +423,8 @@ public:
      * Assumes that all objects in updatable_objects are also in objects.
      */
     ~Scene();
+
+	void render();
 
 private:
     // no meaningful assignment or copy

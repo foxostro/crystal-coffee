@@ -1,3 +1,9 @@
+/**
+* @file SDLinput.h
+* @brief SDL_input wrapper
+* @author Andrew Fox (arfox)
+*/
+
 #ifndef _SDL_INPUT_H_
 #define _SDL_INPUT_H_
 

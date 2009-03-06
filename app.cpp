@@ -78,7 +78,9 @@ static AppState state;
  */
 static void update_camera_aspect()
 {
-    state.scene->camera.aspect = real_t(state.width)/real_t(state.height);
+	Camera * primary_camera = state.scene->primary_camera;
+	assert(primary_camera);
+    primary_camera->aspect = real_t(state.width)/real_t(state.height);
 }
 
 /**
@@ -264,7 +266,9 @@ static void apply_control(CameraControl cc, int delta)
 		return;
 
 	assert(app_get_scene());
-	Camera& cam = app_get_scene()->camera;
+	assert(app_get_scene()->primary_camera);
+
+	Camera& cam = *(app_get_scene()->primary_camera);
 	real_t angle = CAMERA_ROTATION_SCALE_FACTOR * delta;
 	real_t distance = CAMERA_TRANSLATION_SCALE_FACTOR * delta;
 	real_t new_focus_dist;
@@ -487,12 +491,8 @@ static void app_initialize(int argc, char *argv[],
 			prj_update(state.scene, state.period);
 		}
 
-		// invoke user render function
-		prj_render(state.scene);
-
-		// flush and swap the buffer
-		glFlush();
-		SDL_GL_SwapBuffers();
+		// render all passes and swap buffers
+		state.scene->render();
 
 		// Finish processing and possibly stall to maintain constant rate
 		while (g_timer.getElapsedTimeMS() < state.period);

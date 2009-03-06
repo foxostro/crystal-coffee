@@ -19,10 +19,7 @@ using namespace std;
 // current absolute simulation time for the current scene
 static real_t sim_time;
 
-static int num_gl_lights=8;
-
-static void set_light_positions(const Scene::LightList & lights);
-static void init_light_properties(const Scene::LightList & lights);
+static void init_light_properties(const LightList & lights);
 
 static void draw(RenderInstance *o)
 {
@@ -58,7 +55,6 @@ void prj_initialize( Scene* scene )
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_CULL_FACE);
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glGetIntegerv(GL_MAX_LIGHTS, &num_gl_lights);
     
     // Initialize scene resources
 	for_each(scene->resources.begin(),
@@ -87,47 +83,7 @@ void prj_update(Scene* scene, double delta_time)
         (*i)->tick(sim_time);
 }
 
-static void set_camera(const Camera &camera) {
-	real_t fov = camera.get_fov_degrees();
-	real_t aspect = camera.get_aspect_ratio();
-	real_t near_clip = camera.get_near_clip();
-	real_t far_clip = camera.get_far_clip();
-	real_t eyex = camera.get_position().x;
-	real_t eyey = camera.get_position().y;
-	real_t eyez = camera.get_position().z;
-	real_t centerx = camera.get_position().x + camera.get_direction().x * camera.focus_dist;
-	real_t centery = camera.get_position().y + camera.get_direction().y * camera.focus_dist;
-	real_t centerz = camera.get_position().z + camera.get_direction().z * camera.focus_dist;
-	real_t upx = camera.get_up().x;
-	real_t upy = camera.get_up().y;
-	real_t upz = camera.get_up().z;
-	
-	// set the projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(fov, aspect, near_clip, far_clip);
-
-	// set the modelview matrix
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(eyex, eyey, eyez,
-			  centerx, centery, centerz,
-			  upx, upy, upz);
-}
-
-static void set_light_positions(const Scene::LightList & lights)
-{
-	for(int i=0; i<num_gl_lights && i < (int)lights.size(); ++i)
-	{
-		const Light & light = lights[i];
-		const GLfloat position[] = { (GLfloat)light.position.x,
-		                             (GLfloat)light.position.y,
-									 (GLfloat)light.position.z, 1 };
-		glLightfv(GL_LIGHT0 + i, GL_POSITION, position);
-	}
-}
-
-static void init_light_properties(const Scene::LightList & lights)
+static void init_light_properties(const LightList & lights)
 {
 	const GLfloat catt = 1;
 	const GLfloat latt = 0;
@@ -136,11 +92,11 @@ static void init_light_properties(const Scene::LightList & lights)
 	const GLfloat black[] = { 0, 0, 0, 1 };
 	const GLfloat white[] = { 1, 1, 1, 1 };
 
-	for(int i=0; i<num_gl_lights; ++i) {
+	for(int i=0; i<8; ++i) {
 		glDisable(GL_LIGHT0 + i);
 	}
 
-	for(int i=0; i<num_gl_lights && i < (int)lights.size(); ++i)
+	for(int i=0; i<8 && i < (int)lights.size(); ++i)
 	{
 		const Light & light = lights[i];
 
@@ -158,23 +114,4 @@ static void init_light_properties(const Scene::LightList & lights)
 
 		glEnable(GL_LIGHT0 + i);
 	}
-}
-
-/**
- * Render the current scene using opengl to the current frame buffer.
- * @param scene The scene to render.
- * @remark The caller handles double buffering, so do not flip the buffers.
- */
-void prj_render(Scene* scene)
-{	
-	assert(scene);
-
-	set_camera(scene->camera);
-	set_light_positions(scene->lights); // light pos are fixed relative to the scene
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	for_each(scene->instances.begin(), scene->instances.end(), &draw);
-
-	treelib_render();
 }

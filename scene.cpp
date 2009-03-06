@@ -8,11 +8,12 @@
  * @author Andrew Fox (arfox)
  */
 
+#include <SDL/SDL.h>
+#include <iostream>
 #include "vec/mat.h"
 #include "scene.h"
 #include "glheaders.h"
 #include "devil_wrapper.h"
-#include <iostream>
 
 char* ShaderProgram::load_file(const char* file)
 {
@@ -487,19 +488,92 @@ void Camera::rotate_about_focus(const Vec3& axis, real_t radians)
 
 
 Light::Light()
-    : position(Vec3::Zero), color(Vec3::Ones), intensity(1) {}
+: position(Vec3::Zero),
+  color(Vec3::Ones),
+  intensity(1)
+{
+	// Do Nothing
+}
 
 
 
 Scene::Scene()
-    : ambient_light(Vec3::Zero),
-      start_time(0) {}
+: ambient_light(Vec3::Zero),
+  start_time(0),
+  primary_camera(NULL)
+{
+	// Do Nothing
+}
 
 Scene::~Scene()
 {
 	for(SceneResourceList::iterator  i=resources.begin();     i!=resources.end();     ++i) delete *i;    
 	for(RenderMethodList::iterator   i=rendermethods.begin(); i!=rendermethods.end(); ++i) delete *i;
-	for(RenderInstanceList::iterator i=instances.begin();     i!=instances.end();     ++i) delete *i;
 	for(TickableList::iterator       i=tickables.begin();     i!=tickables.end();     ++i) delete *i;
+	for(PassList::iterator           i = passes.begin();      i!=passes.end();        ++i) delete *i;
 }
 
+Pass::Pass(void)
+{
+	// Do Nothing
+}
+
+Pass::~Pass()
+{
+	for(RenderInstanceList::iterator i = instances.begin(); i != instances.end(); ++i)
+	{
+		delete *i;
+	}
+}
+
+void Pass::set_camera(void)
+{
+	real_t fov = camera.get_fov_degrees();
+	real_t aspect = camera.get_aspect_ratio();
+	real_t near_clip = camera.get_near_clip();
+	real_t far_clip = camera.get_far_clip();
+	real_t eyex = camera.get_position().x;
+	real_t eyey = camera.get_position().y;
+	real_t eyez = camera.get_position().z;
+	real_t centerx = camera.get_position().x + camera.get_direction().x * camera.focus_dist;
+	real_t centery = camera.get_position().y + camera.get_direction().y * camera.focus_dist;
+	real_t centerz = camera.get_position().z + camera.get_direction().z * camera.focus_dist;
+	real_t upx = camera.get_up().x;
+	real_t upy = camera.get_up().y;
+	real_t upz = camera.get_up().z;
+
+	// set the projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(fov, aspect, near_clip, far_clip);
+
+	// set the modelview matrix
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(eyex, eyey, eyez,
+	          centerx, centery, centerz,
+	          upx, upy, upz);
+}
+
+void Pass::set_light_positions(const LightList & lights)
+{
+	for(int i=0; i<8 && i < (int)lights.size(); ++i)
+	{
+		const Light & light = lights[i];
+		const GLfloat position[] = { (GLfloat)light.position.x,
+		                             (GLfloat)light.position.y,
+		                             (GLfloat)light.position.z, 1 };
+		glLightfv(GL_LIGHT0 + i, GL_POSITION, position);
+	}
+}
+
+void Scene::render()
+{
+	for(PassList::iterator i = passes.begin();
+		i != passes.end(); ++i)
+	{
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		(*i)->render(this);
+		glPopAttrib();
+	}
+}

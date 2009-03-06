@@ -71,7 +71,6 @@ bool ldr_load_scene(Scene* scene, int num);
 
 void prj_initialize(Scene* scene);
 void prj_update(Scene* scene, double time);
-void prj_render(Scene* scene);
 
 
 #endif /* _PROJECT_H_ */

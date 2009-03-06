@@ -1,3 +1,9 @@
+/**
+* @file SDLinput.cpp
+* @brief SDL_input wrapper
+* @author Andrew Fox (arfox)
+*/
+
 #include <SDL/SDL.h>
 #include <iostream>
 #include "SDLinput.h"

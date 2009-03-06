@@ -8,6 +8,7 @@
 
 #include "project.h"
 #include "scene.h"
+#include "passes.h"
 #include "treelib.h"
 #include "geom/sphere.h"
 #include "geom/trianglesoup.h"
@@ -202,7 +203,30 @@ static RenderMethod * create_pool(Scene * scene)
 
 static void ldr_load_example_scene(Scene * scene)
 {
+	assert(scene);
+
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
 	scene->ambient_light = Vec3(.1, .1, .1);
+
+	// The scene has only one pass
+	Pass * pass = new StandardPass();
+	scene->passes.push_back(pass);
+
+	// Set the camera
+	Camera& camera = pass->camera;
+	camera.orientation = Quat::Identity;
+	camera.position = Vec3(0,0,10);
+	camera.focus_dist = 10;
+	camera.fov = PI / 3.0;
+	camera.near_clip = .1;
+	camera.far_clip = 100.0;
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass->camera);
 
 	// Create an instance of the Earth object
 	RenderInstance * earth = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
@@ -210,27 +234,21 @@ static void ldr_load_example_scene(Scene * scene)
 													 0.0, 0.0, 3.0, 0.0,
 													 0.0, 0.0, 0.0, 1.0),
 	                                            create_tex_sphere(scene, "images/earth.png"));
-	scene->instances.push_back(earth);
-
-	// Add a light to the scene too
-	Light light;
-	light.position = Vec3(.4, .7, .8) * 100;
-	light.color = Vec3::Ones;
-	scene->lights.push_back(light);
-
-	// Set the camera
-	Camera& camera = scene->camera;
-	camera.orientation = Quat::Identity;
-	camera.position = Vec3(0,0,10);
-	camera.focus_dist = 10;
-	camera.fov = PI / 3.0;
-	camera.near_clip = .1;
-	camera.far_clip = 100.0;
+	pass->instances.push_back(earth);
 }
 
 static void ldr_load_fresnel_sphere_scene(Scene * scene)
 {
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
 	scene->ambient_light = Vec3(.1, .1, .1);
+
+	// The scene has only one pass
+	Pass * pass = new StandardPass();
+	scene->passes.push_back(pass);
 
 	// Create an instance of the object
 	RenderInstance * fresnel = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
@@ -238,22 +256,19 @@ static void ldr_load_fresnel_sphere_scene(Scene * scene)
 													   0.0, 0.0, 3.0, 0.0,
 													   0.0, 0.0, 0.0, 1.0),
 												create_fresnel_sphere(scene));
-	scene->instances.push_back(fresnel);
-
-	// Add a light to the scene too
-	Light light;
-	light.position = Vec3(.4, .7, .8) * 100;
-	light.color = Vec3::Ones;
-	scene->lights.push_back(light);
+	pass->instances.push_back(fresnel);
 
 	// Set the camera
-	Camera& cam = scene->camera;
+	Camera& cam = pass->camera;
 	cam.orientation = Quat::Identity;
 	cam.position = Vec3(0,0,10);
 	cam.focus_dist = 10;
 	cam.fov = PI / 3.0;
 	cam.near_clip = .1;
 	cam.far_clip = 100.0;
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass->camera);
 }
 
 static WaterSurface * gen_water_surface(Scene * scene)
@@ -341,48 +356,53 @@ static void ldr_load_pool_scene(Scene * scene)
 	RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 	RenderMethod * tree = create_tree(scene);
 
-	scene->instances.push_back(new RenderInstance(Mat4::Identity, pool));
-
-	scene->instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
-	                                                   0.0, 0.4, 0.0, POY - 1.0,
-													   0.0, 0.0, PIZ, 0.0,
-													   0.0, 0.0, 0.0, 1.0),
-												  water));
-
-	const real_t rad = 2.0;
-
-	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
-	                                                   0.0, rad, 0.0, POY+rad,
-													   0.0, 0.0, rad, (POZ+PIZ)/2,
-													   0.0, 0.0, 0.0, 1.0),
-													   earth));
-
-	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
-	                                                   0.0, rad, 0.0, POY+rad,
-													   0.0, 0.0, rad, -(POZ+PIZ)/2,
-													   0.0, 0.0, 0.0, 1.0),
-												  fresnel_sphere));
-
-	scene->instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
-	                                                   0.0, 1.0, 0.0, POY,
-													   0.0, 0.0, 1.0, (POZ+PIZ)/2,
-													   0.0, 0.0, 0.0, 1.0),
-												  tree));
-
-	scene->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
-	                                                   0.0, rad, 0.0, POY+rad,
-													   0.0, 0.0, rad, -(POZ+PIZ)/2,
-													   0.0, 0.0, 0.0, 1.0),
-												  swirly_sphere));
-
-	// Set up a light
+	// Light the scene
 	Light light;
 	light.position = Vec3(-4, 8.5, -8) * 30;
 	light.color = Vec3(.7,.7,.7);
 	scene->lights.push_back(light);
+	scene->ambient_light = Vec3(.2,.2,.2);
+
+	// The scene has only one pass
+	Pass * pass = new StandardPass();
+	scene->passes.push_back(pass);
+
+	pass->instances.push_back(new RenderInstance(Mat4::Identity, pool));
+
+	pass->instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
+	                                                  0.0, 0.4, 0.0, POY - 1.0,
+													  0.0, 0.0, PIZ, 0.0,
+													  0.0, 0.0, 0.0, 1.0),
+												  water));
+
+	const real_t rad = 2.0;
+
+	pass->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+	                                                  0.0, rad, 0.0, POY+rad,
+												      0.0, 0.0, rad, (POZ+PIZ)/2,
+												      0.0, 0.0, 0.0, 1.0),
+													   earth));
+
+	pass->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+	                                                  0.0, rad, 0.0, POY+rad,
+													  0.0, 0.0, rad, -(POZ+PIZ)/2,
+													  0.0, 0.0, 0.0, 1.0),
+												  fresnel_sphere));
+
+	pass->instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
+	                                                  0.0, 1.0, 0.0, POY,
+													  0.0, 0.0, 1.0, (POZ+PIZ)/2,
+													  0.0, 0.0, 0.0, 1.0),
+												  tree));
+
+	pass->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+	                                                  0.0, rad, 0.0, POY+rad,
+													  0.0, 0.0, rad, -(POZ+PIZ)/2,
+													  0.0, 0.0, 0.0, 1.0),
+												  swirly_sphere));
 
 	// Set up the camera
-	Camera& cam = scene->camera;
+	Camera& cam = pass->camera;
 	cam.orientation = Quat(-0.0946664, -0.00690199, 0.970616, 0.22112);
 	cam.position = Vec3(-2.62381,6.01017,-12.4194);
 	cam.focus_dist = 14.0444;
@@ -390,12 +410,22 @@ static void ldr_load_pool_scene(Scene * scene)
 	cam.near_clip = 1;
 	cam.far_clip = 1000.0;
 
-	scene->ambient_light = Vec3(.2,.2,.2);
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass->camera);
 }
 
 static void ldr_load_bumpy_sphere_scene(Scene * scene)
 {
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
 	scene->ambient_light = Vec3(.1, .1, .1);
+
+	// The scene has only one pass
+	Pass * pass = new StandardPass();
+	scene->passes.push_back(pass);
 
 	// Create an instance of the Earth object
 	RenderInstance * bumpy = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
@@ -403,22 +433,19 @@ static void ldr_load_bumpy_sphere_scene(Scene * scene)
 												     0.0, 0.0, 3.0, 0.0,
 												     0.0, 0.0, 0.0, 1.0),
 												create_bumpy_sphere(scene));
-	scene->instances.push_back(bumpy);
-
-	// Add a light to the scene too
-	Light light;
-	light.position = Vec3(.4, .7, .8) * 100;
-	light.color = Vec3::Ones;
-	scene->lights.push_back(light);
+	pass->instances.push_back(bumpy);
 
 	// Set the camera
-	Camera& cam = scene->camera;
+	Camera& cam = pass->camera;
 	cam.orientation = Quat::Identity;
 	cam.position = Vec3(0,0,10);
 	cam.focus_dist = 10;
 	cam.fov = PI / 3.0;
 	cam.near_clip = .1;
 	cam.far_clip = 100.0;
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass->camera);
 }
 
 /**
