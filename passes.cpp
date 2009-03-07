@@ -14,6 +14,7 @@ void StandardPass::render(const Scene * scene)
 	             (GLclampf)clear_color.y,
 				 (GLclampf)clear_color.z,
 				 (GLclampf)clear_color.w);
+	glClearDepth(1.0);
 
 	glPushAttrib(GL_VIEWPORT_BIT); // save the viewport (set by RenderTarget)
 	rendertarget->bind();
@@ -22,6 +23,11 @@ void StandardPass::render(const Scene * scene)
 	set_light_positions(scene->lights); // light pos are fixed relative to the scene
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	/* TEST: When rendering to an fbo, I have a bug that looks like an HSR bug. */
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHTING);
 
 	for(RenderInstanceList::const_iterator i = instances.begin();
 		i != instances.end(); ++i)

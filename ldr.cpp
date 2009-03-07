@@ -558,6 +558,140 @@ static void ldr_load_rendertarget_scene(Scene * scene)
 	scene->passes.push_back(pass2);
 }
 
+static void ldr_load_rendertarget_scene_2(Scene * scene)
+{
+	Pass * pass1, * pass2;
+	RenderTarget * rendertarget1;
+	real_t aspect = 800.0 / 600.0;
+
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
+	scene->ambient_light = Vec3(.1, .1, .1);
+
+	/************************************************************************/
+
+	{
+		pass1 = new StandardPass();
+
+		// Render target for the main framebuffer
+		rendertarget1 = new RenderTarget(ivec2(800,600));
+		scene->resources.push_back(rendertarget1);
+		pass1->rendertarget = rendertarget1;
+		pass1->proj = Mat4::perspective(PI / 3.0, aspect, 0.1, 100.0);
+		pass1->camera.orientation = Quat(-0.0946664, -0.00690199, 0.970616, 0.22112);
+		pass1->camera.position = Vec3(-2.62381,6.01017,-12.4194);
+		pass1->camera.focus_dist = 14.0444;
+		pass1->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
+
+		Texture * spheremap = new Texture("images/spheremap_stpeters.png");
+		scene->resources.push_back(spheremap);
+
+		RenderMethod * pool = create_pool(scene);
+		RenderMethod * earth = create_tex_sphere(scene, "images/earth.png");
+		RenderMethod * water = create_water(scene, spheremap);
+		RenderMethod * fresnel_sphere = create_fresnel_sphere(scene);
+		RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
+		RenderMethod * tree = create_tree(scene);
+
+		pass1->instances.push_back(new RenderInstance(Mat4::Identity, pool));
+
+		pass1->instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
+														  0.0, 0.4, 0.0, POY - 1.0,
+														  0.0, 0.0, PIZ, 0.0,
+														  0.0, 0.0, 0.0, 1.0),
+													  water));
+
+		const real_t rad = 2.0;
+
+		pass1->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+														  0.0, rad, 0.0, POY+rad,
+														  0.0, 0.0, rad, (POZ+PIZ)/2,
+														  0.0, 0.0, 0.0, 1.0),
+														   earth));
+
+		pass1->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+														  0.0, rad, 0.0, POY+rad,
+														  0.0, 0.0, rad, -(POZ+PIZ)/2,
+														  0.0, 0.0, 0.0, 1.0),
+													  fresnel_sphere));
+
+		pass1->instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
+														  0.0, 1.0, 0.0, POY,
+														  0.0, 0.0, 1.0, (POZ+PIZ)/2,
+														  0.0, 0.0, 0.0, 1.0),
+													  tree));
+
+		pass1->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+														  0.0, rad, 0.0, POY+rad,
+														  0.0, 0.0, rad, -(POZ+PIZ)/2,
+														  0.0, 0.0, 0.0, 1.0),
+													  swirly_sphere));
+	}
+
+	/************************************************************************/
+
+	{
+		pass2 = new StandardPass();
+
+		// Render target for the main framebuffer
+		RenderTarget * rendertarget2 = new NullRenderTarget();
+		scene->resources.push_back(rendertarget2);
+		pass2->rendertarget = rendertarget2;
+		pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+		pass2->camera.orientation = Quat::Identity;
+		pass2->camera.position = Vec3(0,0,20);
+		pass2->camera.focus_dist = 10;
+
+		std::vector<Face> faces;
+		Face a;
+		Face b;
+
+		a.normals[0] = a.normals[1] = a.normals[2] = 
+		b.normals[0] = b.normals[1] = b.normals[2] = Vec3(-1.0, 0.0, 0.0);
+
+		a.vertices[0] = Vec3(5.0 * aspect, 5.0, 5.0);
+		a.vertices[1] = Vec3(0.0, 5.0, 5.0);
+		a.vertices[2] = Vec3(0.0, 0.0, 5.0);
+
+		a.tcoords[0] = Vec2(1.0, 1.0);
+		a.tcoords[1] = Vec2(0.0, 1.0);
+		a.tcoords[2] = Vec2(0.0, 0.0);
+
+		b.vertices[0] = Vec3(5.0 * aspect, 5.0, 5.0);
+		b.vertices[1] = Vec3(0.0, 0.0, 5.0);
+		b.vertices[2] = Vec3(5.0 * aspect, 0.0, 5.0);
+
+		b.tcoords[0] = Vec2(1.0, 1.0);
+		b.tcoords[1] = Vec2(0.0, 0.0);
+		b.tcoords[2] = Vec2(1.0, 0.0);
+
+		faces.push_back(a);
+		faces.push_back(b);
+
+		TriangleSoup geom(scene, faces);
+
+		RenderMethod * r = new RenderMethod_TextureReplace(geom.vertices_buffer,
+														   geom.normals_buffer,
+														   geom.tcoords_buffer,
+														   NULL,
+														   rendertarget1);
+		scene->rendermethods.push_back(r);
+		pass2->instances.push_back(new RenderInstance(Mat4::Identity, r));
+	}
+
+	/************************************************************************/
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass2->camera);
+
+	// Set up the order of passes
+	scene->passes.push_back(pass1);
+	scene->passes.push_back(pass2);
+}
+
 /**
  * Loads the scene with the given num into scene.
  * @param scene The Scene into which to load.
@@ -573,7 +707,7 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
 	case 1:
-		ldr_load_rendertarget_scene(scene);
+		ldr_load_rendertarget_scene_2(scene);
 		break;
 
 	case 2:
@@ -586,6 +720,10 @@ bool ldr_load_scene(Scene* scene, int num)
 
 	case 4:
 		ldr_load_pool_scene(scene);
+		break;
+
+	case 5:
+		ldr_load_rendertarget_scene(scene);
 		break;
 
     default:

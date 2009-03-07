@@ -560,8 +560,8 @@ void RenderTarget::init( void )
 
 	glGenRenderbuffersEXT(1, &renderbuffer);
 	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbuffer);
-	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, dimensions.x, dimensions.y); 
-	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, renderbuffer);
+	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, dimensions.x, dimensions.y); 
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderbuffer);
 
 	glGenTextures(1, &gltex_name);
 	glBindTexture(GL_TEXTURE_2D, gltex_name);
