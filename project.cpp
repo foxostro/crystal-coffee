@@ -31,6 +31,7 @@ static void init_resource(SceneResource * resource)
 {
 	assert(resource);
 	resource->init();
+	CHECK_GL_ERROR();
 }
 
 /**
@@ -40,6 +41,8 @@ static void init_resource(SceneResource * resource)
 void prj_initialize( Scene* scene )
 {
 	assert(scene);
+
+	CHECK_GL_ERROR();
 	
     // reset scene time
     sim_time = scene->start_time;
@@ -62,6 +65,8 @@ void prj_initialize( Scene* scene )
 	         &init_resource);
 	         
 	init_light_properties(scene->lights);
+
+	CHECK_GL_ERROR();
 }
 
 /**

@@ -99,14 +99,99 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 	glPopMatrix();
 }
 
-RenderMethod_Fresnel::
-RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
-					 const BufferObject<Vec3> * normals_buffer,
-					 const BufferObject<index_t> * indices_buffer,
-					 const ShaderProgram * shader,
-				     const Material * mat,
-				     const Texture * env_map,
-				     real_t refraction_index)
+RenderMethod_TextureReplace::
+RenderMethod_TextureReplace(const BufferObject<Vec3> * vertices_buffer,
+							const BufferObject<Vec3> * normals_buffer,
+							const BufferObject<Vec2> * tcoords_buffer,
+							const BufferObject<index_t> * indices_buffer,
+							const Texture * diffuse_texture)
+{
+	assert(vertices_buffer);
+	assert(normals_buffer);
+	assert(tcoords_buffer);
+	assert(diffuse_texture);
+
+	this->vertices_buffer = vertices_buffer;
+	this->normals_buffer = normals_buffer;
+	this->tcoords_buffer = tcoords_buffer;
+	this->indices_buffer = indices_buffer;
+	this->diffuse_texture = diffuse_texture;
+}
+
+void RenderMethod_TextureReplace::draw(const Mat4 &transform) const
+{	
+	assert(vertices_buffer);
+	assert(normals_buffer);
+	assert(tcoords_buffer);
+	assert(diffuse_texture);
+
+	glDisable(GL_LIGHTING);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	// Disable texture unit 2
+	glActiveTexture(GL_TEXTURE2);
+	glDisable(GL_TEXTURE_2D);
+
+	// Disable texture unit 1
+	glActiveTexture(GL_TEXTURE1);
+	glDisable(GL_TEXTURE_2D);
+
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuse_texture->get_gltex_name());
+	glEnable(GL_TEXTURE_2D);
+
+	glUseProgramObjectARB(0); // fixed-function pipeline
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+
+	glMultMatrixd(transform.m);
+
+	// Bind the vertex buffer
+	glEnableClientState(GL_VERTEX_ARRAY);
+	vertices_buffer->bind();
+	glVertexPointer(3, GL_DOUBLE, 0, 0);
+
+	// Bind the normals buffer
+	glEnableClientState(GL_NORMAL_ARRAY);
+	normals_buffer->bind();
+	glNormalPointer(GL_DOUBLE, 0, 0);
+
+	// Bind the tcoord buffer
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	tcoords_buffer->bind();
+	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+
+	// Actually draw the triangles	
+	if(indices_buffer) {
+		// Draw using the index buffer
+		GLsizei count = indices_buffer->getNumber();
+		indices_buffer->bind();
+		glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
+	} else {
+		glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	}
+
+	// Clean up
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glPopMatrix();
+
+	glEnable(GL_LIGHTING);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+}
+
+RenderMethod_FresnelSphereMap::
+RenderMethod_FresnelSphereMap(const BufferObject<Vec3> * vertices_buffer,
+					          const BufferObject<Vec3> * normals_buffer,
+					          const BufferObject<index_t> * indices_buffer,
+					          const ShaderProgram * shader,
+				              const Material * mat,
+				              const Texture * env_map,
+				              real_t refraction_index)
 {
 	GLint env_map_uniform, n_t;
 
@@ -137,7 +222,7 @@ RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
 	glUseProgramObjectARB(0);
 }
 
-void RenderMethod_Fresnel::draw(const Mat4 &transform) const
+void RenderMethod_FresnelSphereMap::draw(const Mat4 &transform) const
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
@@ -189,6 +274,111 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 	}
 	
 	// Clean up
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glPopMatrix();
+}
+
+RenderMethod_Fresnel::
+RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
+					 const BufferObject<Vec3> * normals_buffer,
+					 const BufferObject<Vec2> * tcoords_buffer,
+					 const BufferObject<index_t> * indices_buffer,
+					 const ShaderProgram * shader,
+				     const Material * mat,
+				     const Texture * diffuse_map,
+				     real_t refraction_index)
+{
+	GLint diffuse_map_uniform, n_t;
+
+	assert(vertices_buffer);
+	assert(normals_buffer);
+	assert(tcoords_buffer);
+	assert(shader);
+	assert(mat);
+	assert(diffuse_map);
+
+	this->vertices_buffer = vertices_buffer;
+	this->normals_buffer = normals_buffer;
+	this->tcoords_buffer = tcoords_buffer;
+	this->indices_buffer = indices_buffer;
+	this->shader = shader;
+	this->mat = mat;
+	this->diffuse_map = diffuse_map;
+
+	GLhandleARB program = shader->get_program();
+
+	// Set these uniforms only once when the effect is initialized
+	glUseProgramObjectARB(program);
+	
+	diffuse_map_uniform = glGetUniformLocationARB(program, "diffuse_map");
+	glUniform1iARB(diffuse_map_uniform, 0);
+	
+	n_t = glGetUniformLocationARB(program, "n_t");
+	glUniform1fARB(n_t, (GLfloat)refraction_index);
+
+	glUseProgramObjectARB(0);
+}
+
+void RenderMethod_Fresnel::draw(const Mat4 &transform) const
+{
+	assert(vertices_buffer);
+	assert(normals_buffer);
+	assert(shader);
+	assert(mat);
+	assert(env_map);
+
+	mat->bind();
+	GLhandleARB program = shader->get_program();
+
+	// Disable texture unit 2
+	glActiveTexture(GL_TEXTURE2);
+	glDisable(GL_TEXTURE_2D);
+
+	// Disable texture unit 1
+	glActiveTexture(GL_TEXTURE1);
+	glDisable(GL_TEXTURE_2D);
+
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuse_map->get_gltex_name());
+	glEnable(GL_TEXTURE_2D);
+
+	glUseProgramObjectARB(program);
+	
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+
+	glMultMatrixd(transform.m);
+	
+	// Bind the vertex buffer
+	glEnableClientState(GL_VERTEX_ARRAY);
+	vertices_buffer->bind();
+	glVertexPointer(3, GL_DOUBLE, 0, 0);
+	
+	// Bind the normals buffer
+	glEnableClientState(GL_NORMAL_ARRAY);
+	normals_buffer->bind();
+	glNormalPointer(GL_DOUBLE, 0, 0);
+
+	// Bind the normals buffer
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	tcoords_buffer->bind();
+	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+
+	// Actually draw the triangles	
+	if(indices_buffer) {
+		// Draw using the index buffer
+		GLsizei count = indices_buffer->getNumber();
+		indices_buffer->bind();
+		glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
+	} else {
+		glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	}
+	
+	// Clean up
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 

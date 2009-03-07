@@ -282,6 +282,20 @@ public:
     Mat4 transpose() const;
 
     Mat4 inverse() const;
+
+	static Mat4 perspective(real_t fovy,
+	                        real_t aspect,
+	                        real_t zNear,
+	                        real_t zFar)
+
+	{
+		const real_t f = 1.0 / tan(fovy / 2.0);
+
+		return Mat4(f/aspect,   0.0,   0.0,                       0.0,
+		            0.0,        f,     0.0,                       0.0,
+		            0.0,        0.0,   (zFar+zNear)/(zNear-zFar), (2.0*zFar*zNear)/(zNear-zFar),
+					0.0,        0.0,   -1.0,                      0.0);
+	}
 };
 
 inline Mat4 operator*(real_t r, const Mat4& m)

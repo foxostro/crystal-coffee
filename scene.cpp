@@ -321,13 +321,6 @@ void Material::bind() const
 	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)shininess);
 }
 
-Texture::Texture(const std::string &tex_name)
-: texture_name(tex_name),
-  gltex_name(0)
-{
-	// Do Nothing
-}
-
 Texture::~Texture()
 {
 	glDeleteTextures(1, &gltex_name);
@@ -395,8 +388,7 @@ void calculate_triangle_tangent(const Vec3 *vertices,
 }
 
 Camera::Camera()
-    : position(Vec3::Zero), orientation(Quat::Identity), focus_dist(1),
-      fov(PI), aspect(1), near_clip(.1), far_clip(10) {}
+    : position(Vec3::Zero), orientation(Quat::Identity), focus_dist(1) {}
 
 const Vec3& Camera::get_position() const
 {
@@ -411,31 +403,6 @@ Vec3 Camera::get_direction() const
 Vec3 Camera::get_up() const
 {
     return orientation * Vec3::UnitY;
-}
-
-real_t Camera::get_fov_radians() const
-{
-    return fov;
-}
-
-real_t Camera::get_fov_degrees() const
-{
-    return fov * 180.0 / PI;
-}
-
-real_t Camera::get_aspect_ratio() const
-{
-    return aspect;
-}
-
-real_t Camera::get_near_clip() const
-{
-    return near_clip;
-}
-
-real_t Camera::get_far_clip() const
-{
-    return far_clip;
 }
 
 void Camera::translate(const Vec3& v)
@@ -514,8 +481,9 @@ Scene::~Scene()
 }
 
 Pass::Pass(void)
+ : rendertarget(0)
 {
-	// Do Nothing
+	clear_color = Vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 Pass::~Pass()
@@ -528,24 +496,20 @@ Pass::~Pass()
 
 void Pass::set_camera(void)
 {
-	real_t fov = camera.get_fov_degrees();
-	real_t aspect = camera.get_aspect_ratio();
-	real_t near_clip = camera.get_near_clip();
-	real_t far_clip = camera.get_far_clip();
-	real_t eyex = camera.get_position().x;
-	real_t eyey = camera.get_position().y;
-	real_t eyez = camera.get_position().z;
-	real_t centerx = camera.get_position().x + camera.get_direction().x * camera.focus_dist;
-	real_t centery = camera.get_position().y + camera.get_direction().y * camera.focus_dist;
-	real_t centerz = camera.get_position().z + camera.get_direction().z * camera.focus_dist;
-	real_t upx = camera.get_up().x;
-	real_t upy = camera.get_up().y;
-	real_t upz = camera.get_up().z;
+	GLdouble eyex = camera.get_position().x;
+	GLdouble eyey = camera.get_position().y;
+	GLdouble eyez = camera.get_position().z;
+	GLdouble centerx = camera.get_position().x + camera.get_direction().x * camera.focus_dist;
+	GLdouble centery = camera.get_position().y + camera.get_direction().y * camera.focus_dist;
+	GLdouble centerz = camera.get_position().z + camera.get_direction().z * camera.focus_dist;
+	GLdouble upx = camera.get_up().x;
+	GLdouble upy = camera.get_up().y;
+	GLdouble upz = camera.get_up().z;
 
 	// set the projection matrix
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(fov, aspect, near_clip, far_clip);
+	glLoadMatrixd(proj.m);
 
 	// set the modelview matrix
 	glMatrixMode(GL_MODELVIEW);
@@ -572,8 +536,62 @@ void Scene::render()
 	for(PassList::iterator i = passes.begin();
 		i != passes.end(); ++i)
 	{
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
 		(*i)->render(this);
-		glPopAttrib();
 	}
+
+	SDL_GL_SwapBuffers();
+}
+
+RenderTarget::~RenderTarget()
+{
+	glDeleteFramebuffersEXT(1, &fbo);
+	glDeleteRenderbuffersEXT(1, &renderbuffer);
+}
+
+RenderTarget::RenderTarget( const ivec2 &_dimensions ) : fbo(0), renderbuffer(0), dimensions(_dimensions)
+{
+	assert(!"stub");
+}
+
+void RenderTarget::init( void )
+{
+	glGenFramebuffersEXT(1, &fbo);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+
+	glGenRenderbuffersEXT(1, &renderbuffer);
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbuffer);
+	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, dimensions.x, dimensions.y); 
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, renderbuffer);
+
+	glGenTextures(1, &gltex_name);
+	glBindTexture(GL_TEXTURE_2D, gltex_name);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,  dimensions.x, dimensions.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, gltex_name, 0);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	// error checking
+	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) {
+		std::cerr << "ERROR: Failed to create render-target" << std::endl;
+	}
+	CHECK_GL_ERROR();
+}
+
+void RenderTarget::bind() const
+{
+	CHECK_GL_ERROR();
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+
+	// No need to save state. The viewport is reset by the next pass anyway.
+	glViewport(0, 0, dimensions.x, dimensions.y);
+}
+
+void RenderTarget::unbind()
+{
+	CHECK_GL_ERROR();
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }

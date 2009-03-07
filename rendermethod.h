@@ -50,16 +50,35 @@ private:
 	const Texture *diffuse_texture;
 };
 
-class RenderMethod_Fresnel : public RenderMethod
+class RenderMethod_TextureReplace : public RenderMethod
 {
 public:
-    RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
-                         const BufferObject<Vec3> * normals_buffer,
-                         const BufferObject<index_t> * indices_buffer,
-						 const ShaderProgram * shader,
-				         const Material * mat,
-				         const Texture * env_map,
-				         real_t refraction_index);
+	RenderMethod_TextureReplace(const BufferObject<Vec3> * vertices_buffer,
+                                const BufferObject<Vec3> * normals_buffer,
+								const BufferObject<Vec2> * tcoords_buffer,
+								const BufferObject<index_t> * indices_buffer,
+	                            const Texture * diffuse_texture);
+
+	virtual void draw(const Mat4 &transform) const;
+
+private:
+	const BufferObject<Vec3> * vertices_buffer;
+	const BufferObject<Vec3> * normals_buffer;
+	const BufferObject<Vec2> * tcoords_buffer;
+	const BufferObject<index_t> * indices_buffer;
+	const Texture *diffuse_texture;
+};
+
+class RenderMethod_FresnelSphereMap : public RenderMethod
+{
+public:
+    RenderMethod_FresnelSphereMap(const BufferObject<Vec3> * vertices_buffer,
+                                  const BufferObject<Vec3> * normals_buffer,
+                                  const BufferObject<index_t> * indices_buffer,
+						          const ShaderProgram * shader,
+				                  const Material * mat,
+				                  const Texture * env_map,
+				                  real_t refraction_index);
 
 	virtual void draw(const Mat4 &transform) const;
     
@@ -70,6 +89,30 @@ private:
 	const ShaderProgram * shader;
 	const Material* mat;
 	const Texture* env_map;
+};
+
+class RenderMethod_Fresnel : public RenderMethod
+{
+public:
+	RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
+	                     const BufferObject<Vec3> * normals_buffer,
+	                     const BufferObject<Vec2> * tcoords_buffer,
+	                     const BufferObject<index_t> * indices_buffer,
+	                     const ShaderProgram * shader,
+	                     const Material * mat,
+	                     const Texture * diffuse_map,
+	                     real_t refraction_index);
+
+	virtual void draw(const Mat4 &transform) const;
+
+private:
+	const BufferObject<Vec3> * vertices_buffer;
+	const BufferObject<Vec3> * normals_buffer;
+	const BufferObject<Vec2> * tcoords_buffer;
+	const BufferObject<index_t> * indices_buffer;
+	const ShaderProgram * shader;
+	const Material* mat;
+	const Texture* diffuse_map;
 };
 
 class RenderMethod_BumpMap : public RenderMethod

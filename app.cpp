@@ -78,9 +78,11 @@ static AppState state;
  */
 static void update_camera_aspect()
 {
+	/*
 	Camera * primary_camera = state.scene->primary_camera;
 	assert(primary_camera);
-    primary_camera->aspect = real_t(state.width)/real_t(state.height);
+	primary_camera->aspect = real_t(state.width)/real_t(state.height);
+	*/
 }
 
 /**

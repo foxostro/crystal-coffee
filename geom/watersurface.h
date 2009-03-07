@@ -40,6 +40,8 @@ public:
 	             const WavePointList& wave_points,
 				 int resx, int resz);
 
+	void generate_indices(Scene * scene);
+
     virtual ~WaterSurface();
 
     /**
@@ -56,6 +58,7 @@ public:
 public:
 	BufferObject<Vec3> * vertices_buffer;
 	BufferObject<Vec3> * normals_buffer;
+	BufferObject<Vec2> * tcoords_buffer;
 	BufferObject<index_t> * indices_buffer;
 
 private:
@@ -67,21 +70,19 @@ private:
 
 	real_t * heightmap;
 	
-	// generate indices for the heightmap mesh
-	void generate_indices();
-	
 	// generate the heightmap from the surface function
 	void generate_heightmap(real_t time);
-	
-	// generate the normals of the heightmap
+
+	void generate_indices();
 	void generate_normals();
-	
-	// generate vertices for the mesh from the heightmap
 	void generate_vertices();
+	void generate_tcoords();
 	
 	void set_vertex(Vec3 * vertices, int x, int z, Vec3 v);
 	
 	void set_normal(Vec3 * normals, int x, int z, Vec3 n);
+
+	void set_tcoord(Vec2 * tcoords, int x, int z, Vec2 st);
 	
 	static Vec3 compute_normal(real_t *heightmap, int sx, int sz, int x, int z);
 };

@@ -265,26 +265,62 @@ private:
 class Texture : public SceneResource
 {
 public:
-	Texture(const std::string &texture_name);
-
 	virtual ~Texture();
-
-	GLuint get_gltex_name() const {
-		return gltex_name;
-	}
-	
+	Texture(void) : gltex_name(0) {}
+	Texture(const std::string &f) : texture_name(f), gltex_name(0) {}
+	inline GLuint get_gltex_name() const { return gltex_name; }
 	virtual void init(void) { load_texture(); }
 
 private:
-	void load_texture();
-	
 	// no meaningful assignment or copy
 	Texture(const Texture &r);
 	Texture& operator=(const Texture &r);
 
-private:
+	void load_texture();
+
+public:
 	std::string texture_name;
+
+protected:
 	GLuint gltex_name;
+};
+
+class RenderTarget : public Texture
+{
+public:
+	virtual ~RenderTarget();
+
+	RenderTarget(const ivec2 &_dimensions);
+
+	virtual void init(void);
+
+	virtual void bind() const;
+
+	static void unbind();
+
+private:
+	// no meaningful assignment or copy
+	RenderTarget(const RenderTarget &r);
+	RenderTarget& operator=(const RenderTarget &r);
+
+private:
+	GLuint fbo;
+	GLuint renderbuffer;
+	ivec2 dimensions;
+};
+
+class NullRenderTarget : public RenderTarget
+{
+public:
+	virtual ~NullRenderTarget() {}
+	NullRenderTarget(void) : RenderTarget(ivec2(0,0)) {}
+	virtual void init(void) { std::clog << "NullRenderTarget::init" << std::endl; }
+	virtual void bind() const { unbind(); }
+
+private:
+	// no meaningful assignment or copy
+	NullRenderTarget(const NullRenderTarget &r);
+	NullRenderTarget& operator=(const NullRenderTarget &r);
 };
 
 /** Calculate the tangents for one triangle */
@@ -296,7 +332,7 @@ void calculate_triangle_tangent(const Vec3 *vertices,
 /**
  * Stores position data of the camera.
  */
-class Camera : public SceneResource
+class Camera
 {
 public:
     Camera();
@@ -350,14 +386,6 @@ public:
     Quat orientation;
     // Distance to the point about which the camera's rotate functions operate.
     real_t focus_dist;
-    // Field of view of y-axis, in radians.
-    real_t fov;
-    // The aspect ratio.
-    real_t aspect;
-    // The near clipping plane.
-    real_t near_clip;
-    // The far clipping plane.
-    real_t far_clip;
 };
 
 class Light
@@ -379,9 +407,12 @@ class Scene;
 class Pass
 {
 public:
+	const RenderTarget * rendertarget;
+	Mat4 proj;
 	Camera camera;
 	typedef std::vector<RenderInstance*> RenderInstanceList;
 	RenderInstanceList instances;
+	Vec4 clear_color;
 
 public:
 	virtual ~Pass();

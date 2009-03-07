@@ -29,5 +29,15 @@ typedef unsigned int index_t;
 typedef unsigned short index_t;
 #endif
 
+#define CHECK_GL_ERROR() \
+for(;;) {                                                                  \
+    GLenum errorCode;                                                      \
+    while( (errorCode=glGetError()) != GL_NO_ERROR)                        \
+    {                                                                      \
+		std::cerr << __FILE__ << "(" << __LINE__ << "): "                  \
+		          << (const char*)gluErrorString(errorCode) << std::endl;  \
+    }                                                                      \
+break;}
+
 #endif /* _GLHEADERS_H_ */
 

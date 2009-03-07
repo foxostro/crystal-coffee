@@ -21,6 +21,7 @@ WaterSurface::WaterSurface(Scene * scene,
   heightmap(0),
   vertices_buffer(0),
   normals_buffer(0),
+  tcoords_buffer(0),
   indices_buffer(0)
 {
 	assert(scene);
@@ -41,41 +42,14 @@ WaterSurface::WaterSurface(Scene * scene,
 	normals_buffer->create(num_of_vertices, DYNAMIC_DRAW);
 	scene->resources.push_back(normals_buffer);
 
+	// Create the tcoords buffer
+	tcoords_buffer = new BufferObject<Vec2>();
+	tcoords_buffer->create(num_of_vertices, STATIC_DRAW);
+	scene->resources.push_back(tcoords_buffer);
+	generate_tcoords();
+	
 	// Create the indices buffer to define the mesh topology
-	{
-		const size_t num_of_indices = resx * resz * 6;
-
-		index_t * indices = new index_t[num_of_indices];
-
-		size_t idx;
-		int x, z;
-
-		for(idx = 0, x = 0; x < resx; x++)
-		{
-			for(z = 0; z < resz; z++)
-			{
-				// triangle 1
-				indices[idx+0] = (x+0)*(resz+1) + (z+1);
-				indices[idx+1] = (x+1)*(resz+1) + (z+0);
-				indices[idx+2] = (x+0)*(resz+1) + (z+0);
-
-				// triangle 2
-				indices[idx+3] = (x+0)*(resz+1) + (z+1);
-				indices[idx+4] = (x+1)*(resz+1) + (z+1);
-				indices[idx+5] = (x+1)*(resz+1) + (z+0);
-
-				idx+=6;
-				assert(idx <= num_of_indices);
-			}
-		}
-
-		// Create the indices buffer
-		indices_buffer = new BufferObject<index_t>();
-		indices_buffer->recreate(num_of_indices, indices, STATIC_DRAW);
-		scene->resources.push_back(indices_buffer);
-
-		delete [] indices;
-	}
+	generate_indices(scene);
 
 	tick(0.0);
 }
@@ -160,6 +134,23 @@ void WaterSurface::generate_normals()
 	normals_buffer->unlock();
 }
 
+void WaterSurface::generate_tcoords()
+{
+	assert(tcoords_buffer);
+
+	Vec2 * tcoords = tcoords_buffer->lock();
+
+	for(int x=0; x<=resx; x++)
+	{
+		for(int z=0; z<=resz; z++)
+		{
+			set_tcoord(tcoords, x, z, Vec2((real_t)x/resx, (real_t)z/resz));
+		}
+	}
+
+	tcoords_buffer->unlock();
+}
+
 void WaterSurface::generate_vertices()
 {
 #define NX(x) ((real_t)(x)/resx*2-1)
@@ -214,3 +205,49 @@ void WaterSurface::set_normal(Vec3 * normals, int x, int z, Vec3 n)
 	normals[x*(resz+1)+z] = n;
 }
 
+void WaterSurface::set_tcoord(Vec2 * tcoords, int x, int z, Vec2 st)
+{
+	assert(x <= resx);
+	assert(x >= 0);
+	assert(z <= resz);
+	assert(z >= 0);
+	tcoords[x*(resz+1)+z] = st;
+}
+
+void WaterSurface::generate_indices( Scene * scene )
+{
+	assert(scene);
+
+	const size_t num_of_indices = resx * resz * 6;
+
+	index_t * indices = new index_t[num_of_indices];
+
+	size_t idx;
+	int x, z;
+
+	for(idx = 0, x = 0; x < resx; x++)
+	{
+		for(z = 0; z < resz; z++)
+		{
+			// triangle 1
+			indices[idx+0] = (x+0)*(resz+1) + (z+1);
+			indices[idx+1] = (x+1)*(resz+1) + (z+0);
+			indices[idx+2] = (x+0)*(resz+1) + (z+0);
+
+			// triangle 2
+			indices[idx+3] = (x+0)*(resz+1) + (z+1);
+			indices[idx+4] = (x+1)*(resz+1) + (z+1);
+			indices[idx+5] = (x+1)*(resz+1) + (z+0);
+
+			idx+=6;
+			assert(idx <= num_of_indices);
+		}
+	}
+
+	// Create the indices buffer
+	indices_buffer = new BufferObject<index_t>();
+	indices_buffer->recreate(num_of_indices, indices, STATIC_DRAW);
+	scene->resources.push_back(indices_buffer);
+
+	delete [] indices;
+}

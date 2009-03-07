@@ -24,37 +24,48 @@ static RenderMethod * create_tree(Scene * scene)
 	return rendermethod;
 }
 
-static RenderMethod * create_tex_sphere(Scene * scene, const char * tex)
+static RenderMethod * create_tex_sphere(Scene * scene, const Texture * tex)
 {
 	Material * mat;
-	Texture * diffuse_texture;
 	RenderMethod * rendermethod;
 
-	// Earth material
+	assert(scene);
+	assert(tex);
+
+	// material
 	mat = new Material();
 	mat->ambient = Vec3::Ones;
 	mat->diffuse = Vec3::Ones;
 	mat->shininess = 18;
 	mat->specular = Vec3(.1,.1,.1);
 	scene->resources.push_back(mat);
-
-	// Earth diffuse texture
-	diffuse_texture = new Texture(tex);
-	scene->resources.push_back(diffuse_texture);
 	
 	// Generate sphere geometry
 	TriangleSoup sphere = gen_sphere(scene, 4);
 	
-	// Put it all together to make the "Earth" object
+	// Put it all together to make the object
 	rendermethod = new RenderMethod_DiffuseTexture(sphere.vertices_buffer,
 		                                           sphere.normals_buffer,
 		                                           sphere.tcoords_buffer,
 												   NULL, // no indices
 		                                           mat,
-		                                           diffuse_texture);
+		                                           tex);
 	scene->rendermethods.push_back(rendermethod);
 
 	return rendermethod;
+}
+
+static RenderMethod * create_tex_sphere(Scene * scene, const char * tex)
+{
+	Texture * diffuse_texture;
+
+	assert(scene);
+	assert(tex);
+
+	diffuse_texture = new Texture(tex);
+	scene->resources.push_back(diffuse_texture);
+
+	return create_tex_sphere(scene, diffuse_texture);
 }
 
 static RenderMethod * create_fresnel_sphere(Scene * scene)
@@ -77,15 +88,15 @@ static RenderMethod * create_fresnel_sphere(Scene * scene)
 	scene->resources.push_back(env_map);
 
 	// Load and compile the shader
-	fresnel_shader = new ShaderProgram("shaders/fresnel_vert.glsl",
-	                                   "shaders/fresnel_frag.glsl");
+	fresnel_shader = new ShaderProgram("shaders/fresnel_spheremap_vert.glsl",
+	                                   "shaders/fresnel_spheremap_frag.glsl");
 	scene->resources.push_back(fresnel_shader);
 
 	// Generate sphere geometry
 	TriangleSoup sphere = gen_sphere(scene, 4);
 
 	// Put it all together
-	rendermethod = new RenderMethod_Fresnel(sphere.vertices_buffer,
+	rendermethod = new RenderMethod_FresnelSphereMap(sphere.vertices_buffer,
 	                                        sphere.normals_buffer,
 										    NULL, // no indices
 											fresnel_shader,
@@ -216,14 +227,17 @@ static void ldr_load_example_scene(Scene * scene)
 	Pass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget = new NullRenderTarget();
+	scene->resources.push_back(rendertarget);
+	pass->rendertarget = rendertarget;
+	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+
 	// Set the camera
 	Camera& camera = pass->camera;
 	camera.orientation = Quat::Identity;
 	camera.position = Vec3(0,0,10);
 	camera.focus_dist = 10;
-	camera.fov = PI / 3.0;
-	camera.near_clip = .1;
-	camera.far_clip = 100.0;
 
 	// Set the scene's primary camera
 	scene->primary_camera = &(pass->camera);
@@ -250,6 +264,12 @@ static void ldr_load_fresnel_sphere_scene(Scene * scene)
 	Pass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget = new NullRenderTarget();
+	scene->resources.push_back(rendertarget);
+	pass->rendertarget = rendertarget;
+	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+
 	// Create an instance of the object
 	RenderInstance * fresnel = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
 	                                                   0.0, 3.0, 0.0, 0.0,
@@ -263,9 +283,6 @@ static void ldr_load_fresnel_sphere_scene(Scene * scene)
 	cam.orientation = Quat::Identity;
 	cam.position = Vec3(0,0,10);
 	cam.focus_dist = 10;
-	cam.fov = PI / 3.0;
-	cam.near_clip = .1;
-	cam.far_clip = 100.0;
 
 	// Set the scene's primary camera
 	scene->primary_camera = &(pass->camera);
@@ -300,15 +317,14 @@ static WaterSurface * gen_water_surface(Scene * scene)
 	return watergeom;
 }
 
-RenderMethod * create_water(Scene * scene)
+RenderMethod * create_water(Scene * scene, const Texture * tex)
 {
 	Material * mat;
-	Texture * spheremap;
 	WaterSurface * watergeom;
-	ShaderProgram * fresnel;
+	ShaderProgram * shader;
 	RenderMethod * water;
 
-
+	assert(tex);
 
 	mat = new Material();
 	mat->ambient = Vec3(0.0, 0.2, 0.3);
@@ -318,28 +334,22 @@ RenderMethod * create_water(Scene * scene)
 	scene->resources.push_back(mat);
 
 
-
-	spheremap = new Texture("images/spheremap_stpeters.png");
-	scene->resources.push_back(spheremap);
-
-
-
-	fresnel = new ShaderProgram("shaders/fresnel_vert.glsl", "shaders/fresnel_frag.glsl");
-	scene->resources.push_back(fresnel);
+	shader = new ShaderProgram("shaders/fresnel_spheremap_vert.glsl",
+	                           "shaders/fresnel_spheremap_frag.glsl");
+	scene->resources.push_back(shader);
 
 
 
 	watergeom = gen_water_surface(scene);
 
 
-
-	water = new RenderMethod_Fresnel(watergeom->vertices_buffer,
-	                                 watergeom->normals_buffer,
-									 watergeom->indices_buffer,
-								     fresnel,
-								     mat,
-								     spheremap,
-								     1.33);
+	water = new RenderMethod_FresnelSphereMap(watergeom->vertices_buffer,
+	                                          watergeom->normals_buffer,
+									          watergeom->indices_buffer,
+								              shader,
+								              mat,
+								              tex,
+								              1.33);
 	scene->rendermethods.push_back(water);
 
 
@@ -349,9 +359,12 @@ RenderMethod * create_water(Scene * scene)
 
 static void ldr_load_pool_scene(Scene * scene)
 {
+	Texture * spheremap = new Texture("images/spheremap_stpeters.png");
+	scene->resources.push_back(spheremap);
+
 	RenderMethod * pool = create_pool(scene);
 	RenderMethod * earth = create_tex_sphere(scene, "images/earth.png");
-	RenderMethod * water = create_water(scene);
+	RenderMethod * water = create_water(scene, spheremap);
 	RenderMethod * fresnel_sphere = create_fresnel_sphere(scene);
 	RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 	RenderMethod * tree = create_tree(scene);
@@ -366,6 +379,12 @@ static void ldr_load_pool_scene(Scene * scene)
 	// The scene has only one pass
 	Pass * pass = new StandardPass();
 	scene->passes.push_back(pass);
+
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget = new NullRenderTarget();
+	scene->resources.push_back(rendertarget);
+	pass->rendertarget = rendertarget;
+	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	pass->instances.push_back(new RenderInstance(Mat4::Identity, pool));
 
@@ -406,9 +425,6 @@ static void ldr_load_pool_scene(Scene * scene)
 	cam.orientation = Quat(-0.0946664, -0.00690199, 0.970616, 0.22112);
 	cam.position = Vec3(-2.62381,6.01017,-12.4194);
 	cam.focus_dist = 14.0444;
-	cam.fov = PI / 3.0;
-	cam.near_clip = 1;
-	cam.far_clip = 1000.0;
 
 	// Set the scene's primary camera
 	scene->primary_camera = &(pass->camera);
@@ -427,6 +443,12 @@ static void ldr_load_bumpy_sphere_scene(Scene * scene)
 	Pass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget = new NullRenderTarget();
+	scene->resources.push_back(rendertarget);
+	pass->rendertarget = rendertarget;
+	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+
 	// Create an instance of the Earth object
 	RenderInstance * bumpy = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
 	                                                 0.0, 3.0, 0.0, 0.0,
@@ -440,12 +462,100 @@ static void ldr_load_bumpy_sphere_scene(Scene * scene)
 	cam.orientation = Quat::Identity;
 	cam.position = Vec3(0,0,10);
 	cam.focus_dist = 10;
-	cam.fov = PI / 3.0;
-	cam.near_clip = .1;
-	cam.far_clip = 100.0;
 
 	// Set the scene's primary camera
 	scene->primary_camera = &(pass->camera);
+}
+
+static void ldr_load_rendertarget_scene(Scene * scene)
+{
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
+	scene->ambient_light = Vec3(.1, .1, .1);
+
+	/************************************************************************/
+
+	Pass * pass1 = new StandardPass();
+
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget1 = new RenderTarget(ivec2(256,256));
+	scene->resources.push_back(rendertarget1);
+	pass1->rendertarget = rendertarget1;
+	pass1->proj = Mat4::perspective(PI / 3.0, 1.0, 0.1, 100.0);
+	pass1->camera.orientation = Quat::Identity;
+	pass1->camera.position = Vec3(0,0,10);
+	pass1->camera.focus_dist = 10;
+	pass1->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
+
+	// Add a bumpy sphere
+	pass1->instances.push_back(new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
+	                                                   0.0, 3.0, 0.0, 0.0,
+													   0.0, 0.0, 3.0, 0.0,
+													   0.0, 0.0, 0.0, 1.0),
+												  create_bumpy_sphere(scene)));
+
+	/************************************************************************/
+
+	Pass * pass2 = new StandardPass();
+
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget2 = new NullRenderTarget();
+	scene->resources.push_back(rendertarget2);
+	pass2->rendertarget = rendertarget2;
+	pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+	pass2->camera.orientation = Quat::Identity;
+	pass2->camera.position = Vec3(0,0,20);
+	pass2->camera.focus_dist = 10;
+
+	{
+		std::vector<Face> faces;
+		Face a;
+		Face b;
+
+		a.normals[0] = a.normals[1] = a.normals[2] = 
+		b.normals[0] = b.normals[1] = b.normals[2] = Vec3(-1.0, 0.0, 0.0);
+
+		a.vertices[0] = Vec3(5.0, 5.0, 5.0);
+		a.vertices[1] = Vec3(0.0, 5.0, 5.0);
+		a.vertices[2] = Vec3(0.0, 0.0, 5.0);
+
+		a.tcoords[0] = Vec2(1.0, 1.0);
+		a.tcoords[1] = Vec2(0.0, 1.0);
+		a.tcoords[2] = Vec2(0.0, 0.0);
+
+		b.vertices[0] = Vec3(5.0, 5.0, 5.0);
+		b.vertices[1] = Vec3(0.0, 0.0, 5.0);
+		b.vertices[2] = Vec3(5.0, 0.0, 5.0);
+
+		b.tcoords[0] = Vec2(1.0, 1.0);
+		b.tcoords[1] = Vec2(0.0, 0.0);
+		b.tcoords[2] = Vec2(1.0, 0.0);
+
+		faces.push_back(a);
+		faces.push_back(b);
+
+		TriangleSoup geom(scene, faces);
+
+		RenderMethod * r = new RenderMethod_TextureReplace(geom.vertices_buffer,
+														   geom.normals_buffer,
+														   geom.tcoords_buffer,
+														   NULL,
+														   rendertarget1);
+		scene->rendermethods.push_back(r);
+		pass2->instances.push_back(new RenderInstance(Mat4::Identity, r));
+	}
+
+	/************************************************************************/
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass2->camera);
+
+	// Set up the order of passes
+	scene->passes.push_back(pass1);
+	scene->passes.push_back(pass2);
 }
 
 /**
@@ -463,7 +573,7 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
 	case 1:
-		ldr_load_pool_scene(scene);
+		ldr_load_rendertarget_scene(scene);
 		break;
 
 	case 2:
@@ -474,8 +584,12 @@ bool ldr_load_scene(Scene* scene, int num)
 		ldr_load_bumpy_sphere_scene(scene);
 		break;
 
+	case 4:
+		ldr_load_pool_scene(scene);
+		break;
+
     default:
-    	std::cout << "#" << num << "does not refer to a scene." << std::endl;
+    	std::cout << "#" << num << " does not refer to a scene." << std::endl;
         return false;
     }
 
