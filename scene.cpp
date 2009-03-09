@@ -335,6 +335,12 @@ void Texture::load_texture()
 	}
 }
 
+void Texture::bind( void ) const
+{
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, get_gltex_name());
+}
+
 void calculate_triangle_tangent(const Vec3 *vertices,
                                 const Vec3 *normals,
                                 const Vec2 *tcoords,
@@ -550,7 +556,7 @@ RenderTarget::~RenderTarget()
 
 RenderTarget::RenderTarget( const ivec2 &_dimensions ) : fbo(0), renderbuffer(0), dimensions(_dimensions)
 {
-	assert(!"stub");
+	// Do Nothing
 }
 
 void RenderTarget::init( void )
@@ -594,4 +600,128 @@ void RenderTarget::unbind()
 {
 	CHECK_GL_ERROR();
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+
+CubeMapRenderTarget::CubeMapRenderTarget(const ivec2 &_dimensions)
+	: RenderTarget(_dimensions)
+{
+	assert(!"stub");
+}
+
+void CubeMapRenderTarget::init( void )
+{
+	assert(!"stub");
+}
+
+void CubeMapRenderTarget::bind() const
+{
+	assert(!"bind is n/a to the  Cube Map RenderTarget");
+}
+
+void CubeMapRenderTarget::bind( int face ) const
+{
+	assert(!"stub");
+}
+
+GLenum CubeMapTexture::face_targets[6] =
+{
+	GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT,
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_X_EXT,
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Y_EXT,
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_EXT,
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Z_EXT,
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_EXT
+};
+
+CubeMapTexture::CubeMapTexture(const std::string &face1,
+							   const std::string &face2,
+							   const std::string &face3,
+							   const std::string &face4,
+							   const std::string &face5,
+							   const std::string &face6)
+{
+	texture_name_face[0] = face1;
+	texture_name_face[1] = face2;
+	texture_name_face[2] = face3;
+	texture_name_face[3] = face4;
+	texture_name_face[4] = face5;
+	texture_name_face[5] = face6;
+}
+
+void CubeMapTexture::load_face(GLenum target, const std::string &filename)
+{
+	ILuint ImageName, width, height, bpp;
+	ILubyte *data;
+	GLint internalformat;
+	GLenum format;
+
+	ilGenImages(1, &ImageName);
+	ilBindImage(ImageName);
+	ilLoadImage(filename.c_str());
+
+	width = ilGetInteger(IL_IMAGE_WIDTH);
+	height = ilGetInteger(IL_IMAGE_HEIGHT);
+	bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
+	data = ilGetData(); 
+
+	CHECK_IL_ERROR();
+
+	assert(bpp == 3 || bpp == 4);
+
+	internalformat = (bpp==4) ? GL_RGBA8 : GL_RGB8;
+	format = (bpp==4) ? GL_RGBA : GL_RGB;
+
+	glTexImage2D(target,
+	             0,
+				 internalformat,
+	             width,
+				 height,
+				 0,
+				 format,
+				 GL_UNSIGNED_BYTE,
+				 data);
+
+	ilDeleteImages(1, &ImageName); 
+
+	CHECK_GL_ERROR();
+}
+
+void CubeMapTexture::init(void)
+{
+	if(gltex_name)
+		return;
+
+	glGenTextures(1, &gltex_name);
+
+	glEnable(GL_TEXTURE_CUBE_MAP_EXT);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_EXT, gltex_name);
+
+	for(int i=0; i<6; i++)
+	{
+		load_face(face_targets[i], texture_name_face[i]);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	CHECK_GL_ERROR();
+}
+
+void CubeMapTexture::bind_cubemap() const
+{
+	glActiveTexture(GL_TEXTURE0);
+
+	glEnable(GL_TEXTURE_CUBE_MAP_EXT);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_EXT, gltex_name);
+
+	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT);
+	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT);
+	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT);
+
+	glEnable(GL_TEXTURE_GEN_S);
+	glEnable(GL_TEXTURE_GEN_T);
+	glEnable(GL_TEXTURE_GEN_R);
 }

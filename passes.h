@@ -20,5 +20,14 @@ public:
 	virtual void render(const Scene * scene);
 };
 
+class CubeMapUpdatePass : public Pass
+{
+public:
+	CubeMapUpdatePass(void) { /* Do nothing */ }
+	virtual ~CubeMapUpdatePass() { /* Do nothing */ }
+
+	virtual void render(const Scene * scene);
+};
+
 #endif /* _PASSES_H_ */
 

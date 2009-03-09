@@ -271,6 +271,8 @@ public:
 	inline GLuint get_gltex_name() const { return gltex_name; }
 	virtual void init(void) { load_texture(); }
 
+	virtual void bind(void) const;
+
 private:
 	// no meaningful assignment or copy
 	Texture(const Texture &r);
@@ -283,6 +285,41 @@ public:
 
 protected:
 	GLuint gltex_name;
+};
+
+class CubeMapTexture : public Texture
+{
+public:
+	CubeMapTexture(void) { /* Do Nothing */ }
+
+	CubeMapTexture(const std::string &face1,
+	               const std::string &face2,
+				   const std::string &face3,
+				   const std::string &face4,
+				   const std::string &face5,
+				   const std::string &face6);
+
+	virtual void init(void);
+
+	virtual void bind(void) const
+	{
+		bind_cubemap();
+	}
+
+	void bind_cubemap() const;
+
+private:
+	// no meaningful assignment or copy
+	CubeMapTexture(const CubeMapTexture &r);
+	CubeMapTexture& operator=(const CubeMapTexture &r);
+
+	void load_face(GLenum target, const std::string &filename);
+
+private:
+	static GLenum face_targets[6];
+
+public:
+	std::string texture_name_face[6];
 };
 
 class RenderTarget : public Texture
@@ -307,6 +344,23 @@ private:
 	GLuint fbo;
 	GLuint renderbuffer;
 	ivec2 dimensions;
+};
+
+class CubeMapRenderTarget : public RenderTarget
+{
+public:
+	CubeMapRenderTarget(const ivec2 &_dimensions);
+
+	virtual void init(void);
+
+	virtual void bind(int face) const;
+
+private:
+	// no meaningful assignment or copy
+	CubeMapRenderTarget(const CubeMapRenderTarget &r);
+	CubeMapRenderTarget& operator=(const CubeMapRenderTarget &r);
+
+	virtual void bind() const;
 };
 
 class NullRenderTarget : public RenderTarget

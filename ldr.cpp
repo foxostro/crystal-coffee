@@ -24,7 +24,7 @@ static RenderMethod * create_tree(Scene * scene)
 	return rendermethod;
 }
 
-static RenderMethod * create_tex_sphere(Scene * scene, const Texture * tex)
+static RenderMethod * create_tex_sphere(Scene * scene, const Texture * tex, bool include_tcoords = true)
 {
 	Material * mat;
 	RenderMethod * rendermethod;
@@ -46,7 +46,7 @@ static RenderMethod * create_tex_sphere(Scene * scene, const Texture * tex)
 	// Put it all together to make the object
 	rendermethod = new RenderMethod_DiffuseTexture(sphere.vertices_buffer,
 		                                           sphere.normals_buffer,
-		                                           sphere.tcoords_buffer,
+												   include_tcoords ? sphere.tcoords_buffer : NULL,
 												   NULL, // no indices
 		                                           mat,
 		                                           tex);
@@ -97,12 +97,12 @@ static RenderMethod * create_fresnel_sphere(Scene * scene)
 
 	// Put it all together
 	rendermethod = new RenderMethod_FresnelSphereMap(sphere.vertices_buffer,
-	                                        sphere.normals_buffer,
-										    NULL, // no indices
-											fresnel_shader,
-											mat,
-											env_map,
-											1.33);
+	                                                 sphere.normals_buffer,
+										             NULL, // no indices
+											         fresnel_shader,
+											         mat,
+											         env_map,
+											         1.33);
 	scene->rendermethods.push_back(rendermethod);
 
 	return rendermethod;
@@ -249,6 +249,62 @@ static void ldr_load_example_scene(Scene * scene)
 													 0.0, 0.0, 0.0, 1.0),
 	                                            create_tex_sphere(scene, "images/earth.png"));
 	pass->instances.push_back(earth);
+}
+
+static void ldr_load_cubemap_sphere_scene(Scene * scene)
+{
+	assert(scene);
+
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
+	scene->ambient_light = Vec3(.1, .1, .1);
+
+	// The scene has only one pass
+	Pass * pass = new StandardPass();
+	scene->passes.push_back(pass);
+
+	// Render target for the main framebuffer
+	RenderTarget * rendertarget = new NullRenderTarget();
+	scene->resources.push_back(rendertarget);
+	pass->rendertarget = rendertarget;
+	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+
+	// Create the cubemap texture from 6 image files.
+	CubeMapTexture * cubemap = new CubeMapTexture("images/cubemap/cm_left.jpg",
+	                                              "images/cubemap/cm_right.jpg",
+												  "images/cubemap/cm_top.jpg",
+												  "images/cubemap/cm_bottom.jpg",
+												  "images/cubemap/cm_back.jpg",
+												  "images/cubemap/cm_front.jpg");
+	scene->resources.push_back(cubemap);
+
+	// Create an instance of the Earth object
+	RenderInstance * earth = new RenderInstance(Mat4(3.0, 0.0, 0.0, 4.0,
+	                                                 0.0, 3.0, 0.0, 0.0,
+													 0.0, 0.0, 3.0, -5.0,
+													 0.0, 0.0, 0.0, 1.0),
+	                                            create_tex_sphere(scene, "images/earth.png"));
+	pass->instances.push_back(earth);
+
+	// Create an instance of a cubemapped sphere
+	RenderInstance * sphere = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
+	                                                  0.0, 3.0, 0.0, 0.0,
+													  0.0, 0.0, 3.0, 0.0,
+													  0.0, 0.0, 0.0, 1.0),
+												create_tex_sphere(scene, cubemap, false));
+	pass->instances.push_back(sphere);
+
+	// Set the camera
+	Camera& cam = pass->camera;
+	cam.orientation = Quat::Identity;
+	cam.position = Vec3(0,0,10);
+	cam.focus_dist = 10;
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass->camera);
 }
 
 static void ldr_load_fresnel_sphere_scene(Scene * scene)
@@ -707,22 +763,26 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
 	case 1:
-		ldr_load_rendertarget_scene_2(scene);
+		ldr_load_cubemap_sphere_scene(scene);
 		break;
 
 	case 2:
-		ldr_load_fresnel_sphere_scene(scene);
+		ldr_load_rendertarget_scene_2(scene);
 		break;
 
 	case 3:
-		ldr_load_bumpy_sphere_scene(scene);
+		ldr_load_fresnel_sphere_scene(scene);
 		break;
 
 	case 4:
-		ldr_load_pool_scene(scene);
+		ldr_load_bumpy_sphere_scene(scene);
 		break;
 
 	case 5:
+		ldr_load_pool_scene(scene);
+		break;
+
+	case 6:
 		ldr_load_rendertarget_scene(scene);
 		break;
 

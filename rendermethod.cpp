@@ -24,7 +24,6 @@ RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
-	assert(tcoords_buffer);
 	assert(mat);
 	assert(diffuse_texture);
 
@@ -40,24 +39,27 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 {	
 	assert(vertices_buffer);
 	assert(normals_buffer);
-	assert(tcoords_buffer);
 	assert(mat);
 	assert(diffuse_texture);
 
+	CHECK_GL_ERROR();
+
 	mat->bind();
 
-	// Disable texture unit 2
-	glActiveTexture(GL_TEXTURE2);
-	glDisable(GL_TEXTURE_2D);
-
-	// Disable texture unit 1
-	glActiveTexture(GL_TEXTURE1);
-	glDisable(GL_TEXTURE_2D);
+	// Disable all texture units
+	int num_tex_units=1;
+	glGetIntegerv(GL_MAX_TEXTURE_COORDS, &num_tex_units);
+	for(int i=num_tex_units-1; i>=0; --i)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_3D);
+		glDisable(GL_TEXTURE_CUBE_MAP_EXT);
+	}
 
 	// Bind texture unit 0
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, diffuse_texture->get_gltex_name());
-	glEnable(GL_TEXTURE_2D);
+	diffuse_texture->bind();
 
 	glUseProgramObjectARB(0); // fixed-function pipeline
 	
@@ -77,9 +79,12 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 	glNormalPointer(GL_DOUBLE, 0, 0);
 
 	// Bind the tcoord buffer
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	tcoords_buffer->bind();
-	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+	if(tcoords_buffer) {
+		glClientActiveTexture(GL_TEXTURE0);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		tcoords_buffer->bind();
+		glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+	}
 
 	// Actually draw the triangles	
 	if(indices_buffer) {
@@ -92,11 +97,13 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 	}
 
 	// Clean up
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	if(tcoords_buffer) { glDisableClientState(GL_TEXTURE_COORD_ARRAY); }
 	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glPopMatrix();
+
+	CHECK_GL_ERROR();
 }
 
 RenderMethod_TextureReplace::
@@ -327,7 +334,7 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 	assert(normals_buffer);
 	assert(shader);
 	assert(mat);
-	assert(env_map);
+	assert(diffuse_map);
 
 	mat->bind();
 	GLhandleARB program = shader->get_program();

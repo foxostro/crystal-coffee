@@ -39,5 +39,15 @@ for(;;) {                                                                  \
     }                                                                      \
 break;}
 
+#define CHECK_IL_ERROR() \
+for(;;) {                                                                  \
+    ILenum errorCode;                                                      \
+    while( (errorCode=ilGetError()) != IL_NO_ERROR)                        \
+    {                                                                      \
+		std::cerr << __FILE__ << "(" << __LINE__ << "): "                  \
+		          << (const char*)iluErrorString(errorCode) << std::endl;  \
+    }                                                                      \
+break;}
+
 #endif /* _GLHEADERS_H_ */
 

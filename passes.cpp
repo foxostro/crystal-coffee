@@ -32,8 +32,9 @@ void StandardPass::render(const Scene * scene)
 	for(RenderInstanceList::const_iterator i = instances.begin();
 		i != instances.end(); ++i)
 	{
-		CHECK_GL_ERROR();
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
 		(*i)->draw();
+		glPopAttrib();
 		CHECK_GL_ERROR();
 	}
 
@@ -41,4 +42,11 @@ void StandardPass::render(const Scene * scene)
 
 	rendertarget->unbind();
 	glPopAttrib(); // restore the viewport (altered by RenderTarget)
+
+	CHECK_GL_ERROR();
+}
+
+void CubeMapUpdatePass::render( const Scene * scene )
+{
+	assert(!"stub");
 }
