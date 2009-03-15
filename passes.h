@@ -14,7 +14,10 @@
 class StandardPass : public Pass
 {
 public:
-	StandardPass(void) { /* Do nothing */ }
+	const RenderTarget2D * rendertarget;
+
+public:
+	StandardPass(void) : rendertarget(0) { /* Do nothing */ }
 	virtual ~StandardPass() { /* Do nothing */ }
 
 	virtual void render(const Scene * scene);
@@ -23,10 +26,16 @@ public:
 class CubeMapUpdatePass : public Pass
 {
 public:
-	CubeMapUpdatePass(void) { /* Do nothing */ }
+	const CubeMapTarget * rendertarget;
+
+public:
+	CubeMapUpdatePass(void) : rendertarget(0) { /* Do nothing */ }
 	virtual ~CubeMapUpdatePass() { /* Do nothing */ }
 
 	virtual void render(const Scene * scene);
+
+private:
+	static Mat4 face_orientation[6];
 };
 
 #endif /* _PASSES_H_ */

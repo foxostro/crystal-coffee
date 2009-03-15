@@ -57,12 +57,12 @@ static RenderMethod * create_tex_sphere(Scene * scene, const Texture * tex, bool
 
 static RenderMethod * create_tex_sphere(Scene * scene, const char * tex)
 {
-	Texture * diffuse_texture;
+	Texture2D * diffuse_texture;
 
 	assert(scene);
 	assert(tex);
 
-	diffuse_texture = new Texture(tex);
+	diffuse_texture = new Texture2D(tex);
 	scene->resources.push_back(diffuse_texture);
 
 	return create_tex_sphere(scene, diffuse_texture);
@@ -71,7 +71,7 @@ static RenderMethod * create_tex_sphere(Scene * scene, const char * tex)
 static RenderMethod * create_fresnel_sphere(Scene * scene)
 {
 	Material * mat;
-	Texture * env_map;
+	Texture2D * env_map;
 	ShaderProgram * fresnel_shader;
 	RenderMethod * rendermethod;
 
@@ -84,7 +84,7 @@ static RenderMethod * create_fresnel_sphere(Scene * scene)
 	scene->resources.push_back(mat);
 
 	// Create texture resources
-	env_map = new Texture("images/spheremap_stpeters.png");
+	env_map = new Texture2D("images/spheremap_stpeters.png");
 	scene->resources.push_back(env_map);
 
 	// Load and compile the shader
@@ -111,9 +111,9 @@ static RenderMethod * create_fresnel_sphere(Scene * scene)
 static RenderMethod * create_bumpy_sphere(Scene * scene)
 {
 	Material * mat;
-	Texture * diffuse_map;
-	Texture * normal_map;
-	Texture * height_map;
+	Texture2D * diffuse_map;
+	Texture2D * normal_map;
+	Texture2D * height_map;
 	ShaderProgram * parallax_bump_shader;
 	RenderMethod * rendermethod;
 
@@ -126,13 +126,13 @@ static RenderMethod * create_bumpy_sphere(Scene * scene)
 	scene->resources.push_back(mat);
 
 	// Create texture resources
-	diffuse_map = new Texture("images/bricks2_diffuse_map.png");
+	diffuse_map = new Texture2D("images/bricks2_diffuse_map.png");
 	scene->resources.push_back(diffuse_map);
 
-	normal_map = new Texture("images/bricks2_normal_map.png");
+	normal_map = new Texture2D("images/bricks2_normal_map.png");
 	scene->resources.push_back(normal_map);
 
-	height_map = new Texture("images/bricks2_height_map.png");
+	height_map = new Texture2D("images/bricks2_height_map.png");
 	scene->resources.push_back(height_map);
 
 	// Load and compile the shader
@@ -162,9 +162,9 @@ static RenderMethod * create_bumpy_sphere(Scene * scene)
 static RenderMethod * create_pool(Scene * scene)
 {
 	Material * mat;
-	Texture * diffuse_map;
-	Texture * normal_map;
-	Texture * height_map;
+	Texture2D * diffuse_map;
+	Texture2D * normal_map;
+	Texture2D * height_map;
 	ShaderProgram * parallax_bump_shader;
 	RenderMethod * rendermethod;
 
@@ -179,13 +179,13 @@ static RenderMethod * create_pool(Scene * scene)
 	scene->resources.push_back(mat);
 
 	// Create texture resources
-	diffuse_map = new Texture("images/bricks2_diffuse_map.png");
+	diffuse_map = new Texture2D("images/bricks2_diffuse_map.png");
 	scene->resources.push_back(diffuse_map);
 
-	normal_map = new Texture("images/bricks2_normal_map.png");
+	normal_map = new Texture2D("images/bricks2_normal_map.png");
 	scene->resources.push_back(normal_map);
 
-	height_map = new Texture("images/bricks2_height_map.png");
+	height_map = new Texture2D("images/bricks2_height_map.png");
 	scene->resources.push_back(height_map);
 
 	// Load and compile the shader
@@ -224,13 +224,11 @@ static void ldr_load_example_scene(Scene * scene)
 	scene->ambient_light = Vec3(.1, .1, .1);
 
 	// The scene has only one pass
-	Pass * pass = new StandardPass();
+	StandardPass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget = new NullRenderTarget();
-	scene->resources.push_back(rendertarget);
-	pass->rendertarget = rendertarget;
+	pass->rendertarget = NULL;
 	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	// Set the camera
@@ -263,13 +261,11 @@ static void ldr_load_cubemap_sphere_scene(Scene * scene)
 	scene->ambient_light = Vec3(.1, .1, .1);
 
 	// The scene has only one pass
-	Pass * pass = new StandardPass();
+	StandardPass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget = new NullRenderTarget();
-	scene->resources.push_back(rendertarget);
-	pass->rendertarget = rendertarget;
+	pass->rendertarget = NULL;
 	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	// Create the cubemap texture from 6 image files.
@@ -317,13 +313,11 @@ static void ldr_load_fresnel_sphere_scene(Scene * scene)
 	scene->ambient_light = Vec3(.1, .1, .1);
 
 	// The scene has only one pass
-	Pass * pass = new StandardPass();
+	StandardPass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget = new NullRenderTarget();
-	scene->resources.push_back(rendertarget);
-	pass->rendertarget = rendertarget;
+	pass->rendertarget = NULL;
 	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	// Create an instance of the object
@@ -373,7 +367,7 @@ static WaterSurface * gen_water_surface(Scene * scene)
 	return watergeom;
 }
 
-RenderMethod * create_water(Scene * scene, const Texture * tex)
+RenderMethod * create_water(Scene * scene, const Texture2D * tex)
 {
 	Material * mat;
 	WaterSurface * watergeom;
@@ -415,7 +409,7 @@ RenderMethod * create_water(Scene * scene, const Texture * tex)
 
 static void ldr_load_pool_scene(Scene * scene)
 {
-	Texture * spheremap = new Texture("images/spheremap_stpeters.png");
+	Texture2D * spheremap = new Texture2D("images/spheremap_stpeters.png");
 	scene->resources.push_back(spheremap);
 
 	RenderMethod * pool = create_pool(scene);
@@ -433,13 +427,11 @@ static void ldr_load_pool_scene(Scene * scene)
 	scene->ambient_light = Vec3(.2,.2,.2);
 
 	// The scene has only one pass
-	Pass * pass = new StandardPass();
+	StandardPass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget = new NullRenderTarget();
-	scene->resources.push_back(rendertarget);
-	pass->rendertarget = rendertarget;
+	pass->rendertarget = NULL;
 	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	pass->instances.push_back(new RenderInstance(Mat4::Identity, pool));
@@ -496,13 +488,11 @@ static void ldr_load_bumpy_sphere_scene(Scene * scene)
 	scene->ambient_light = Vec3(.1, .1, .1);
 
 	// The scene has only one pass
-	Pass * pass = new StandardPass();
+	StandardPass * pass = new StandardPass();
 	scene->passes.push_back(pass);
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget = new NullRenderTarget();
-	scene->resources.push_back(rendertarget);
-	pass->rendertarget = rendertarget;
+	pass->rendertarget = NULL;
 	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	// Create an instance of the Earth object
@@ -534,10 +524,10 @@ static void ldr_load_rendertarget_scene(Scene * scene)
 
 	/************************************************************************/
 
-	Pass * pass1 = new StandardPass();
+	StandardPass * pass1 = new StandardPass();
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget1 = new RenderTarget(ivec2(256,256));
+	RenderTarget2D * rendertarget1 = new RenderTarget2D(ivec2(256,256));
 	scene->resources.push_back(rendertarget1);
 	pass1->rendertarget = rendertarget1;
 	pass1->proj = Mat4::perspective(PI / 3.0, 1.0, 0.1, 100.0);
@@ -555,12 +545,10 @@ static void ldr_load_rendertarget_scene(Scene * scene)
 
 	/************************************************************************/
 
-	Pass * pass2 = new StandardPass();
+	StandardPass * pass2 = new StandardPass();
 
 	// Render target for the main framebuffer
-	RenderTarget * rendertarget2 = new NullRenderTarget();
-	scene->resources.push_back(rendertarget2);
-	pass2->rendertarget = rendertarget2;
+	pass2->rendertarget = NULL;
 	pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 	pass2->camera.orientation = Quat::Identity;
 	pass2->camera.position = Vec3(0,0,20);
@@ -616,8 +604,8 @@ static void ldr_load_rendertarget_scene(Scene * scene)
 
 static void ldr_load_rendertarget_scene_2(Scene * scene)
 {
-	Pass * pass1, * pass2;
-	RenderTarget * rendertarget1;
+	StandardPass * pass1, * pass2;
+	RenderTarget2D * rendertarget1;
 	real_t aspect = 800.0 / 600.0;
 
 	// Light the scene
@@ -633,7 +621,7 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 		pass1 = new StandardPass();
 
 		// Render target for the main framebuffer
-		rendertarget1 = new RenderTarget(ivec2(800,600));
+		rendertarget1 = new RenderTarget2D(ivec2(800,600));
 		scene->resources.push_back(rendertarget1);
 		pass1->rendertarget = rendertarget1;
 		pass1->proj = Mat4::perspective(PI / 3.0, aspect, 0.1, 100.0);
@@ -642,7 +630,7 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 		pass1->camera.focus_dist = 14.0444;
 		pass1->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
 
-		Texture * spheremap = new Texture("images/spheremap_stpeters.png");
+		Texture2D * spheremap = new Texture2D("images/spheremap_stpeters.png");
 		scene->resources.push_back(spheremap);
 
 		RenderMethod * pool = create_pool(scene);
@@ -693,9 +681,7 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 		pass2 = new StandardPass();
 
 		// Render target for the main framebuffer
-		RenderTarget * rendertarget2 = new NullRenderTarget();
-		scene->resources.push_back(rendertarget2);
-		pass2->rendertarget = rendertarget2;
+		pass2->rendertarget = NULL;
 		pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 		pass2->camera.orientation = Quat::Identity;
 		pass2->camera.position = Vec3(0,0,20);
@@ -748,6 +734,101 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 	scene->passes.push_back(pass2);
 }
 
+void ldr_load_cubemap_rendertarget_scene(Scene * scene)
+{
+	CubeMapUpdatePass * pass1;
+	StandardPass * pass2;
+	CubeMapTarget * cubemap;
+	Pass::RenderInstanceList instances;
+	const real_t rad = 2.0;
+
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
+	scene->ambient_light = Vec3(.1, .1, .1);
+
+	/************************************************************************/
+	/** Cube Map Update Pass (does not specify any geometry here) ***********/
+	/************************************************************************/
+
+	pass1 = new CubeMapUpdatePass();
+	pass1->rendertarget = cubemap = new CubeMapTarget(ivec2(128, 128));
+	scene->resources.push_back(cubemap);
+	pass1->proj = Mat4::perspective(PI / 2.0, 1.0, 1.0, 50.0);
+	pass1->camera.orientation = Quat::Identity; // orientation is irrelevant as given here
+	pass1->camera.position = Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2);
+	pass1->camera.focus_dist = 1.0;
+
+	/************************************************************************/
+	/**	Set up geometry for the scene ***************************************/
+	/************************************************************************/
+
+	{
+		Texture2D * spheremap = new Texture2D("images/spheremap_stpeters.png");
+		scene->resources.push_back(spheremap);
+
+		RenderMethod * pool = create_pool(scene);
+		RenderMethod * earth = create_tex_sphere(scene, "images/earth.png");
+		RenderMethod * water = create_water(scene, spheremap);
+		RenderMethod * mirror_sphere = create_tex_sphere(scene, cubemap);
+		RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
+		RenderMethod * tree = create_tree(scene);
+
+		instances.push_back(new RenderInstance(Mat4::Identity, pool));
+
+		instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
+		                                            0.0, 0.4, 0.0, POY - 1.0,
+		                                            0.0, 0.0, PIZ, 0.0,
+		                                            0.0, 0.0, 0.0, 1.0),
+		                                            water));
+
+		instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+		                                            0.0, rad, 0.0, POY+rad,
+		                                            0.0, 0.0, rad, (POZ+PIZ)/2,
+		                                            0.0, 0.0, 0.0, 1.0),
+		                                            mirror_sphere));
+
+		instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+		                                            0.0, rad, 0.0, POY+rad,
+		                                            0.0, 0.0, rad, -(POZ+PIZ)/2,
+		                                            0.0, 0.0, 0.0, 1.0),
+		                                            earth));
+
+		instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
+		                                            0.0, 1.0, 0.0, POY,
+		                                            0.0, 0.0, 1.0, (POZ+PIZ)/2,
+		                                            0.0, 0.0, 0.0, 1.0),
+		                                            tree));
+
+		instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+		                                            0.0, rad, 0.0, POY+rad,
+		                                            0.0, 0.0, rad, -(POZ+PIZ)/2,
+		                                            0.0, 0.0, 0.0, 1.0),
+		                                            swirly_sphere));
+	}
+
+	// Have the cubemap pass use the scene geometry
+	pass1->instances = instances;
+
+	// Render target for the main framebuffer
+	pass2 = new StandardPass();
+	pass2->rendertarget = NULL;
+	pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+	pass2->camera.orientation = Quat::Identity;
+	pass2->camera.position = Vec3(0,0,20);
+	pass2->camera.focus_dist = 10;
+	pass2->instances = instances;
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass2->camera);
+
+	// Set up the order of passes
+	scene->passes.push_back(pass1);
+	scene->passes.push_back(pass2);
+}
+
 /**
  * Loads the scene with the given num into scene.
  * @param scene The Scene into which to load.
@@ -763,26 +844,31 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
 	case 1:
-		ldr_load_cubemap_sphere_scene(scene);
+		ldr_load_cubemap_rendertarget_scene(scene);
+		//ldr_load_cubemap_sphere_scene(scene);
 		break;
 
 	case 2:
-		ldr_load_rendertarget_scene_2(scene);
+		ldr_load_cubemap_sphere_scene(scene);
 		break;
 
 	case 3:
-		ldr_load_fresnel_sphere_scene(scene);
+		ldr_load_rendertarget_scene_2(scene);
 		break;
 
 	case 4:
-		ldr_load_bumpy_sphere_scene(scene);
+		ldr_load_fresnel_sphere_scene(scene);
 		break;
 
 	case 5:
-		ldr_load_pool_scene(scene);
+		ldr_load_bumpy_sphere_scene(scene);
 		break;
 
 	case 6:
+		ldr_load_pool_scene(scene);
+		break;
+
+	case 7:
 		ldr_load_rendertarget_scene(scene);
 		break;
 

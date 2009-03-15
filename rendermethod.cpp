@@ -522,4 +522,3 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 
 	glPopMatrix();
 }
-

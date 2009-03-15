@@ -260,31 +260,49 @@ private:
 };
 
 /**
- * Represents a single texture unit and associated settings.
- */
+* Represents a single texture unit and associated settings.
+*/
 class Texture : public SceneResource
 {
 public:
 	virtual ~Texture();
 	Texture(void) : gltex_name(0) {}
-	Texture(const std::string &f) : texture_name(f), gltex_name(0) {}
-	inline GLuint get_gltex_name() const { return gltex_name; }
-	virtual void init(void) { load_texture(); }
 
-	virtual void bind(void) const;
+	inline GLuint get_gltex_name() const { return gltex_name; }
+
+	virtual void init(void) = 0;
+	virtual void bind(void) const = 0;
 
 private:
 	// no meaningful assignment or copy
 	Texture(const Texture &r);
 	Texture& operator=(const Texture &r);
 
-	void load_texture();
-
 public:
 	std::string texture_name;
 
 protected:
 	GLuint gltex_name;
+};
+
+class Texture2D : public Texture
+{
+public:
+	Texture2D(void) {}
+	Texture2D(const std::string &f) : texture_name(f) {}
+
+	virtual void init(void) { load_texture(); }
+	virtual void bind(void) const;
+
+private:
+	// no meaningful assignment or copy
+	Texture2D(const Texture2D &r);
+	Texture2D& operator=(const Texture2D &r);
+
+	void load_texture();
+
+public:
+	std::string texture_name;
 };
 
 class CubeMapTexture : public Texture
@@ -306,8 +324,6 @@ public:
 		bind_cubemap();
 	}
 
-	void bind_cubemap() const;
-
 private:
 	// no meaningful assignment or copy
 	CubeMapTexture(const CubeMapTexture &r);
@@ -315,30 +331,32 @@ private:
 
 	void load_face(GLenum target, const std::string &filename);
 
-private:
+	void init_blank_face(GLenum target, const ivec2 &dimensions);
+
+	void bind_cubemap() const;
+
+protected:
 	static GLenum face_targets[6];
 
 public:
 	std::string texture_name_face[6];
 };
 
-class RenderTarget : public Texture
+class RenderTarget2D : public Texture2D
 {
 public:
-	virtual ~RenderTarget();
+	virtual ~RenderTarget2D();
 
-	RenderTarget(const ivec2 &_dimensions);
+	RenderTarget2D(const ivec2 &_dimensions);
 
-	virtual void init(void);
+	virtual void init();
 
-	virtual void bind() const;
-
-	static void unbind();
+	virtual void bind_render_target() const;
 
 private:
 	// no meaningful assignment or copy
-	RenderTarget(const RenderTarget &r);
-	RenderTarget& operator=(const RenderTarget &r);
+	RenderTarget2D(const RenderTarget2D &r);
+	RenderTarget2D& operator=(const RenderTarget2D &r);
 
 private:
 	GLuint fbo;
@@ -346,35 +364,25 @@ private:
 	ivec2 dimensions;
 };
 
-class CubeMapRenderTarget : public RenderTarget
+class CubeMapTarget : public CubeMapTexture
 {
 public:
-	CubeMapRenderTarget(const ivec2 &_dimensions);
-
+	CubeMapTarget(const ivec2 &_dimensions);
 	virtual void init(void);
-
-	virtual void bind(int face) const;
-
-private:
-	// no meaningful assignment or copy
-	CubeMapRenderTarget(const CubeMapRenderTarget &r);
-	CubeMapRenderTarget& operator=(const CubeMapRenderTarget &r);
-
-	virtual void bind() const;
-};
-
-class NullRenderTarget : public RenderTarget
-{
-public:
-	virtual ~NullRenderTarget() {}
-	NullRenderTarget(void) : RenderTarget(ivec2(0,0)) {}
-	virtual void init(void) { std::clog << "NullRenderTarget::init" << std::endl; }
-	virtual void bind() const { unbind(); }
+	virtual void bind_render_target(int face) const;
 
 private:
 	// no meaningful assignment or copy
-	NullRenderTarget(const NullRenderTarget &r);
-	NullRenderTarget& operator=(const NullRenderTarget &r);
+	CubeMapTarget(const CubeMapTarget &r);
+	CubeMapTarget& operator=(const CubeMapTarget &r);
+
+	void init_face_texture(GLenum target, const ivec2 &dimensions);
+	void create_cubemap_texture(const ivec2 &dimensions);
+
+private:
+	GLuint fbo;
+	GLuint renderbuffer;
+	ivec2 dimensions;
 };
 
 /** Calculate the tangents for one triangle */
@@ -461,7 +469,6 @@ class Scene;
 class Pass
 {
 public:
-	const RenderTarget * rendertarget;
 	Mat4 proj;
 	Camera camera;
 	typedef std::vector<RenderInstance*> RenderInstanceList;

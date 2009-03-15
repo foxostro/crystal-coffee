@@ -326,7 +326,7 @@ Texture::~Texture()
 	glDeleteTextures(1, &gltex_name);
 }
 
-void Texture::load_texture()
+void Texture2D::load_texture()
 {
 	// don't load texture if already loaded or filename is blank
 	if(!gltex_name && !texture_name.empty()) {
@@ -335,7 +335,7 @@ void Texture::load_texture()
 	}
 }
 
-void Texture::bind( void ) const
+void Texture2D::bind( void ) const
 {
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, get_gltex_name());
@@ -487,7 +487,6 @@ Scene::~Scene()
 }
 
 Pass::Pass(void)
- : rendertarget(0)
 {
 	clear_color = Vec4(0.0, 0.0, 0.0, 1.0);
 }
@@ -548,18 +547,19 @@ void Scene::render()
 	SDL_GL_SwapBuffers();
 }
 
-RenderTarget::~RenderTarget()
+RenderTarget2D::~RenderTarget2D()
 {
 	glDeleteFramebuffersEXT(1, &fbo);
 	glDeleteRenderbuffersEXT(1, &renderbuffer);
 }
 
-RenderTarget::RenderTarget( const ivec2 &_dimensions ) : fbo(0), renderbuffer(0), dimensions(_dimensions)
+RenderTarget2D::RenderTarget2D( const ivec2 &_dimensions )
+	: fbo(0), renderbuffer(0), dimensions(_dimensions)
 {
 	// Do Nothing
 }
 
-void RenderTarget::init( void )
+void RenderTarget2D::init()
 {
 	glGenFramebuffersEXT(1, &fbo);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
@@ -579,48 +579,24 @@ void RenderTarget::init( void )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	// error checking
+	// Error Checking: Make sure the FBO is properly constituted
+#ifndef NDEBUG
 	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) {
 		std::cerr << "ERROR: Failed to create render-target" << std::endl;
 	}
+#endif
+
 	CHECK_GL_ERROR();
 }
 
-void RenderTarget::bind() const
+void RenderTarget2D::bind_render_target() const
 {
 	CHECK_GL_ERROR();
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
 
 	// No need to save state. The viewport is reset by the next pass anyway.
 	glViewport(0, 0, dimensions.x, dimensions.y);
-}
-
-void RenderTarget::unbind()
-{
-	CHECK_GL_ERROR();
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-}
-
-CubeMapRenderTarget::CubeMapRenderTarget(const ivec2 &_dimensions)
-	: RenderTarget(_dimensions)
-{
-	assert(!"stub");
-}
-
-void CubeMapRenderTarget::init( void )
-{
-	assert(!"stub");
-}
-
-void CubeMapRenderTarget::bind() const
-{
-	assert(!"bind is n/a to the  Cube Map RenderTarget");
-}
-
-void CubeMapRenderTarget::bind( int face ) const
-{
-	assert(!"stub");
 }
 
 GLenum CubeMapTexture::face_targets[6] =
@@ -650,39 +626,47 @@ CubeMapTexture::CubeMapTexture(const std::string &face1,
 
 void CubeMapTexture::load_face(GLenum target, const std::string &filename)
 {
-	ILuint ImageName, width, height, bpp;
-	ILubyte *data;
-	GLint internalformat;
-	GLenum format;
-
-	ilGenImages(1, &ImageName);
-	ilBindImage(ImageName);
-	ilLoadImage(filename.c_str());
-
-	width = ilGetInteger(IL_IMAGE_WIDTH);
-	height = ilGetInteger(IL_IMAGE_HEIGHT);
-	bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
-	data = ilGetData(); 
-
 	CHECK_IL_ERROR();
+	CHECK_GL_ERROR();
 
-	assert(bpp == 3 || bpp == 4);
+	if(filename.empty()) {
+		init_blank_face(target, ivec2(8, 8));
+	} else {
+		ILuint ImageName, width, height, bpp;
+		ILubyte *data;
+		GLint internalformat;
+		GLenum format;
 
-	internalformat = (bpp==4) ? GL_RGBA8 : GL_RGB8;
-	format = (bpp==4) ? GL_RGBA : GL_RGB;
+		std::clog << "Loading cubmap face from file: " <<  filename << std::endl;
 
-	glTexImage2D(target,
-	             0,
-				 internalformat,
-	             width,
-				 height,
-				 0,
-				 format,
-				 GL_UNSIGNED_BYTE,
-				 data);
+		ilGenImages(1, &ImageName);
+		ilBindImage(ImageName);
+		ilLoadImage(filename.c_str());
 
-	ilDeleteImages(1, &ImageName); 
+		width = ilGetInteger(IL_IMAGE_WIDTH);
+		height = ilGetInteger(IL_IMAGE_HEIGHT);
+		bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
+		data = ilGetData();
 
+		assert(bpp == 3 || bpp == 4);
+
+		internalformat = (bpp==4) ? GL_RGBA8 : GL_RGB8;
+		format = (bpp==4) ? GL_RGBA : GL_RGB;
+
+		glTexImage2D(target,
+					 0,
+					 internalformat,
+					 width,
+					 height,
+					 0,
+					 format,
+					 GL_UNSIGNED_BYTE,
+					 data);
+
+		ilDeleteImages(1, &ImageName); 
+	}
+	
+	CHECK_IL_ERROR();
 	CHECK_GL_ERROR();
 }
 
@@ -704,8 +688,8 @@ void CubeMapTexture::init(void)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	CHECK_GL_ERROR();
 }
@@ -724,4 +708,127 @@ void CubeMapTexture::bind_cubemap() const
 	glEnable(GL_TEXTURE_GEN_S);
 	glEnable(GL_TEXTURE_GEN_T);
 	glEnable(GL_TEXTURE_GEN_R);
+}
+
+void CubeMapTexture::init_blank_face(GLenum target, const ivec2 &dimensions)
+{
+	unsigned char * data = new unsigned char[dimensions.x * dimensions.y * 4];
+	unsigned char * pixel = data;
+
+	for(int y = 0; y < dimensions.y; ++y)
+	{
+		for(int x = 0; x < dimensions.x; ++x)
+		{
+			pixel[0] = 255; // R
+			pixel[1] = 255; // G
+			pixel[2] = 255; // B
+			pixel[3] = 255; // A
+			pixel += 4;
+		}
+	}
+
+	glTexImage2D(target,
+		0,
+		GL_RGBA8,
+		dimensions.x,
+		dimensions.y,
+		0,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		data);
+
+	delete [] data;
+}
+
+CubeMapTarget::CubeMapTarget(const ivec2 &_dimensions)
+	: fbo(0), renderbuffer(0), dimensions(_dimensions)
+{
+	// Do Nothing
+}
+
+void CubeMapTarget::init(void)
+{
+	create_cubemap_texture(dimensions);
+
+	// Create the frame buffer object
+	glGenFramebuffersEXT(1, &fbo);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+
+	// Add a depth buffer to the frame buffer object
+	glGenRenderbuffersEXT(1, &renderbuffer);
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbuffer);
+	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, dimensions.x, dimensions.y); 
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderbuffer);
+
+	CHECK_GL_ERROR();
+}
+
+void CubeMapTarget::bind_render_target(int face) const
+{
+	CHECK_GL_ERROR();
+
+	// No need to save state. The viewport is reset by the next pass anyway.
+	glViewport(0, 0, dimensions.x, dimensions.y);
+
+	// Bind the frame buffer object
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
+
+	// Bind the face we are rendering to right now (must do one at a time)
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
+	                          GL_COLOR_ATTACHMENT0_EXT,
+							  face_targets[face],
+							  gltex_name,
+							  0);
+
+	// Error Checking: Make sure the FBO is properly constituted
+#ifndef NDEBUG
+	GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	if(status != GL_FRAMEBUFFER_COMPLETE_EXT) {
+		std::cerr << "ERROR: Failed to create render-target" << std::endl;
+	}
+#endif
+
+	CHECK_GL_ERROR();
+}
+
+void CubeMapTarget::init_face_texture( GLenum target, const ivec2 &dimensions )
+{
+	unsigned char * data = new unsigned char[dimensions.x * dimensions.y * 4];
+	unsigned char * pixel = data;
+
+	for(int y = 0; y < dimensions.y; ++y)
+	{
+		for(int x = 0; x < dimensions.x; ++x)
+		{
+			pixel[0] = 255; // R
+			pixel[1] = 0;   // G
+			pixel[2] = 0;   // B
+			pixel[3] = 255; // A
+			pixel += 4;
+		}
+	}
+
+	glTexImage2D(target,
+	             0,
+	             GL_RGBA8,
+	             dimensions.x,
+	             dimensions.y,
+	             0,
+	             GL_RGBA,
+	             GL_UNSIGNED_BYTE,
+	             data); // NULL
+
+	delete [] data;
+}
+
+void CubeMapTarget::create_cubemap_texture(const ivec2 &dim)
+{
+	glGenTextures(1, &gltex_name);
+	glEnable(GL_TEXTURE_CUBE_MAP_EXT);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_EXT, gltex_name);
+	for(int i=0; i<6; i++) { init_face_texture(face_targets[i], dim); }
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }

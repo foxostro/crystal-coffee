@@ -87,8 +87,8 @@ private:
 	const BufferObject<Vec3> * normals_buffer;
 	const BufferObject<index_t> * indices_buffer;
 	const ShaderProgram * shader;
-	const Material* mat;
-	const Texture* env_map;
+	const Material * mat;
+	const Texture * env_map;
 };
 
 class RenderMethod_Fresnel : public RenderMethod
@@ -111,8 +111,8 @@ private:
 	const BufferObject<Vec2> * tcoords_buffer;
 	const BufferObject<index_t> * indices_buffer;
 	const ShaderProgram * shader;
-	const Material* mat;
-	const Texture* diffuse_map;
+	const Material * mat;
+	const Texture * diffuse_map;
 };
 
 class RenderMethod_BumpMap : public RenderMethod
