@@ -33,10 +33,9 @@ public:
 	virtual ~CubeMapUpdatePass() { /* Do nothing */ }
 
 	virtual void render(const Scene * scene);
-
-private:
-	static Mat4 face_orientation[6];
 };
+
+extern Quat face_orientation[6];
 
 #endif /* _PASSES_H_ */
 

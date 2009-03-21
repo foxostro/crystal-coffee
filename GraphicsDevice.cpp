@@ -122,7 +122,7 @@ Mat3 GraphicsDevice::getCameraOrientation() {
 
 void GraphicsDevice::initializeOpenGLExtensions() {
 	GLenum err = glewInit();
-	if(GLEW_OK == err) {
+	if(GLEW_OK != err) {
 		std::cerr << (const char*)glewGetErrorString(err) << std::endl;
 	}
 }

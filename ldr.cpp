@@ -513,7 +513,7 @@ static void ldr_load_bumpy_sphere_scene(Scene * scene)
 	scene->primary_camera = &(pass->camera);
 }
 
-static void ldr_load_rendertarget_scene(Scene * scene)
+static void ldr_load_rendertarget_scene_1(Scene * scene)
 {
 	// Light the scene
 	Light light;
@@ -602,11 +602,71 @@ static void ldr_load_rendertarget_scene(Scene * scene)
 	scene->passes.push_back(pass2);
 }
 
+static TriangleSoup create_square(Scene * scene)
+{
+	assert(scene);
+
+	std::vector<Face> faces;
+	Face a;
+	Face b;
+
+	a.normals[0] = a.normals[1] = a.normals[2] = 
+	b.normals[0] = b.normals[1] = b.normals[2] = Vec3(-1.0, 0.0, 0.0);
+
+	a.vertices[0] = Vec3(1.0, 1.0, 1.0);
+	a.vertices[1] = Vec3(0.0, 1.0, 1.0);
+	a.vertices[2] = Vec3(0.0, 0.0, 1.0);
+
+	a.tcoords[0] = Vec2(1.0, 1.0);
+	a.tcoords[1] = Vec2(0.0, 1.0);
+	a.tcoords[2] = Vec2(0.0, 0.0);
+
+	b.vertices[0] = Vec3(1.0, 1.0, 1.0);
+	b.vertices[1] = Vec3(0.0, 0.0, 1.0);
+	b.vertices[2] = Vec3(1.0, 0.0, 1.0);
+
+	b.tcoords[0] = Vec2(1.0, 1.0);
+	b.tcoords[1] = Vec2(0.0, 0.0);
+	b.tcoords[2] = Vec2(1.0, 0.0);
+
+	faces.push_back(a);
+	faces.push_back(b);
+
+	return TriangleSoup(scene, faces);
+}
+
+static RenderInstance * create_square(real_t x, real_t y,
+							          real_t w, real_t h,
+							          Scene * scene,
+							          const Texture2D * tex)
+{
+	assert(scene);
+	assert(tex);
+
+	TriangleSoup geom = create_square(scene);
+
+	RenderMethod * r = new RenderMethod_TextureReplace(geom.vertices_buffer,
+	                                                   geom.normals_buffer,
+	                                                   geom.tcoords_buffer,
+	                                                   NULL,
+	                                                   tex);
+
+	scene->rendermethods.push_back(r);
+
+	return new RenderInstance(Mat4(w,   0.0, 0.0, x,
+	                               0.0, h,   0.0, y,
+								   0.0, 0.0, w,   0.0,
+								   0.0, 0.0, 0.0, 1.0), r);
+}
+
 static void ldr_load_rendertarget_scene_2(Scene * scene)
 {
-	StandardPass * pass1, * pass2;
-	RenderTarget2D * rendertarget1;
-	real_t aspect = 800.0 / 600.0;
+	assert(scene);
+
+	enum FACE { FACE_BEGIN=0, LEFT=0, RIGHT, TOP, BOTTOM, FRONT, BACK, FACE_END };
+	StandardPass * pass_main=NULL, * pass_face[6] = {NULL};
+	RenderTarget2D * rt_face[6] = {NULL};
+	Pass::RenderInstanceList instances;
 
 	// Light the scene
 	Light light;
@@ -618,18 +678,6 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 	/************************************************************************/
 
 	{
-		pass1 = new StandardPass();
-
-		// Render target for the main framebuffer
-		rendertarget1 = new RenderTarget2D(ivec2(800,600));
-		scene->resources.push_back(rendertarget1);
-		pass1->rendertarget = rendertarget1;
-		pass1->proj = Mat4::perspective(PI / 3.0, aspect, 0.1, 100.0);
-		pass1->camera.orientation = Quat(-0.0946664, -0.00690199, 0.970616, 0.22112);
-		pass1->camera.position = Vec3(-2.62381,6.01017,-12.4194);
-		pass1->camera.focus_dist = 14.0444;
-		pass1->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
-
 		Texture2D * spheremap = new Texture2D("images/spheremap_stpeters.png");
 		scene->resources.push_back(spheremap);
 
@@ -640,101 +688,92 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 		RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 		RenderMethod * tree = create_tree(scene);
 
-		pass1->instances.push_back(new RenderInstance(Mat4::Identity, pool));
+		instances.push_back(new RenderInstance(Mat4::Identity, pool));
 
-		pass1->instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
-														  0.0, 0.4, 0.0, POY - 1.0,
-														  0.0, 0.0, PIZ, 0.0,
-														  0.0, 0.0, 0.0, 1.0),
-													  water));
+		instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
+											        0.0, 0.4, 0.0, POY - 1.0,
+											        0.0, 0.0, PIZ, 0.0,
+													0.0, 0.0, 0.0, 1.0),
+											   water));
 
 		const real_t rad = 2.0;
 
-		pass1->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
-														  0.0, rad, 0.0, POY+rad,
-														  0.0, 0.0, rad, (POZ+PIZ)/2,
-														  0.0, 0.0, 0.0, 1.0),
-														   earth));
+		instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+											        0.0, rad, 0.0, POY+rad,
+											        0.0, 0.0, rad, (POZ+PIZ)/2,
+											        0.0, 0.0, 0.0, 1.0),
+											   earth));
 
-		pass1->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
-														  0.0, rad, 0.0, POY+rad,
-														  0.0, 0.0, rad, -(POZ+PIZ)/2,
-														  0.0, 0.0, 0.0, 1.0),
-													  fresnel_sphere));
+		instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+											        0.0, rad, 0.0, POY+rad,
+													0.0, 0.0, rad, -(POZ+PIZ)/2,
+													0.0, 0.0, 0.0, 1.0),
+											   fresnel_sphere));
 
-		pass1->instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
-														  0.0, 1.0, 0.0, POY,
-														  0.0, 0.0, 1.0, (POZ+PIZ)/2,
-														  0.0, 0.0, 0.0, 1.0),
-													  tree));
+		instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
+											        0.0, 1.0, 0.0, POY,
+													0.0, 0.0, 1.0, (POZ+PIZ)/2,
+													0.0, 0.0, 0.0, 1.0),
+											   tree));
 
-		pass1->instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
-														  0.0, rad, 0.0, POY+rad,
-														  0.0, 0.0, rad, -(POZ+PIZ)/2,
-														  0.0, 0.0, 0.0, 1.0),
-													  swirly_sphere));
+		instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+												    0.0, rad, 0.0, POY+rad,
+													0.0, 0.0, rad, -(POZ+PIZ)/2,
+													0.0, 0.0, 0.0, 1.0),
+											   swirly_sphere));
+	}
+
+	/************************************************************************/
+
+	for(int i=FACE_BEGIN; i<FACE_END; ++i)
+	{
+		pass_face[i] = new StandardPass();
+		rt_face[i] = new RenderTarget2D(ivec2(128,128));
+		scene->resources.push_back(rt_face[i]);
+		pass_face[i]->rendertarget = rt_face[i];
+		pass_face[i]->proj = Mat4::perspective(PI / 2.0, 1.0, 0.1, 100.0);
+		pass_face[i]->camera.orientation = face_orientation[i];
+		pass_face[i]->camera.position = Vec3(0.0, POY+2.0, 0.0);
+		pass_face[i]->camera.focus_dist = 1.0;
+		pass_face[i]->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
+		pass_face[i]->instances = instances;
 	}
 
 	/************************************************************************/
 
 	{
-		pass2 = new StandardPass();
+		pass_main = new StandardPass();
+		pass_main->rendertarget = NULL; // render to the main framebuffer
+		pass_main->proj = Mat4::ortho(-2.0, 2.0, -1.0, 2.0, 0.1, 100.0);
+		pass_main->camera.orientation = Quat::Identity;
+		pass_main->camera.position = Vec3(0,0,20);
+		pass_main->camera.focus_dist = 10;
 
-		// Render target for the main framebuffer
-		pass2->rendertarget = NULL;
-		pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
-		pass2->camera.orientation = Quat::Identity;
-		pass2->camera.position = Vec3(0,0,20);
-		pass2->camera.focus_dist = 10;
+		pass_main->instances.push_back(create_square(-2.0, 0.0, 1.0, 1.0, scene, rt_face[LEFT]));
+		pass_main->instances.push_back(create_square(-1.0, 0.0, 1.0, 1.0, scene, rt_face[BACK]));
+		pass_main->instances.push_back(create_square( 0.0, 0.0, 1.0, 1.0, scene, rt_face[RIGHT]));
+		pass_main->instances.push_back(create_square(+1.0, 0.0, 1.0, 1.0, scene, rt_face[FRONT]));
 
-		std::vector<Face> faces;
-		Face a;
-		Face b;
-
-		a.normals[0] = a.normals[1] = a.normals[2] = 
-		b.normals[0] = b.normals[1] = b.normals[2] = Vec3(-1.0, 0.0, 0.0);
-
-		a.vertices[0] = Vec3(5.0 * aspect, 5.0, 5.0);
-		a.vertices[1] = Vec3(0.0, 5.0, 5.0);
-		a.vertices[2] = Vec3(0.0, 0.0, 5.0);
-
-		a.tcoords[0] = Vec2(1.0, 1.0);
-		a.tcoords[1] = Vec2(0.0, 1.0);
-		a.tcoords[2] = Vec2(0.0, 0.0);
-
-		b.vertices[0] = Vec3(5.0 * aspect, 5.0, 5.0);
-		b.vertices[1] = Vec3(0.0, 0.0, 5.0);
-		b.vertices[2] = Vec3(5.0 * aspect, 0.0, 5.0);
-
-		b.tcoords[0] = Vec2(1.0, 1.0);
-		b.tcoords[1] = Vec2(0.0, 0.0);
-		b.tcoords[2] = Vec2(1.0, 0.0);
-
-		faces.push_back(a);
-		faces.push_back(b);
-
-		TriangleSoup geom(scene, faces);
-
-		RenderMethod * r = new RenderMethod_TextureReplace(geom.vertices_buffer,
-														   geom.normals_buffer,
-														   geom.tcoords_buffer,
-														   NULL,
-														   rendertarget1);
-		scene->rendermethods.push_back(r);
-		pass2->instances.push_back(new RenderInstance(Mat4::Identity, r));
+		pass_main->instances.push_back(create_square(-1.0, +1.0, 1.0, 1.0, scene, rt_face[TOP]));
+		pass_main->instances.push_back(create_square(-1.0, -1.0, 1.0, 1.0, scene, rt_face[BOTTOM]));
 	}
 
 	/************************************************************************/
 
 	// Set the scene's primary camera
-	scene->primary_camera = &(pass2->camera);
+	scene->primary_camera = &(pass_main->camera);
 
 	// Set up the order of passes
-	scene->passes.push_back(pass1);
-	scene->passes.push_back(pass2);
+	scene->passes.push_back(pass_face[FRONT]);
+	scene->passes.push_back(pass_face[BACK]);
+	scene->passes.push_back(pass_face[TOP]);
+	scene->passes.push_back(pass_face[BOTTOM]);
+	scene->passes.push_back(pass_face[LEFT]);
+	scene->passes.push_back(pass_face[RIGHT]);
+	scene->passes.push_back(pass_main);
 }
 
-void ldr_load_cubemap_rendertarget_scene(Scene * scene)
+void ldr_load_cubemap_rendertarget_scene_2(Scene * scene)
 {
 	CubeMapUpdatePass * pass1;
 	StandardPass * pass2;
@@ -809,7 +848,7 @@ void ldr_load_cubemap_rendertarget_scene(Scene * scene)
 		                                            swirly_sphere));
 	}
 
-	// Have the cubemap pass use the scene geometry
+	// Have the cubemap pass_main use the scene geometry
 	pass1->instances = instances;
 
 	// Render target for the main framebuffer
@@ -829,6 +868,121 @@ void ldr_load_cubemap_rendertarget_scene(Scene * scene)
 	scene->passes.push_back(pass2);
 }
 
+Pass::RenderInstanceList build_pool_geometry(Scene * scene, real_t rad)
+{
+	assert(scene);
+
+	Pass::RenderInstanceList instances;
+
+	Texture2D * spheremap = new Texture2D("images/spheremap_stpeters.png");
+	scene->resources.push_back(spheremap);
+
+	RenderMethod * pool = create_pool(scene);
+	RenderMethod * earth = create_tex_sphere(scene, "images/earth.png");
+	RenderMethod * water = create_water(scene, spheremap);
+	RenderMethod * swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
+	RenderMethod * tree = create_tree(scene);
+
+	instances.push_back(new RenderInstance(Mat4::Identity, pool));
+
+	instances.push_back(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
+		0.0, 0.4, 0.0, POY - 1.0,
+		0.0, 0.0, PIZ, 0.0,
+		0.0, 0.0, 0.0, 1.0),
+		water));
+
+	instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+		0.0, rad, 0.0, POY+rad,
+		0.0, 0.0, rad, (POZ+PIZ)/2,
+		0.0, 0.0, 0.0, 1.0),
+		swirly_sphere));
+
+	instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
+		0.0, rad, 0.0, POY+rad,
+		0.0, 0.0, rad, -(POZ+PIZ)/2,
+		0.0, 0.0, 0.0, 1.0),
+		earth));
+
+	instances.push_back(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
+		0.0, 1.0, 0.0, POY,
+		0.0, 0.0, 1.0, (POZ+PIZ)/2,
+		0.0, 0.0, 0.0, 1.0),
+		tree));
+
+	instances.push_back(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
+		0.0, rad, 0.0, POY+rad,
+		0.0, 0.0, rad, -(POZ+PIZ)/2,
+		0.0, 0.0, 0.0, 1.0),
+		swirly_sphere));
+
+	return instances;
+}
+
+static void ldr_load_cubemap_rendertarget_scene_1(Scene * scene)
+{
+	assert(scene);
+
+	StandardPass * pass_main = 0;
+	CubeMapUpdatePass * pass_cubemap = 0;
+	CubeMapTarget * cubemap = 0;
+	const real_t rad = 2.0;
+
+	// Light the scene
+	Light light;
+	light.position = Vec3(.4, .7, .8) * 100;
+	light.color = Vec3::Ones;
+	scene->lights.push_back(light);
+	scene->ambient_light = Vec3(.1, .1, .1);
+
+	/************************************************************************/
+	/** Cube Map ************************************************************/
+	/************************************************************************/
+	{
+		pass_cubemap = new CubeMapUpdatePass();
+		pass_cubemap->rendertarget = cubemap = new CubeMapTarget(ivec2(128, 128));
+		scene->resources.push_back(cubemap);
+		pass_cubemap->proj = Mat4::perspective(PI / 2.0, 1.0, 1.0, 50.0);
+		pass_cubemap->camera.orientation = Quat::Identity; // orientation is irrelevant as given here
+		pass_cubemap->camera.position = Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2);
+		pass_cubemap->camera.focus_dist = 1.0;
+		pass_cubemap->instances = build_pool_geometry(scene, rad);
+	}
+
+	/************************************************************************/
+	/** Main Pass ***********************************************************/
+	/************************************************************************/
+	{
+		pass_main = new StandardPass();
+		pass_main->rendertarget = NULL;
+		pass_main->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+		pass_main->camera.orientation = Quat::Identity;
+		pass_main->camera.position = Vec3(0,0,10);
+		pass_main->camera.focus_dist = 10;
+	
+		// Create an instance of the Earth object
+		RenderInstance * earth = new RenderInstance(Mat4(3.0, 0.0, 0.0, 4.0,
+		                                                 0.0, 3.0, 0.0, 0.0,
+														 0.0, 0.0, 3.0, -5.0,
+														 0.0, 0.0, 0.0, 1.0),
+		                                            create_tex_sphere(scene, "images/earth.png"));
+		pass_main->instances.push_back(earth);
+	
+		// Create an instance of a cubemapped sphere
+		RenderInstance * sphere = new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
+		                                                  0.0, 3.0, 0.0, 0.0,
+														  0.0, 0.0, 3.0, 0.0,
+														  0.0, 0.0, 0.0, 1.0),
+													create_tex_sphere(scene, cubemap, false));
+		pass_main->instances.push_back(sphere);
+	}
+
+	// Set the scene's primary camera
+	scene->primary_camera = &(pass_main->camera);
+
+	scene->passes.push_back(pass_cubemap);
+	scene->passes.push_back(pass_main);
+}
+
 /**
  * Loads the scene with the given num into scene.
  * @param scene The Scene into which to load.
@@ -844,32 +998,35 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
 	case 1:
-		ldr_load_cubemap_rendertarget_scene(scene);
-		//ldr_load_cubemap_sphere_scene(scene);
+		ldr_load_cubemap_rendertarget_scene_1(scene);
 		break;
-
+		
 	case 2:
-		ldr_load_cubemap_sphere_scene(scene);
+		ldr_load_cubemap_rendertarget_scene_2(scene);
 		break;
 
 	case 3:
-		ldr_load_rendertarget_scene_2(scene);
+		ldr_load_cubemap_sphere_scene(scene);
 		break;
 
 	case 4:
-		ldr_load_fresnel_sphere_scene(scene);
+		ldr_load_rendertarget_scene_1(scene);
 		break;
 
 	case 5:
-		ldr_load_bumpy_sphere_scene(scene);
+		ldr_load_rendertarget_scene_2(scene);
 		break;
 
 	case 6:
-		ldr_load_pool_scene(scene);
+		ldr_load_fresnel_sphere_scene(scene);
 		break;
 
 	case 7:
-		ldr_load_rendertarget_scene(scene);
+		ldr_load_bumpy_sphere_scene(scene);
+		break;
+
+	case 8:
+		ldr_load_pool_scene(scene);
 		break;
 
     default:

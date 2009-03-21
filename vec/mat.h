@@ -296,6 +296,29 @@ public:
 		            0.0,        0.0,   (zFar+zNear)/(zNear-zFar), (2.0*zFar*zNear)/(zNear-zFar),
 					0.0,        0.0,   -1.0,                      0.0);
 	}
+
+	static Mat4 ortho(real_t left,
+	                  real_t right,
+	                  real_t bottom,
+				      real_t top,
+					  real_t nearVal,
+					  real_t farVal)
+
+	{
+		return Mat4(2.0 / (right - left), 0.0,                  0.0,                       -(right+left)/(right-left),
+		            0.0,                  2.0 / (top - bottom), 0.0,                       -(top+bottom)/(top-bottom),
+		            0.0,                  0.0,                  -2.0 / (farVal - nearVal), -(farVal+nearVal)/(farVal-nearVal),
+					0.0,                  0.0,                  0.0,                       1.0);
+	}
+
+	static Mat4 ortho2D(real_t left,
+	                    real_t right,
+	                    real_t bottom,
+				        real_t top)
+
+	{
+		return ortho(left, right, top, bottom, -1, +1);
+	}
 };
 
 inline Mat4 operator*(real_t r, const Mat4& m)
