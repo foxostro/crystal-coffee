@@ -293,34 +293,6 @@ template class BufferObject<Vec3>;
 template class BufferObject<Vec2>;
 template class BufferObject<index_t>;
 
-Material::Material()
-: diffuse(Vec3::Ones),
-  ambient(Vec3::Ones),
-  specular(Vec3::Ones),
-  shininess(0)
-{
-	// Do nothing
-}
-
-Material::~Material()
-{
-	// Do nothing
-}
-
-void Material::bind() const
-{
-	const GLfloat c_a[] = { (GLfloat)ambient.x, (GLfloat)ambient.y, (GLfloat)ambient.z, 1 };
-	const GLfloat c_d[] = { (GLfloat)diffuse.x, (GLfloat)diffuse.y, (GLfloat)diffuse.z, 1 };
-	const GLfloat c_s[] = { (GLfloat)specular.x, (GLfloat)specular.y, (GLfloat)specular.z, 1 };
-	const GLfloat black[] = { 0, 0, 0, 1 };
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT, c_a);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, c_d);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, c_s);
-	glMaterialfv(GL_FRONT, GL_EMISSION, black);
-	glMaterialf(GL_FRONT, GL_SHININESS, (GLfloat)shininess);
-}
-
 Texture::~Texture()
 {
 	glDeleteTextures(1, &gltex_name);
@@ -480,10 +452,12 @@ Scene::Scene()
 
 Scene::~Scene()
 {
+	/*
 	for(SceneResourceList::iterator  i=resources.begin();     i!=resources.end();     ++i) delete *i;    
 	for(RenderMethodList::iterator   i=rendermethods.begin(); i!=rendermethods.end(); ++i) delete *i;
 	for(TickableList::iterator       i=tickables.begin();     i!=tickables.end();     ++i) delete *i;
 	for(PassList::iterator           i = passes.begin();      i!=passes.end();        ++i) delete *i;
+	*/
 }
 
 Pass::Pass(void)
@@ -493,10 +467,10 @@ Pass::Pass(void)
 
 Pass::~Pass()
 {
-	for(RenderInstanceList::iterator i = instances.begin(); i != instances.end(); ++i)
+	/*for(RenderInstanceList::iterator i = instances.begin(); i != instances.end(); ++i)
 	{
 		delete *i;
-	}
+	}*/
 }
 
 void Pass::set_camera(void)
@@ -599,29 +573,43 @@ void RenderTarget2D::bind_render_target() const
 	glViewport(0, 0, dimensions.x, dimensions.y);
 }
 
-GLenum CubeMapTexture::face_targets[6] =
+GLenum face_targets[6] =
 {
-	GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT,
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_X_EXT,
-	GL_TEXTURE_CUBE_MAP_POSITIVE_Y_EXT,
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_EXT,
-	GL_TEXTURE_CUBE_MAP_POSITIVE_Z_EXT,
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_EXT
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_EXT, // left
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Z_EXT, // right
+
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Y_EXT, // top
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_EXT, // bottom
+
+	GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT, // front
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_X_EXT, // back
 };
 
-CubeMapTexture::CubeMapTexture(const std::string &face1,
-							   const std::string &face2,
-							   const std::string &face3,
-							   const std::string &face4,
-							   const std::string &face5,
-							   const std::string &face6)
+Quat face_orientation[6] =
 {
-	texture_name_face[0] = face1;
-	texture_name_face[1] = face2;
-	texture_name_face[2] = face3;
-	texture_name_face[3] = face4;
-	texture_name_face[4] = face5;
-	texture_name_face[5] = face6;
+	Quat(Vec3(0,0,1), PI) * Quat(Vec3(0,1,0), 0.0),
+	Quat(Vec3(0,0,1), PI) * Quat(Vec3(0,1,0), PI),
+
+	Quat(Vec3(1,0,0), +PI / 2.0),
+	Quat(Vec3(1,0,0), -PI / 2.0),
+
+	Quat(Vec3(0,0,1), PI) * Quat(Vec3(0,1,0), +PI / 2.0),
+	Quat(Vec3(0,0,1), PI) * Quat(Vec3(0,1,0), -PI / 2.0)
+};
+
+CubeMapTexture::CubeMapTexture(const std::string &left_face,
+							   const std::string &right_face,
+							   const std::string &top_face,
+							   const std::string &bottom_face,
+							   const std::string &back_face,
+							   const std::string &front_face)
+{
+	texture_name_face[0] = left_face;
+	texture_name_face[1] = right_face;
+	texture_name_face[2] = top_face;
+	texture_name_face[3] = bottom_face;
+	texture_name_face[4] = back_face;
+	texture_name_face[5] = front_face;
 }
 
 void CubeMapTexture::load_face(GLenum target, const std::string &filename)
@@ -824,11 +812,11 @@ void CubeMapTarget::init_face_texture( GLenum target, const ivec2 &dimensions )
 void CubeMapTarget::create_cubemap_texture(const ivec2 &dim)
 {
 	glGenTextures(1, &gltex_name);
-	glEnable(GL_TEXTURE_CUBE_MAP_EXT);
 	glBindTexture(GL_TEXTURE_CUBE_MAP_EXT, gltex_name);
 	for(int i=0; i<6; i++) { init_face_texture(face_targets[i], dim); }
 	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }

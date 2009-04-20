@@ -161,6 +161,13 @@ void Quat::to_matrix(Mat4& mat) const
     mat(3,3) = 1;
 }
 
+Mat4 Quat::to_matrix( void ) const
+{
+	Mat4 mat;
+	to_matrix(mat);
+	return mat;
+}
+
 void Quat::to_axes(Vec3* axes) const
 {
     real_t x2  = 2.0 * x;

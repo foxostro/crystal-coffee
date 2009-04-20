@@ -102,7 +102,12 @@ public:
     /**
      * Converts this quaternion to a matrix.
      */
-    void to_matrix(Mat4& mat) const;
+	void to_matrix(Mat4& mat) const;
+
+	/**
+	* Converts this quaternion to a matrix.
+	*/
+	Mat4 to_matrix(void) const;
 
     /**
      * Returns the X,Y,Z axes rotated by this quaternion.

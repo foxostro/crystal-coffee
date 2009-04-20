@@ -17,12 +17,10 @@
 WaterSurface::WaterSurface(Scene * scene,
 						   const WavePointList& wave_points,
                            int resx, int resz)
-: wave_points(wave_points), resx(resx), resz(resz),
-  heightmap(0),
-  vertices_buffer(0),
-  normals_buffer(0),
-  tcoords_buffer(0),
-  indices_buffer(0)
+: wave_points(wave_points),
+  resx(resx),
+  resz(resz),
+  heightmap(0)
 {
 	assert(scene);
 
@@ -33,19 +31,16 @@ WaterSurface::WaterSurface(Scene * scene,
 	memset(heightmap, 0, sizeof(real_t) * num_of_vertices);
 
 	// Create the vertices buffer
-	vertices_buffer = new BufferObject<Vec3>();
+	vertices_buffer = boost::shared_ptr< BufferObject<Vec3> >(new BufferObject<Vec3>());
 	vertices_buffer->create(num_of_vertices, DYNAMIC_DRAW);
-	scene->resources.push_back(vertices_buffer);
 
 	// Create the normals buffer
-	normals_buffer = new BufferObject<Vec3>();
+	normals_buffer = boost::shared_ptr< BufferObject<Vec3> >(new BufferObject<Vec3>());
 	normals_buffer->create(num_of_vertices, DYNAMIC_DRAW);
-	scene->resources.push_back(normals_buffer);
 
 	// Create the tcoords buffer
-	tcoords_buffer = new BufferObject<Vec2>();
+	tcoords_buffer = boost::shared_ptr< BufferObject<Vec2> >(new BufferObject<Vec2>());
 	tcoords_buffer->create(num_of_vertices, STATIC_DRAW);
-	scene->resources.push_back(tcoords_buffer);
 	generate_tcoords();
 	
 	// Create the indices buffer to define the mesh topology
@@ -245,9 +240,8 @@ void WaterSurface::generate_indices( Scene * scene )
 	}
 
 	// Create the indices buffer
-	indices_buffer = new BufferObject<index_t>();
+	indices_buffer = boost::shared_ptr< BufferObject<index_t> >(new BufferObject<index_t>());
 	indices_buffer->recreate(num_of_indices, indices, STATIC_DRAW);
-	scene->resources.push_back(indices_buffer);
 
 	delete [] indices;
 }

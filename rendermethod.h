@@ -12,12 +12,15 @@
 #include "glheaders.h"
 #include "vec/vec.h"
 #include "vec/mat.h"
+#include "material.h"
 #include <string>
+#include <boost/shared_ptr.hpp>
 
 template<class TYPE> class BufferObject;
 class Material;
 class Texture;
 class ShaderProgram;
+class CubeMapTexture;
 
 class RenderMethod
 {
@@ -32,119 +35,139 @@ protected:
 class RenderMethod_DiffuseTexture : public RenderMethod
 {
 public:
-	RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
-                                const BufferObject<Vec3> * normals_buffer,
-								const BufferObject<Vec2> * tcoords_buffer,
-								const BufferObject<index_t> * indices_buffer,
-                                const Material * mat,
-	                            const Texture * diffuse_texture);
+	RenderMethod_DiffuseTexture(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+                                const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
+								const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer,
+								const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
+                                const Material & mat,
+	                            const boost::shared_ptr<const Texture> diffuse_texture);
 
 	virtual void draw(const Mat4 &transform) const;
 
 private:
-	const BufferObject<Vec3> * vertices_buffer;
-	const BufferObject<Vec3> * normals_buffer;
-	const BufferObject<Vec2> * tcoords_buffer;
-	const BufferObject<index_t> * indices_buffer;
-	const Material *mat;
-	const Texture *diffuse_texture;
+	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
+	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
+	const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer;
+	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
+	const Material mat;
+	const boost::shared_ptr<const Texture> diffuse_texture;
 };
 
 class RenderMethod_TextureReplace : public RenderMethod
 {
 public:
-	RenderMethod_TextureReplace(const BufferObject<Vec3> * vertices_buffer,
-                                const BufferObject<Vec3> * normals_buffer,
-								const BufferObject<Vec2> * tcoords_buffer,
-								const BufferObject<index_t> * indices_buffer,
-	                            const Texture * diffuse_texture);
+	RenderMethod_TextureReplace(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+                                const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
+								const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer,
+								const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
+	                            boost::shared_ptr<const Texture> diffuse_texture);
 
 	virtual void draw(const Mat4 &transform) const;
 
 private:
-	const BufferObject<Vec3> * vertices_buffer;
-	const BufferObject<Vec3> * normals_buffer;
-	const BufferObject<Vec2> * tcoords_buffer;
-	const BufferObject<index_t> * indices_buffer;
-	const Texture *diffuse_texture;
+	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
+	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
+	const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer;
+	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
+	const boost::shared_ptr<const Texture> diffuse_texture;
 };
 
 class RenderMethod_FresnelSphereMap : public RenderMethod
 {
 public:
-    RenderMethod_FresnelSphereMap(const BufferObject<Vec3> * vertices_buffer,
-                                  const BufferObject<Vec3> * normals_buffer,
-                                  const BufferObject<index_t> * indices_buffer,
-						          const ShaderProgram * shader,
-				                  const Material * mat,
-				                  const Texture * env_map,
+    RenderMethod_FresnelSphereMap(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+                                  const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
+                                  const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
+						          const boost::shared_ptr<const ShaderProgram> shader,
+				                  const Material & mat,
+				                  boost::shared_ptr<const Texture> env_map,
 				                  real_t refraction_index);
 
 	virtual void draw(const Mat4 &transform) const;
     
 private:
-	const BufferObject<Vec3> * vertices_buffer;
-	const BufferObject<Vec3> * normals_buffer;
-	const BufferObject<index_t> * indices_buffer;
-	const ShaderProgram * shader;
-	const Material * mat;
-	const Texture * env_map;
+	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
+	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
+	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
+	const boost::shared_ptr<const ShaderProgram> shader;
+	const Material mat;
+	const boost::shared_ptr<const Texture> env_map;
 };
 
 class RenderMethod_Fresnel : public RenderMethod
 {
 public:
-	RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
-	                     const BufferObject<Vec3> * normals_buffer,
-	                     const BufferObject<Vec2> * tcoords_buffer,
-	                     const BufferObject<index_t> * indices_buffer,
-	                     const ShaderProgram * shader,
-	                     const Material * mat,
-	                     const Texture * diffuse_map,
+	RenderMethod_Fresnel(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+	                     const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
+	                     const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer,
+	                     const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
+	                     boost::shared_ptr<const ShaderProgram> shader,
+	                     const Material & mat,
+	                     boost::shared_ptr<const Texture> diffuse_map,
 	                     real_t refraction_index);
 
 	virtual void draw(const Mat4 &transform) const;
 
 private:
-	const BufferObject<Vec3> * vertices_buffer;
-	const BufferObject<Vec3> * normals_buffer;
-	const BufferObject<Vec2> * tcoords_buffer;
-	const BufferObject<index_t> * indices_buffer;
-	const ShaderProgram * shader;
-	const Material * mat;
-	const Texture * diffuse_map;
+	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
+	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
+	const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer;
+	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
+	const boost::shared_ptr<const ShaderProgram> shader;
+	const Material mat;
+	const boost::shared_ptr<const Texture> diffuse_map;
 };
 
 class RenderMethod_BumpMap : public RenderMethod
 {
 public:
-    RenderMethod_BumpMap(const BufferObject<Vec3> * vertices_buffer,
-                         const BufferObject<Vec3> * normals_buffer,
-                         const BufferObject<Vec4> * tangents_buffer,
-						 const BufferObject<Vec2> * tcoords_buffer,
-						 const BufferObject<index_t> * indices_buffer,
-						 const ShaderProgram * shader,
-				         const Material * mat,
-				         const Texture * diffuse_map,
-                         const Texture * normal_map,
-				         const Texture * height_map);
+    RenderMethod_BumpMap(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+                         const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
+                         const boost::shared_ptr< const BufferObject<Vec4> > tangents_buffer,
+						 const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer,
+						 const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
+						 const boost::shared_ptr<const ShaderProgram> shader,
+				         const Material & mat,
+				         const boost::shared_ptr<const Texture> diffuse_map,
+                         const boost::shared_ptr<const Texture> normal_map,
+				         const boost::shared_ptr<const Texture> height_map);
 
 	virtual void draw(const Mat4 &transform) const;
     
 private:
 	GLint tangent_attrib_slot;
 	
-	const BufferObject<Vec3> * vertices_buffer;
-	const BufferObject<Vec3> * normals_buffer;
-	const BufferObject<Vec4> * tangents_buffer;
-	const BufferObject<Vec2> * tcoords_buffer;
-	const BufferObject<index_t> * indices_buffer;
-	const ShaderProgram * shader;
-	const Material * mat;
-	const Texture * normal_map;
-	const Texture * height_map;
-	const Texture * diffuse_map;
+	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
+	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
+	const boost::shared_ptr< const BufferObject<Vec4> > tangents_buffer;
+	const boost::shared_ptr< const BufferObject<Vec2> > tcoords_buffer;
+	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
+	const boost::shared_ptr<const ShaderProgram> shader;
+	const Material mat;
+	const boost::shared_ptr<const Texture> normal_map;
+	const boost::shared_ptr<const Texture> height_map;
+	const boost::shared_ptr<const Texture> diffuse_map;
+};
+
+class RenderMethod_CubemapReflection : public RenderMethod
+{
+public:
+	RenderMethod_CubemapReflection(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+                                   const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+								   const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+                                   const Material & _mat,
+								   const boost::shared_ptr<const CubeMapTexture> _cubemap,
+								   const boost::shared_ptr<const ShaderProgram> _shader);
+
+	virtual void draw(const Mat4 &transform) const;
+
+private:
+	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
+	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
+	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
+	const Material mat;
+	const boost::shared_ptr<const CubeMapTexture> cubemap;
+	const boost::shared_ptr<const ShaderProgram> shader;
 };
 
 #endif /* _EFFECT_H_ */
-

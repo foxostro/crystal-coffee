@@ -24,7 +24,7 @@ void StandardPass::render(const Scene * scene)
 	}
 
 	set_camera();
-	set_light_positions(scene->lights); // light pos are fixed relative to the scene
+	set_light_positions(scene->lights); // light eye are fixed relative to the scene
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -44,20 +44,16 @@ void StandardPass::render(const Scene * scene)
 	CHECK_GL_ERROR();
 }
 
-Quat face_orientation[6] =
+CubeMapUpdatePass::CubeMapUpdatePass()
 {
-	Quat(Vec3(0.0, 1.0, 0.0), -PI / 2.0),	// left   / GL_TEXTURE_CUBE_MAP_POSITIVE_X_EXT
-	Quat(Vec3(0.0, 1.0, 0.0), +PI / 2.0),	// right  / GL_TEXTURE_CUBE_MAP_NEGATIVE_X_EXT
-	Quat(Vec3(1.0, 0.0, 0.0), -PI / 2.0) * Quat(Vec3(0.0, 1.0, 0.0), PI),	// top    / GL_TEXTURE_CUBE_MAP_POSITIVE_Y_EXT
-	Quat(Vec3(1.0, 0.0, 0.0), +PI / 2.0) * Quat(Vec3(0.0, 1.0, 0.0), PI),	// bottom / GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_EXT
-	Quat(Vec3(0.0, 1.0, 0.0), 0.0),			// front  / GL_TEXTURE_CUBE_MAP_POSITIVE_Z_EXT
-	Quat(Vec3(0.0, 1.0, 0.0), PI)			// back   / GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_EXT
-};
+	dimensions = ivec2(128, 128);
+	rt = boost::shared_ptr<RenderTarget2D>(new RenderTarget2D(dimensions));
+}
 
 void CubeMapUpdatePass::render(const Scene * scene)
 {
 	assert(scene);
-	assert(rendertarget);
+	assert(cubemaptarget);
 
 	CHECK_GL_ERROR();
 
@@ -69,23 +65,16 @@ void CubeMapUpdatePass::render(const Scene * scene)
 
 	glPushAttrib(GL_VIEWPORT_BIT); // save the viewport
 
+	glMatrixMode(GL_PROJECTION); // save the projection matrix
+	glPushMatrix();
+
 	for(int i=0; i<6; ++i)
 	{
-		rendertarget->bind_render_target(i);
+		cubemaptarget->bind_render_target(i);
 
-		// set the projection matrix
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glLoadMatrixd(proj.m);
-
-		// set the modelview matrix for this face
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glTranslated(-camera.position.x, -camera.position.y, -camera.position.z);
-
-		Mat4 modl;
-		face_orientation[i].to_matrix(modl);
-		glMultMatrixd(modl.m);
+		glMatrixMode(GL_MODELVIEW); // save the modelview matrix
+		glPushMatrix();
+		set_camera(camera.get_position(), face_orientation[i]);
 
 		set_light_positions(scene->lights);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -100,9 +89,34 @@ void CubeMapUpdatePass::render(const Scene * scene)
 		}
 
 		treelib_render();
+
+		glPopMatrix(); // restore the modelview matrix
 	}
+
+	glMatrixMode(GL_PROJECTION); // restore the projection matrix
+	glPopMatrix();
 
 	glPopAttrib(); // restore the viewport
 
 	CHECK_GL_ERROR();
+}
+
+void CubeMapUpdatePass::set_camera(const Vec3 &eye, const Quat &orientation)
+{
+	const Vec3 up = orientation * Vec3::UnitY;
+	const Vec3 direction = orientation * -Vec3::UnitZ;
+	const GLdouble centerx = eye.x + direction.x;
+	const GLdouble centery = eye.y + direction.y;
+	const GLdouble centerz = eye.z + direction.z;
+
+	// set the projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixd(proj.m);
+
+	// set the modelview matrix
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(eye.x, eye.y, eye.z,
+	          centerx, centery, centerz,
+	          up.x, up.y, up.z);
 }

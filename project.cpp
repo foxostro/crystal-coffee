@@ -27,7 +27,7 @@ static void draw(RenderInstance *o)
 	o->draw();
 }
 
-static void init_resource(SceneResource * resource)
+static void init_resource(boost::shared_ptr<SceneResource> resource)
 {
 	assert(resource);
 	resource->init();

@@ -168,9 +168,11 @@ void app_set_render_state(RenderState s)
  */
 void app_exit()
 {
-    // clean up resources
 	delete state.input;
+	state.input = NULL;
+
     delete state.scene;
+	state.scene = NULL;
 
     exit(0);
 }
@@ -270,42 +272,44 @@ static void apply_control(CameraControl cc, int delta)
 	assert(app_get_scene());
 	assert(app_get_scene()->primary_camera);
 
-	Camera& cam = *(app_get_scene()->primary_camera);
+	Camera * cam = app_get_scene()->primary_camera;
+	assert(cam);
+
 	real_t angle = CAMERA_ROTATION_SCALE_FACTOR * delta;
 	real_t distance = CAMERA_TRANSLATION_SCALE_FACTOR * delta;
 	real_t new_focus_dist;
 
-	switch (cc)
+	switch(cc)
 	{
 	case CC_FOCUS_YAW:
-		cam.yaw_about_focus(-angle);
+		cam->yaw_about_focus(-angle);
 		break;
 	case CC_FOCUS_PITCH:
-		cam.pitch_about_focus(-angle);
+		cam->pitch_about_focus(-angle);
 		break;
 	case CC_FOCUS_ZOOM:
 		// change focus based on an exponential scale
-		new_focus_dist = pow(2, distance) * cam.focus_dist;
-		cam.translate(Vec3::UnitZ * (new_focus_dist - cam.focus_dist));
-		cam.focus_dist = new_focus_dist;
+		new_focus_dist = pow(2, distance) * cam->focus_dist;
+		cam->translate(Vec3::UnitZ * (new_focus_dist - cam->focus_dist));
+		cam->focus_dist = new_focus_dist;
 		break;
 	case CC_TRANSLATE_X:
-		cam.translate(-Vec3::UnitX * distance);
+		cam->translate(-Vec3::UnitX * distance);
 		break;
 	case CC_TRANSLATE_Y:
-		cam.translate(Vec3::UnitY * distance);
+		cam->translate(Vec3::UnitY * distance);
 		break;
 	case CC_TRANSLATE_Z:
-		cam.translate(Vec3::UnitZ * distance);
+		cam->translate(Vec3::UnitZ * distance);
 		break;
 	case CC_ROLL:
-		cam.roll(angle);
+		cam->roll(angle);
 		break;
 	case CC_PITCH:
-		cam.pitch(angle);
+		cam->pitch(angle);
 		break;
 	case CC_YAW:
-		cam.yaw(angle);
+		cam->yaw(angle);
 		break;
 	default:
 		break;

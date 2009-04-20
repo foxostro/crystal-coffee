@@ -15,9 +15,11 @@
 #include "vec/vec.h"
 #include "vec/quat.h"
 #include "treelib.h"
+#include "material.h"
 #include <string>
 #include <vector>
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 class Tickable
 {
@@ -52,7 +54,7 @@ class RenderInstance
 public:
 	~RenderInstance(void) { /* Do Nothing */ }
 
-	RenderInstance(const Mat4 &_transform, const RenderMethod *_rendermethod)
+	RenderInstance(const Mat4 &_transform, const boost::shared_ptr<RenderMethod> _rendermethod)
 		: transform(_transform),
 		  rendermethod(_rendermethod)
 	{
@@ -67,7 +69,7 @@ public:
 
 private:
 	const Mat4 transform;
-	const RenderMethod *rendermethod;
+	const boost::shared_ptr<RenderMethod> rendermethod;
 };
 
 class ShaderProgram : public SceneResource
@@ -112,8 +114,7 @@ Contains a buffer of graphically related data such as an index array or a
 vertex array. This data may be stored in memory on the graphics device after
 being submitted.
 */
-template<typename ELEMENT>
-class BufferObject : public SceneResource {
+template<typename ELEMENT> class BufferObject {
 public:
 	/** Destructor */
 	virtual ~BufferObject();
@@ -224,44 +225,7 @@ private:
 	BUFFER_USAGE usage;
 };
 
-/**
- * Represents a material property for a geometry or part of a geometry.
- */
-class Material : public SceneResource
-{
-public:
-    /**
-     * P1 NOTE: the only items that must be dealt with are diffuse, phong,
-     * ambient, and shininess. These correspond to diffuse, specular,
-     * ambient, and shininess opengl material properties.
-     */
-
-    // the diffuse color
-    Vec3 diffuse;
-
-    // the ambient color
-    Vec3 ambient;
-
-    // the specular reflection color
-    Vec3 specular;
-
-    // the phong shininess
-    real_t shininess;
-
-    Material();
-    virtual ~Material();
-
-	void bind() const;
-
-private:
-    // no meaningful assignment or copy
-    Material(const Material&);
-    Material& operator=(const Material&);
-};
-
-/**
-* Represents a single texture unit and associated settings.
-*/
+/** Represents a single texture unit and associated settings. */
 class Texture : public SceneResource
 {
 public:
@@ -335,12 +299,12 @@ private:
 
 	void bind_cubemap() const;
 
-protected:
-	static GLenum face_targets[6];
-
 public:
 	std::string texture_name_face[6];
 };
+
+extern GLenum face_targets[6];
+extern Quat face_orientation[6];
 
 class RenderTarget2D : public Texture2D
 {
@@ -471,7 +435,7 @@ class Pass
 public:
 	Mat4 proj;
 	Camera camera;
-	typedef std::vector<RenderInstance*> RenderInstanceList;
+	typedef std::vector<  boost::shared_ptr<RenderInstance> > RenderInstanceList;
 	RenderInstanceList instances;
 	Vec4 clear_color;
 
@@ -489,10 +453,10 @@ protected:
 class Scene
 {
 public:
-    typedef std::vector<SceneResource*> SceneResourceList;
-	typedef std::vector<RenderMethod*> RenderMethodList;
-	typedef std::vector<Tickable*> TickableList;
-	typedef std::list<Pass*> PassList;
+	typedef std::vector< boost::shared_ptr<SceneResource> > SceneResourceList;
+	typedef std::vector< boost::shared_ptr<RenderMethod> > RenderMethodList;
+	typedef std::vector< boost::shared_ptr<Tickable> > TickableList;
+	typedef std::list< boost::shared_ptr<Pass> > PassList;
 
 	Camera * primary_camera;
     Vec3 ambient_light;

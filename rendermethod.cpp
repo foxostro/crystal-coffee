@@ -15,36 +15,33 @@
 using namespace std;
 
 RenderMethod_DiffuseTexture::
-RenderMethod_DiffuseTexture(const BufferObject<Vec3> * vertices_buffer,
-                            const BufferObject<Vec3> * normals_buffer,
-							const BufferObject<Vec2> * tcoords_buffer,
-							const BufferObject<index_t> * indices_buffer,
-                            const Material * mat,
-	                        const Texture * diffuse_texture)
+RenderMethod_DiffuseTexture(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+                            const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+							const boost::shared_ptr< const BufferObject<Vec2> > _tcoords_buffer,
+							const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+                            const Material & _mat,
+	                        const boost::shared_ptr< const Texture > _diffuse_texture)
+: vertices_buffer(_vertices_buffer),
+  normals_buffer(_normals_buffer),
+  tcoords_buffer(_tcoords_buffer),
+  indices_buffer(_indices_buffer),
+  mat(_mat),
+  diffuse_texture(_diffuse_texture)
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
-	assert(mat);
 	assert(diffuse_texture);
-
-	this->vertices_buffer = vertices_buffer;
-	this->normals_buffer = normals_buffer;
-	this->tcoords_buffer = tcoords_buffer;
-	this->indices_buffer = indices_buffer;
-	this->mat = mat;
-	this->diffuse_texture = diffuse_texture;
 }
 
 void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 {	
 	assert(vertices_buffer);
 	assert(normals_buffer);
-	assert(mat);
 	assert(diffuse_texture);
 
 	CHECK_GL_ERROR();
 
-	mat->bind();
+	mat.bind();
 
 	// Disable all texture units
 	int num_tex_units=1;
@@ -107,22 +104,21 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 }
 
 RenderMethod_TextureReplace::
-RenderMethod_TextureReplace(const BufferObject<Vec3> * vertices_buffer,
-							const BufferObject<Vec3> * normals_buffer,
-							const BufferObject<Vec2> * tcoords_buffer,
-							const BufferObject<index_t> * indices_buffer,
-							const Texture * diffuse_texture)
+RenderMethod_TextureReplace(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+							const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+							const boost::shared_ptr< const BufferObject<Vec2> > _tcoords_buffer,
+							const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+							const boost::shared_ptr< const Texture > _diffuse_texture)
+: vertices_buffer(_vertices_buffer),
+  normals_buffer(_normals_buffer),
+  tcoords_buffer(_tcoords_buffer),
+  indices_buffer(_indices_buffer),
+  diffuse_texture(_diffuse_texture)
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
 	assert(tcoords_buffer);
 	assert(diffuse_texture);
-
-	this->vertices_buffer = vertices_buffer;
-	this->normals_buffer = normals_buffer;
-	this->tcoords_buffer = tcoords_buffer;
-	this->indices_buffer = indices_buffer;
-	this->diffuse_texture = diffuse_texture;
 }
 
 void RenderMethod_TextureReplace::draw(const Mat4 &transform) const
@@ -192,28 +188,26 @@ void RenderMethod_TextureReplace::draw(const Mat4 &transform) const
 }
 
 RenderMethod_FresnelSphereMap::
-RenderMethod_FresnelSphereMap(const BufferObject<Vec3> * vertices_buffer,
-					          const BufferObject<Vec3> * normals_buffer,
-					          const BufferObject<index_t> * indices_buffer,
-					          const ShaderProgram * shader,
-				              const Material * mat,
-				              const Texture * env_map,
+RenderMethod_FresnelSphereMap(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+					          const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+					          const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+					          const boost::shared_ptr< const ShaderProgram > _shader,
+				              const Material & _mat,
+				              const boost::shared_ptr< const Texture > _env_map,
 				              real_t refraction_index)
+: vertices_buffer(_vertices_buffer),
+  normals_buffer(_normals_buffer),
+  indices_buffer(_indices_buffer),
+  shader(_shader),
+  mat(_mat),
+  env_map(_env_map)
 {
 	GLint env_map_uniform, n_t;
 
 	assert(vertices_buffer);
 	assert(normals_buffer);
 	assert(shader);
-	assert(mat);
 	assert(env_map);
-
-	this->vertices_buffer = vertices_buffer;
-	this->normals_buffer = normals_buffer;
-	this->indices_buffer = indices_buffer;
-	this->shader = shader;
-	this->mat = mat;
-	this->env_map = env_map;
 
 	GLhandleARB program = shader->get_program();
 
@@ -234,10 +228,9 @@ void RenderMethod_FresnelSphereMap::draw(const Mat4 &transform) const
 	assert(vertices_buffer);
 	assert(normals_buffer);
 	assert(shader);
-	assert(mat);
 	assert(env_map);
 
-	mat->bind();
+	mat.bind();
 	GLhandleARB program = shader->get_program();
 
 	// Disable texture unit 2
@@ -288,14 +281,21 @@ void RenderMethod_FresnelSphereMap::draw(const Mat4 &transform) const
 }
 
 RenderMethod_Fresnel::
-RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
-					 const BufferObject<Vec3> * normals_buffer,
-					 const BufferObject<Vec2> * tcoords_buffer,
-					 const BufferObject<index_t> * indices_buffer,
-					 const ShaderProgram * shader,
-				     const Material * mat,
-				     const Texture * diffuse_map,
+RenderMethod_Fresnel(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+					 const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+					 const boost::shared_ptr< const BufferObject<Vec2> > _tcoords_buffer,
+					 const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+					 const boost::shared_ptr< const ShaderProgram > _shader,
+				     const Material & _mat,
+				     const boost::shared_ptr< const Texture > _diffuse_map,
 				     real_t refraction_index)
+: vertices_buffer(_vertices_buffer),
+  normals_buffer(_normals_buffer),
+  tcoords_buffer(_tcoords_buffer),
+  indices_buffer(_indices_buffer),
+  shader(_shader),
+  mat(_mat),
+  diffuse_map(_diffuse_map)
 {
 	GLint diffuse_map_uniform, n_t;
 
@@ -303,16 +303,7 @@ RenderMethod_Fresnel(const BufferObject<Vec3> * vertices_buffer,
 	assert(normals_buffer);
 	assert(tcoords_buffer);
 	assert(shader);
-	assert(mat);
 	assert(diffuse_map);
-
-	this->vertices_buffer = vertices_buffer;
-	this->normals_buffer = normals_buffer;
-	this->tcoords_buffer = tcoords_buffer;
-	this->indices_buffer = indices_buffer;
-	this->shader = shader;
-	this->mat = mat;
-	this->diffuse_map = diffuse_map;
 
 	GLhandleARB program = shader->get_program();
 
@@ -333,10 +324,9 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 	assert(vertices_buffer);
 	assert(normals_buffer);
 	assert(shader);
-	assert(mat);
 	assert(diffuse_map);
 
-	mat->bind();
+	mat.bind();
 	GLhandleARB program = shader->get_program();
 
 	// Disable texture unit 2
@@ -393,16 +383,26 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 }
 
 RenderMethod_BumpMap::
-RenderMethod_BumpMap(const BufferObject<Vec3> * vertices_buffer,
-                     const BufferObject<Vec3> * normals_buffer,
-                     const BufferObject<Vec4> * tangents_buffer,
-					 const BufferObject<Vec2> * tcoords_buffer,
-					 const BufferObject<index_t> * indices_buffer,
-					 const ShaderProgram * shader,
-				     const Material * mat,
-				     const Texture * diffuse_map,
-                     const Texture * normal_map,
-				     const Texture * height_map)
+RenderMethod_BumpMap(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+                     const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+                     const boost::shared_ptr< const BufferObject<Vec4> > _tangents_buffer,
+					 const boost::shared_ptr< const BufferObject<Vec2> > _tcoords_buffer,
+					 const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+					 const boost::shared_ptr< const ShaderProgram > _shader,
+				     const Material & _mat,
+				     const boost::shared_ptr< const Texture > _diffuse_map,
+                     const boost::shared_ptr< const Texture > _normal_map,
+				     const boost::shared_ptr< const Texture > _height_map)
+: vertices_buffer(_vertices_buffer),
+  normals_buffer(_normals_buffer),
+  tangents_buffer(_tangents_buffer),
+  tcoords_buffer(_tcoords_buffer),
+  indices_buffer(_indices_buffer),
+  shader(_shader),
+  mat(_mat),
+  normal_map(_normal_map),
+  height_map(_height_map),
+  diffuse_map(_diffuse_map)
 {
 	GLint diffuse_map_uniform, normal_map_uniform, height_map_uniform;
 
@@ -411,21 +411,9 @@ RenderMethod_BumpMap(const BufferObject<Vec3> * vertices_buffer,
 	assert(tangents_buffer);
 	assert(tcoords_buffer);
 	assert(shader);
-	assert(mat);
 	assert(normal_map);
 	assert(height_map);
 	assert(diffuse_map);
-
-	this->vertices_buffer = vertices_buffer;
-	this->normals_buffer = normals_buffer;
-	this->tangents_buffer = tangents_buffer;
-	this->tcoords_buffer = tcoords_buffer;
-	this->indices_buffer = indices_buffer;
-	this->shader = shader;
-	this->mat = mat;
-	this->normal_map = normal_map;
-	this->height_map = height_map;
-	this->diffuse_map = diffuse_map;
 
 	// Set these uniforms only once when the effect is initialized
 
@@ -453,12 +441,11 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 	assert(normals_buffer);
 	assert(tangents_buffer);
 	assert(tcoords_buffer);
-	assert(mat);
 	assert(normal_map);
 	assert(height_map);
 	assert(diffuse_map);
 
-	mat->bind();
+	mat.bind();
 	GLhandleARB program = shader->get_program();
 
 	// Bind texture unit 2
@@ -521,4 +508,87 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glPopMatrix();
+}
+
+RenderMethod_CubemapReflection::
+RenderMethod_CubemapReflection(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+							   const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+							   const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+							   const Material & _mat,
+							   const boost::shared_ptr<const CubeMapTexture> _cubemap,
+							   const boost::shared_ptr<const ShaderProgram> _shader)
+: vertices_buffer(_vertices_buffer),
+  normals_buffer(_normals_buffer),
+  indices_buffer(_indices_buffer),
+  mat(_mat),
+  cubemap(_cubemap),
+  shader(_shader)
+{
+	assert(vertices_buffer);
+	assert(normals_buffer);
+	assert(cubemap);
+	assert(shader);
+}
+
+void RenderMethod_CubemapReflection::draw(const Mat4 &transform) const
+{
+	assert(vertices_buffer);
+	assert(normals_buffer);
+	assert(cubemap);
+	assert(shader);
+
+	CHECK_GL_ERROR();
+
+	mat.bind();
+
+	// Disable all texture units
+	int num_tex_units=1;
+	glGetIntegerv(GL_MAX_TEXTURE_COORDS, &num_tex_units);
+	for(int i=num_tex_units-1; i>=0; --i)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_3D);
+		glDisable(GL_TEXTURE_CUBE_MAP_EXT);
+	}
+
+	// Bind texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	cubemap->bind();
+
+	// Bind the shader program
+	glUseProgram(shader->get_program());
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+
+	glMultMatrixd(transform.m);
+
+	// Bind the vertex buffer
+	glEnableClientState(GL_VERTEX_ARRAY);
+	vertices_buffer->bind();
+	glVertexPointer(3, GL_DOUBLE, 0, 0);
+
+	// Bind the normals buffer
+	glEnableClientState(GL_NORMAL_ARRAY);
+	normals_buffer->bind();
+	glNormalPointer(GL_DOUBLE, 0, 0);
+
+	// Actually draw the triangles	
+	if(indices_buffer) {
+		// Draw using the index buffer
+		GLsizei count = indices_buffer->getNumber();
+		indices_buffer->bind();
+		glDrawElements(GL_TRIANGLES, count, MESH_INDEX_FORMAT, 0);
+	} else {
+		glDrawArrays(GL_TRIANGLES, 0, vertices_buffer->getNumber());
+	}
+
+	// Clean up
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glPopMatrix();
+
+	CHECK_GL_ERROR();
 }

@@ -56,10 +56,10 @@ public:
     virtual void tick(real_t time);
 
 public:
-	BufferObject<Vec3> * vertices_buffer;
-	BufferObject<Vec3> * normals_buffer;
-	BufferObject<Vec2> * tcoords_buffer;
-	BufferObject<index_t> * indices_buffer;
+	boost::shared_ptr< BufferObject<Vec3> > vertices_buffer;
+	boost::shared_ptr< BufferObject<Vec3> > normals_buffer;
+	boost::shared_ptr< BufferObject<Vec2> > tcoords_buffer;
+	boost::shared_ptr< BufferObject<index_t> > indices_buffer;
 
 private:
     // list of all wave-emitting points.

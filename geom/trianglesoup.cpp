@@ -10,19 +10,11 @@
 #include "glheaders.h"
 #include <memory.h>
 
-TriangleSoup::TriangleSoup( void ) : vertices_buffer(0),
-normals_buffer(0),
-tangents_buffer(0),
-tcoords_buffer(0)
-{
-	// Do Nothing
-}
+TriangleSoup::~TriangleSoup() { /* Do Nothing */ }
+
+TriangleSoup::TriangleSoup() { /* Do Nothing */ }
 
 TriangleSoup::TriangleSoup(Scene * scene, const std::vector<Face> &faces)
-: vertices_buffer(0),
-normals_buffer(0),
-tangents_buffer(0),
-tcoords_buffer(0)
 {
 	create(scene, faces);
 }
@@ -33,18 +25,12 @@ void TriangleSoup::create(Scene * scene, const std::vector<Face> &faces)
 
 	size_t num_of_vertices = faces.size()*3;
 
-	vertices_buffer = new BufferObject<Vec3>();
-	normals_buffer = new BufferObject<Vec3>();
-	tangents_buffer = new BufferObject<Vec4>();
-	tcoords_buffer = new BufferObject<Vec2>();
-
-	scene->resources.push_back(vertices_buffer);
-	scene->resources.push_back(normals_buffer);
-	scene->resources.push_back(tangents_buffer);
-	scene->resources.push_back(tcoords_buffer);
+	vertices_buffer = boost::shared_ptr<BufferObject<Vec3> >(new BufferObject<Vec3>());
+	normals_buffer  = boost::shared_ptr<BufferObject<Vec3> >(new BufferObject<Vec3>());
+	tangents_buffer = boost::shared_ptr<BufferObject<Vec4> >(new BufferObject<Vec4>());
+	tcoords_buffer  = boost::shared_ptr<BufferObject<Vec2> >(new BufferObject<Vec2>());
 
 	// Create buffer objects from the vector of faces
-
 	vertices_buffer->create(num_of_vertices, STATIC_DRAW);
 	normals_buffer->create(num_of_vertices, STATIC_DRAW);
 	tangents_buffer->create(num_of_vertices, STATIC_DRAW);
