@@ -48,7 +48,7 @@ char* ShaderProgram::load_file(const char* file)
 void ShaderProgram::load_shader(const char* file,
 								GLint type,
 								GLhandleARB& program)
-{    
+{
 	int result;
 	char error_msg[1024];
 
@@ -62,9 +62,10 @@ void ShaderProgram::load_shader(const char* file,
 	glCompileShaderARB(shader);
 	// Get compile result
 	glGetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, &result);
-	if(!result){
+	if(!result) {
 		glGetInfoLogARB(shader, sizeof(error_msg), NULL, error_msg);
-		fprintf(stderr, "GLSL COMPILE ERROR(%s): %s\n", file, error_msg);
+		std::cerr << "GLSL COMPILE ERROR(" << file << "): " << error_msg << std::endl;
+		DebugBreak();
 		exit(2);
 	}
 
@@ -78,6 +79,9 @@ void ShaderProgram::load_shader(const char* file,
 GLhandleARB ShaderProgram::load_shaders(const char* vert_file,
 										const char* frag_file)
 {
+	int result;
+	char error_msg[1024];
+	
 	// Create shader program
 	GLhandleARB program  = glCreateProgramObjectARB();
 
@@ -89,7 +93,25 @@ GLhandleARB ShaderProgram::load_shaders(const char* vert_file,
 	std::cout << "loading fragment shader " << frag_file << std::endl;
 	load_shader(frag_file, GL_FRAGMENT_SHADER_ARB, program);
 
+	// link the shader objects into one shader program
 	glLinkProgramARB(program);
+	glGetObjectParameterivARB(program, GL_LINK_STATUS, &result);
+	if(!result) {
+		glGetInfoLogARB(program, sizeof(error_msg), NULL, error_msg);
+		std::cerr << "Shader failed to link: " << error_msg << std::endl;
+		DebugBreak();
+		exit(2);
+	}
+
+	// Validate the shader (ensure it can run on this hardware setup)
+	glValidateProgram(program);
+	glGetObjectParameterivARB(program, GL_VALIDATE_STATUS, &result);
+	if(!result) {
+		glGetInfoLogARB(program, sizeof(error_msg), NULL, error_msg);
+		std::cerr << "Shader failed to validate: " << error_msg << std::endl;
+		DebugBreak();
+		exit(2);
+	}
 
 	return program;
 }
@@ -488,7 +510,7 @@ void Pass::set_camera(void)
 	// set the projection matrix
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glLoadMatrixd(proj.m);
+	glLoadMatrixr(proj.m);
 
 	// set the modelview matrix
 	glMatrixMode(GL_MODELVIEW);
@@ -689,6 +711,7 @@ void CubeMapTexture::bind_cubemap() const
 	glEnable(GL_TEXTURE_CUBE_MAP_EXT);
 	glBindTexture(GL_TEXTURE_CUBE_MAP_EXT, gltex_name);
 
+	/*
 	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT);
 	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT);
 	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT);
@@ -696,6 +719,7 @@ void CubeMapTexture::bind_cubemap() const
 	glEnable(GL_TEXTURE_GEN_S);
 	glEnable(GL_TEXTURE_GEN_T);
 	glEnable(GL_TEXTURE_GEN_R);
+	*/
 }
 
 void CubeMapTexture::init_blank_face(GLenum target, const ivec2 &dimensions)

@@ -72,20 +72,24 @@ private:
 	const boost::shared_ptr<const Texture> diffuse_texture;
 };
 
-class RenderMethod_FresnelSphereMap : public RenderMethod
+class RenderMethod_FresnelEnvMap : public RenderMethod
 {
 public:
-    RenderMethod_FresnelSphereMap(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
-                                  const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
-                                  const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
-						          const boost::shared_ptr<const ShaderProgram> shader,
-				                  const Material & mat,
-				                  boost::shared_ptr<const Texture> env_map,
-				                  real_t refraction_index);
+    RenderMethod_FresnelEnvMap(const Mat4 &wld_space_to_obj_space,
+	                           const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+                               const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
+                               const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
+						       const boost::shared_ptr<const ShaderProgram> shader,
+				               const Material & mat,
+				               const boost::shared_ptr<const Texture> env_map,
+				               real_t refraction_index);
 
 	virtual void draw(const Mat4 &transform) const;
     
 private:
+	const Mat4 wld_space_to_obj_space;
+	GLint wld_space_to_obj_space_uniform;
+
 	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
 	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
 	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;
@@ -152,7 +156,8 @@ private:
 class RenderMethod_CubemapReflection : public RenderMethod
 {
 public:
-	RenderMethod_CubemapReflection(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+	RenderMethod_CubemapReflection(const Mat4 &wld_space_to_obj_space,
+	                               const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
                                    const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
 								   const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
                                    const Material & _mat,
@@ -162,6 +167,9 @@ public:
 	virtual void draw(const Mat4 &transform) const;
 
 private:
+	const Mat4 wld_space_to_obj_space;
+	GLint wld_space_to_obj_space_uniform;
+
 	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
 	const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer;
 	const boost::shared_ptr< const BufferObject<index_t> > indices_buffer;

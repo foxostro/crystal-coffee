@@ -72,7 +72,8 @@ static boost::shared_ptr<RenderMethod> create_tex_sphere(Scene * scene, const ch
 static
 boost::shared_ptr<RenderMethod>
 create_mirror_sphere(Scene * scene,
-				     const boost::shared_ptr< const CubeMapTexture > &cubemap)
+				     const Mat4 &wld_space_to_obj_space,
+					 const boost::shared_ptr< const CubeMapTexture > &cubemap)
 {
 	Material mat;
 	boost::shared_ptr<RenderMethod> rendermethod;
@@ -93,7 +94,8 @@ create_mirror_sphere(Scene * scene,
 	shader = boost::shared_ptr<ShaderProgram>(new ShaderProgram("shaders/reflect_vert.glsl", "shaders/reflect_frag.glsl"));
 	
 	// Put it all together to make the object
-	rendermethod = boost::shared_ptr<RenderMethod>(new RenderMethod_CubemapReflection(sphere.vertices_buffer,
+	rendermethod = boost::shared_ptr<RenderMethod>(new RenderMethod_CubemapReflection(wld_space_to_obj_space,
+	                                                                                  sphere.vertices_buffer,
 		                                                                              sphere.normals_buffer,
 												                                      boost::shared_ptr< const BufferObject<index_t> >(), // no indices
 		                                                                              mat,
@@ -104,10 +106,10 @@ create_mirror_sphere(Scene * scene,
 	return rendermethod;
 }
 
-static boost::shared_ptr<RenderMethod> create_fresnel_sphere(Scene * scene)
+static boost::shared_ptr<RenderMethod> create_fresnel_sphere(Scene * scene, const Mat4 &wld_space_to_obj_space)
 {
 	Material mat;
-	boost::shared_ptr<Texture2D> env_map;
+	boost::shared_ptr<Texture2D> spheremap;
 	boost::shared_ptr<ShaderProgram> fresnel_shader;
 	boost::shared_ptr<RenderMethod> rendermethod;
 
@@ -118,8 +120,8 @@ static boost::shared_ptr<RenderMethod> create_fresnel_sphere(Scene * scene)
 	mat.specular = Vec3(0.1, 0.1, 0.1);
 
 	// Create texture resources
-	env_map = boost::shared_ptr<Texture2D>(new Texture2D("images/spheremap_stpeters.png"));
-	scene->resources.push_back(env_map);
+	spheremap = boost::shared_ptr<Texture2D>(new Texture2D("images/spheremap_stpeters.png"));
+	scene->resources.push_back(spheremap);
 
 	// Load and compile the shader
 	fresnel_shader = boost::shared_ptr<ShaderProgram>(new ShaderProgram("shaders/fresnel_spheremap_vert.glsl",
@@ -130,13 +132,14 @@ static boost::shared_ptr<RenderMethod> create_fresnel_sphere(Scene * scene)
 	TriangleSoup sphere = gen_sphere(scene, 4);
 
 	// Put it all together
-	rendermethod = boost::shared_ptr<RenderMethod>(new RenderMethod_FresnelSphereMap(sphere.vertices_buffer,
-	                                                                                 sphere.normals_buffer,
-																				     boost::shared_ptr< const BufferObject<index_t> >(), // no indices
-																				     fresnel_shader,
-																				     mat,
-																				     env_map,											         											        
-																				     1.33));
+	rendermethod = boost::shared_ptr<RenderMethod>(new RenderMethod_FresnelEnvMap(wld_space_to_obj_space,
+	                                                                              sphere.vertices_buffer,
+	                                                                              sphere.normals_buffer,
+																				  boost::shared_ptr< const BufferObject<index_t> >(), // no indices
+																				  fresnel_shader,
+																				  mat,
+																				  spheremap,											         											        
+																				  1.33));
 	scene->rendermethods.push_back(rendermethod);
 
 	return rendermethod;
@@ -350,11 +353,11 @@ static void ldr_load_fresnel_sphere_scene(Scene * scene)
 	pass->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
 
 	// Create an instance of the object
-	boost::shared_ptr<RenderInstance> fresnel = boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(3.0, 0.0, 0.0, 0.0,
-	                                                                                                      0.0, 3.0, 0.0, 0.0,
-													                                                      0.0, 0.0, 3.0, 0.0,
-													                                                      0.0, 0.0, 0.0, 1.0),
-												                                                   create_fresnel_sphere(scene)));
+	const Mat4 obj_space_to_wld_space(3.0, 0.0, 0.0, 0.0,
+	                                  0.0, 3.0, 0.0, 0.0,
+								      0.0, 0.0, 3.0, 0.0,
+								      0.0, 0.0, 0.0, 1.0);
+	boost::shared_ptr<RenderInstance> fresnel = boost::shared_ptr<RenderInstance>(new RenderInstance(obj_space_to_wld_space.inverse(), create_fresnel_sphere(scene, obj_space_to_wld_space)));
 	pass->instances.push_back(fresnel);
 
 	// Set the camera
@@ -396,22 +399,25 @@ static boost::shared_ptr<WaterSurface> gen_water_surface(Scene * scene)
 	return watergeom;
 }
 
-boost::shared_ptr<RenderMethod> create_water(Scene * scene, const boost::shared_ptr<Texture2D> tex)
+boost::shared_ptr<RenderMethod>
+create_water(Scene * scene,
+			 const Mat4 &wld_space_to_obj_space,
+			 const boost::shared_ptr<const Texture> &cubemap)
 {
 	Material mat;
 	boost::shared_ptr<WaterSurface> watergeom;
 	boost::shared_ptr<ShaderProgram> shader;
 	boost::shared_ptr<RenderMethod> water;
 
-	assert(tex);
+	assert(cubemap);
 
 	mat.ambient = Vec3(0.0, 0.2, 0.3);
 	mat.diffuse = Vec3(0.0, 0.2, 0.3); // blue water
 	mat.shininess = 20;
 	mat.specular = Vec3::Ones;
 
-	shader = boost::shared_ptr<ShaderProgram>(new ShaderProgram("shaders/fresnel_spheremap_vert.glsl",
-	                                                            "shaders/fresnel_spheremap_frag.glsl"));
+	shader = boost::shared_ptr<ShaderProgram>(new ShaderProgram("shaders/fresnel_cubemap_vert.glsl",
+	                                                            "shaders/fresnel_cubemap_frag.glsl"));
 	scene->resources.push_back(shader);
 
 
@@ -419,29 +425,40 @@ boost::shared_ptr<RenderMethod> create_water(Scene * scene, const boost::shared_
 	watergeom = gen_water_surface(scene);
 
 
-	water = boost::shared_ptr<RenderMethod>(new RenderMethod_FresnelSphereMap(watergeom->vertices_buffer,
-	                                                                          watergeom->normals_buffer,
-									                                          watergeom->indices_buffer,
-								                                              shader,
-								                                              mat,
-								                                              tex,
-								                                              1.33));
+	water = boost::shared_ptr<RenderMethod>(new RenderMethod_FresnelEnvMap(wld_space_to_obj_space,
+	                                                                       watergeom->vertices_buffer,
+	                                                                       watergeom->normals_buffer,
+									                                       watergeom->indices_buffer,
+								                                           shader,
+								                                           mat,
+								                                           cubemap,
+								                                           1.33));
 	scene->rendermethods.push_back(water);
-
-
 
 	return water;
 }
 
 static void ldr_load_pool_scene(Scene * scene)
 {
+	const real_t rad = 2.0;
+
+	const Mat4 water_obj_space_to_wld_space(PIX, 0.0, 0.0, 0.0,
+	                                        0.0, 0.4, 0.0, POY - 1.0,
+											0.0, 0.0, PIZ, 0.0,
+											0.0, 0.0, 0.0, 1.0);
+
+	const Mat4 fresnel_obj_space_to_wld_space(rad, 0.0, 0.0, -(POX+PIX)/2,
+	                                          0.0, rad, 0.0, POY+rad,
+	                                          0.0, 0.0, rad, -(POZ+PIZ)/2,
+	                                          0.0, 0.0, 0.0, 1.0);
+
 	boost::shared_ptr<Texture2D> spheremap = boost::shared_ptr<Texture2D>(new Texture2D("images/spheremap_stpeters.png"));
 	scene->resources.push_back(spheremap);
 
 	boost::shared_ptr<RenderMethod> pool = create_pool(scene);
 	boost::shared_ptr<RenderMethod> earth = create_tex_sphere(scene, "images/earth.png");
-	boost::shared_ptr<RenderMethod> water = create_water(scene, spheremap);
-	boost::shared_ptr<RenderMethod> fresnel_sphere = create_fresnel_sphere(scene);
+	boost::shared_ptr<RenderMethod> water = create_water(scene, water_obj_space_to_wld_space, spheremap);
+	boost::shared_ptr<RenderMethod> fresnel_sphere = create_fresnel_sphere(scene, fresnel_obj_space_to_wld_space);
 	boost::shared_ptr<RenderMethod> swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 	boost::shared_ptr<RenderMethod> tree = create_tree(scene);
 
@@ -462,13 +479,7 @@ static void ldr_load_pool_scene(Scene * scene)
 
 	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4::Identity, pool)));
 
-	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
-	                                                                                    0.0, 0.4, 0.0, POY - 1.0,
-													                                    0.0, 0.0, PIZ, 0.0,
-													                                    0.0, 0.0, 0.0, 1.0),
-												                                    water)));
-
-	const real_t rad = 2.0;
+	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(water_obj_space_to_wld_space, water)));
 
 	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
 	                                                                                    0.0, rad, 0.0, POY+rad,
@@ -476,11 +487,7 @@ static void ldr_load_pool_scene(Scene * scene)
 												                                        0.0, 0.0, 0.0, 1.0),
 													                               earth)));
 
-	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
-	                                                                                    0.0, rad, 0.0, POY+rad,
-													                                    0.0, 0.0, rad, -(POZ+PIZ)/2,
-													                                    0.0, 0.0, 0.0, 1.0),
-												                                    fresnel_sphere)));
+	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(fresnel_obj_space_to_wld_space, fresnel_sphere)));
 
 	pass->instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
 	                                                                                    0.0, 1.0, 0.0, POY,
@@ -694,6 +701,18 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 	boost::shared_ptr<RenderTarget2D> rt_face[6];
 	Pass::RenderInstanceList instances;
 
+	const real_t rad = 2.0;
+
+	const Mat4 water_obj_space_to_wld_space(PIX, 0.0, 0.0, 0.0,
+	                                        0.0, 0.4, 0.0, POY - 1.0,
+											0.0, 0.0, PIZ, 0.0,
+											0.0, 0.0, 0.0, 1.0);
+
+	const Mat4 fresnel_obj_space_to_wld_space(rad, 0.0, 0.0, -(POX+PIX)/2,
+	                                          0.0, rad, 0.0, POY+rad,
+	                                          0.0, 0.0, rad, -(POZ+PIZ)/2,
+	                                          0.0, 0.0, 0.0, 1.0);
+
 	// Light the scene
 	Light light;
 	light.position = Vec3(.4, .7, .8) * 100;
@@ -709,20 +728,14 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 
 		boost::shared_ptr<RenderMethod> pool = create_pool(scene);
 		boost::shared_ptr<RenderMethod> earth = create_tex_sphere(scene, "images/earth.png");
-		boost::shared_ptr<RenderMethod> water = create_water(scene, spheremap);
-		boost::shared_ptr<RenderMethod> fresnel_sphere = create_fresnel_sphere(scene);
+		boost::shared_ptr<RenderMethod> water = create_water(scene, water_obj_space_to_wld_space, spheremap);
+		boost::shared_ptr<RenderMethod> fresnel_sphere = create_fresnel_sphere(scene, fresnel_obj_space_to_wld_space);
 		boost::shared_ptr<RenderMethod> swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 		boost::shared_ptr<RenderMethod> tree = create_tree(scene);
 
 		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4::Identity, pool)));
 
-		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
-											        0.0, 0.4, 0.0, POY - 1.0,
-											        0.0, 0.0, PIZ, 0.0,
-													0.0, 0.0, 0.0, 1.0),
-											   water)));
-
-		const real_t rad = 2.0;
+		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(water_obj_space_to_wld_space, water)));
 
 		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
 											        0.0, rad, 0.0, POY+rad,
@@ -730,11 +743,7 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 											        0.0, 0.0, 0.0, 1.0),
 											   earth)));
 
-		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, -(POX+PIX)/2,
-											        0.0, rad, 0.0, POY+rad,
-													0.0, 0.0, rad, -(POZ+PIZ)/2,
-													0.0, 0.0, 0.0, 1.0),
-											   fresnel_sphere)));
+		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(fresnel_obj_space_to_wld_space, fresnel_sphere)));
 
 		instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(1.0, 0.0, 0.0, -(POX+PIX)/2,
 											        0.0, 1.0, 0.0, POY,
@@ -802,30 +811,41 @@ static void ldr_load_rendertarget_scene_2(Scene * scene)
 static
 Pass::RenderInstanceList
 ldr_load_cubemap_rendertarget_scene_2_setup_instances(Scene * scene,
-												      boost::shared_ptr<CubeMapTarget> cubemap,
+													  boost::shared_ptr<CubeMapTarget> &cubemap1,
+													  boost::shared_ptr<CubeMapTarget> &cubemap2,
+													  boost::shared_ptr<CubeMapTarget> &cubemap3,
 													  const real_t rad)
 {
 	Pass::RenderInstanceList instances;
 
 	assert(scene);
 
-	boost::shared_ptr<Texture2D> spheremap = boost::shared_ptr<Texture2D>(new Texture2D("images/spheremap_stpeters.png"));
-	scene->resources.push_back(spheremap);
+	const Mat4 water_transform(PIX, 0.0, 0.0, 0.0,
+	                           0.0, 0.4, 0.0, POY - 1.0,
+	                           0.0, 0.0, PIZ, 0.0,
+	                           0.0, 0.0, 0.0, 1.0);
+
+	const Mat4 mirrored1_transform(rad, 0.0, 0.0, (POX+PIX)/2,
+	                               0.0, rad, 0.0, POY+rad,
+	                               0.0, 0.0, rad, (POZ+PIZ)/2,
+	                               0.0, 0.0, 0.0, 1.0);
+
+	const Mat4 mirrored2_transform(rad, 0.0, 0.0, (POX+PIX)/2,
+	                               0.0, rad, 0.0, POY+rad,
+	                               0.0, 0.0, rad, -(POZ+PIZ)/2,
+	                               0.0, 0.0, 0.0, 1.0);
 
 	boost::shared_ptr<RenderMethod> pool = create_pool(scene);
 	boost::shared_ptr<RenderMethod> earth = create_tex_sphere(scene, "images/earth.png");
-	boost::shared_ptr<RenderMethod> water = create_water(scene, spheremap);
+	boost::shared_ptr<RenderMethod> water = create_water(scene, water_transform.inverse(), cubemap3);
 	boost::shared_ptr<RenderMethod> swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 	boost::shared_ptr<RenderMethod> tree = create_tree(scene);
-	boost::shared_ptr<RenderMethod> mirror_sphere = create_mirror_sphere(scene, cubemap);
+	boost::shared_ptr<RenderMethod> mirror_sphere1 = create_mirror_sphere(scene, mirrored1_transform.inverse(), cubemap1);
+	boost::shared_ptr<RenderMethod> mirror_sphere2 = create_mirror_sphere(scene, mirrored2_transform.inverse(), cubemap2);
 
 	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4::Identity, pool)));
 
-	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
-		                                                                          0.0, 0.4, 0.0, POY - 1.0,
-		                                                                          0.0, 0.0, PIZ, 0.0,
-		                                                                          0.0, 0.0, 0.0, 1.0),
-		                                                                     water)));
+	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(water_transform, water)));
 
 	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad*2, 0.0, 0.0, -(POX+PIX)/2,
 		                                                                          0.0, rad*2, 0.0, POY+rad*2,
@@ -839,27 +859,18 @@ ldr_load_cubemap_rendertarget_scene_2_setup_instances(Scene * scene,
 		                                                                          0.0, 0.0, 0.0, 1.0),
 		                                                                      tree)));
 
-	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
-		                                                                          0.0, rad, 0.0, POY+rad,
-		                                                                          0.0, 0.0, rad, (POZ+PIZ)/2,
-		                                                                          0.0, 0.0, 0.0, 1.0),
-		                                                                     swirly_sphere)));
+	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(mirrored1_transform, mirror_sphere1)));
 
-	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, 0.0, //(POX+PIX)/2,
-		                                                                          0.0, rad, 0.0, POY+rad,
-		                                                                          0.0, 0.0, rad, 0.0, // -(POZ+PIZ)/2,
-		                                                                          0.0, 0.0, 0.0, 1.0),
-		                                                                     mirror_sphere)));
+	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(mirrored2_transform, mirror_sphere2)));
 
 	return instances;
 }
 
 void ldr_load_cubemap_rendertarget_scene_2(Scene * scene)
 {
-	boost::shared_ptr<CubeMapUpdatePass> pass1;
-	boost::shared_ptr<StandardPass> pass2;
-	boost::shared_ptr<CubeMapTarget> cubemap;
-	Pass::RenderInstanceList instances;
+	boost::shared_ptr<CubeMapUpdatePass> pass1, pass2, pass3;
+	boost::shared_ptr<StandardPass> pass4;
+	boost::shared_ptr<CubeMapTarget> cubemap1, cubemap2, cubemap3;
 	const real_t rad = 2.0;
 
 	// Light the scene
@@ -869,43 +880,64 @@ void ldr_load_cubemap_rendertarget_scene_2(Scene * scene)
 	scene->lights.push_back(light);
 	scene->ambient_light = Vec3(.1, .1, .1);
 
-	
+	// Create the cubemaps (used for reflections)
+	cubemap1 = boost::shared_ptr<CubeMapTarget>(new CubeMapTarget(ivec2(128, 128)));
+	cubemap2 = boost::shared_ptr<CubeMapTarget>(new CubeMapTarget(ivec2(128, 128)));
+	cubemap3 = boost::shared_ptr<CubeMapTarget>(new CubeMapTarget(ivec2(128, 128)));
 
-	/************************************************************************/
-	/** Cube Map Update Pass ************************************************/
-	/************************************************************************/
+	scene->resources.push_back(cubemap1);
+	scene->resources.push_back(cubemap2);
+	scene->resources.push_back(cubemap3);
 
+	// Cubemap Update Pass 1 (mirrored sphere #1)
 	pass1 = boost::shared_ptr<CubeMapUpdatePass>(new CubeMapUpdatePass());
-	pass1->cubemaptarget = cubemap = boost::shared_ptr<CubeMapTarget>(new CubeMapTarget(ivec2(1024, 1024)));
-	scene->resources.push_back(cubemap);
+	pass1->cubemaptarget = cubemap1;
 	pass1->proj = Mat4::perspective(PI / 2.0, 1.0, 1.0, 50.0);
 	pass1->camera.orientation = Quat::Identity; // orientation is irrelevant as given here
-	pass1->camera.position = Vec3(0.0, POY+rad, 0.0);
+	pass1->camera.position = Vec3((POX+PIX)/2, POY+rad, (POZ+PIZ)/2); // position of the first mirrored sphere
 	pass1->camera.focus_dist = 1.0;
-	pass1->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
+	pass1->clear_color = Vec4(0.0, 0.0, 0.0, 1.0);
 
-	// Specify geometry for the cubemap pass (depends on cubemap target)
-	pass1->instances = instances = ldr_load_cubemap_rendertarget_scene_2_setup_instances(scene, cubemap, rad);
+	// Cubemap Update Pass 2 (mirrored sphere #2)
+	pass2 = boost::shared_ptr<CubeMapUpdatePass>(new CubeMapUpdatePass());
+	pass2->cubemaptarget = cubemap2;
+	pass2->proj = Mat4::perspective(PI / 2.0, 1.0, 1.0, 50.0);
+	pass2->camera.orientation = Quat::Identity; // orientation is irrelevant as given here
+	pass2->camera.position = Vec3((POX+PIX)/2, POY+rad, -(POZ+PIZ)/2); // position of the second mirrored sphere
+	pass2->camera.focus_dist = 1.0;
+	pass2->clear_color = Vec4(0.0, 0.0, 0.0, 1.0);
 
-	/************************************************************************/
-	/** Framebuffer Update Pass *********************************************/
-	/************************************************************************/
+	// Cubemap Update Pass 3 (water)
+	pass3 = boost::shared_ptr<CubeMapUpdatePass>(new CubeMapUpdatePass());
+	pass3->cubemaptarget = cubemap3;
+	pass3->proj = Mat4::perspective(PI / 2.0, 1.0, 1.0, 50.0);
+	pass3->camera.orientation = Quat::Identity; // orientation is irrelevant as given here
+	pass3->camera.position = Vec3(0.0, POY - 1.0, 0.0); // position of the water surface
+	pass3->camera.focus_dist = 1.0;
+	pass3->clear_color = Vec4(0.3, 0.3, 0.3, 1.0);
 
-	// Render target for the main framebuffer
-	pass2 = boost::shared_ptr<StandardPass>(new StandardPass());
-	pass2->rendertarget = boost::shared_ptr<RenderTarget2D>(); // set to null
-	pass2->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
-	pass2->camera.orientation = Quat::Identity;
-	pass2->camera.position = Vec3(0,0,20);
-	pass2->camera.focus_dist = 10;
-	pass2->instances = instances;
+	// Framebuffer update pass 
+	pass4 = boost::shared_ptr<StandardPass>(new StandardPass());
+	pass4->rendertarget = boost::shared_ptr<RenderTarget2D>(); // set to null
+	pass4->proj = Mat4::perspective(PI / 3.0, 800.0/600.0, 0.1, 100.0);
+	pass4->camera.orientation = Quat::Identity;
+	pass4->camera.position = Vec3(0,0,20);
+	pass4->camera.focus_dist = 10;
+
+	// Specify geometry to use for each pass
+	pass4->instances =
+	pass3->instances =
+	pass2->instances =
+	pass1->instances = ldr_load_cubemap_rendertarget_scene_2_setup_instances(scene, cubemap1, cubemap2, cubemap3, rad);
 
 	// Set the scene's primary camera
-	scene->primary_camera = &(pass2->camera);
+	scene->primary_camera = &(pass4->camera);
 
 	// Set up the order of passes
 	scene->passes.push_back(pass1);
 	scene->passes.push_back(pass2);
+	scene->passes.push_back(pass3);
+	scene->passes.push_back(pass4);
 }
 
 Pass::RenderInstanceList build_pool_geometry(Scene * scene, real_t rad)
@@ -914,22 +946,23 @@ Pass::RenderInstanceList build_pool_geometry(Scene * scene, real_t rad)
 
 	Pass::RenderInstanceList instances;
 
+	const Mat4 water_obj_space_to_wld_space(PIX, 0.0, 0.0, 0.0,
+	                                        0.0, 0.4, 0.0, POY - 1.0,
+	                                        0.0, 0.0, PIZ, 0.0,
+	                                        0.0, 0.0, 0.0, 1.0);
+
 	boost::shared_ptr<Texture2D> spheremap = boost::shared_ptr<Texture2D>(new Texture2D("images/spheremap_stpeters.png"));
 	scene->resources.push_back(spheremap);
 
 	boost::shared_ptr<RenderMethod> pool = create_pool(scene);
 	boost::shared_ptr<RenderMethod> earth = create_tex_sphere(scene, "images/earth.png");
-	boost::shared_ptr<RenderMethod> water = create_water(scene, spheremap);
+	boost::shared_ptr<RenderMethod> water = create_water(scene, water_obj_space_to_wld_space, spheremap);
 	boost::shared_ptr<RenderMethod> swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 	boost::shared_ptr<RenderMethod> tree = create_tree(scene);
 
 	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4::Identity, pool)));
 
-	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(PIX, 0.0, 0.0, 0.0,
-		0.0, 0.4, 0.0, POY - 1.0,
-		0.0, 0.0, PIZ, 0.0,
-		0.0, 0.0, 0.0, 1.0),
-		water)));
+	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(water_obj_space_to_wld_space, water)));
 
 	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4(rad, 0.0, 0.0, (POX+PIX)/2,
 		0.0, rad, 0.0, POY+rad,

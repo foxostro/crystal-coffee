@@ -8,6 +8,7 @@
 #include "glheaders.h"
 #include "rendermethod.h"
 #include "scene.h"
+#include "vec/mat.h"
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -63,24 +64,36 @@ void RenderMethod_DiffuseTexture::draw(const Mat4 &transform) const
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixd(transform.m);
+	glMultMatrixr(transform.m);
 	
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
 	vertices_buffer->bind();
+#if REAL_IS_DOUBLE
 	glVertexPointer(3, GL_DOUBLE, 0, 0);
+#else
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+#endif
 	
 	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
 	normals_buffer->bind();
+#if REAL_IS_DOUBLE
 	glNormalPointer(GL_DOUBLE, 0, 0);
+#else
+	glNormalPointer(GL_FLOAT, 0, 0);
+#endif
 
 	// Bind the tcoord buffer
 	if(tcoords_buffer) {
 		glClientActiveTexture(GL_TEXTURE0);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		tcoords_buffer->bind();
-		glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+		#if REAL_IS_DOUBLE
+				glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+		#else
+				glTexCoordPointer(2, GL_FLOAT, 0, 0);
+		#endif
 	}
 
 	// Actually draw the triangles	
@@ -149,22 +162,34 @@ void RenderMethod_TextureReplace::draw(const Mat4 &transform) const
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixd(transform.m);
+	glMultMatrixr(transform.m);
 
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
 	vertices_buffer->bind();
+#if REAL_IS_DOUBLE
 	glVertexPointer(3, GL_DOUBLE, 0, 0);
+#else
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+#endif
 
 	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
 	normals_buffer->bind();
+#if REAL_IS_DOUBLE
 	glNormalPointer(GL_DOUBLE, 0, 0);
+#else
+	glNormalPointer(GL_FLOAT, 0, 0);
+#endif
 
 	// Bind the tcoord buffer
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	tcoords_buffer->bind();
+#if REAL_IS_DOUBLE
 	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+#else
+	glTexCoordPointer(2, GL_FLOAT, 0, 0);
+#endif
 
 	// Actually draw the triangles	
 	if(indices_buffer) {
@@ -187,15 +212,18 @@ void RenderMethod_TextureReplace::draw(const Mat4 &transform) const
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
-RenderMethod_FresnelSphereMap::
-RenderMethod_FresnelSphereMap(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
-					          const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
-					          const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
-					          const boost::shared_ptr< const ShaderProgram > _shader,
-				              const Material & _mat,
-				              const boost::shared_ptr< const Texture > _env_map,
-				              real_t refraction_index)
-: vertices_buffer(_vertices_buffer),
+RenderMethod_FresnelEnvMap::
+RenderMethod_FresnelEnvMap(const Mat4 &_wld_space_to_obj_space,
+						   const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+					       const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
+					       const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
+					       const boost::shared_ptr< const ShaderProgram > _shader,
+						   const Material & _mat,
+						   const boost::shared_ptr<const Texture> _env_map,
+				           real_t refraction_index)
+: wld_space_to_obj_space(_wld_space_to_obj_space),
+  wld_space_to_obj_space_uniform(0),
+  vertices_buffer(_vertices_buffer),
   normals_buffer(_normals_buffer),
   indices_buffer(_indices_buffer),
   shader(_shader),
@@ -211,27 +239,31 @@ RenderMethod_FresnelSphereMap(const boost::shared_ptr< const BufferObject<Vec3> 
 
 	GLhandleARB program = shader->get_program();
 
-	// Set these uniforms only once when the effect is initialized
 	glUseProgramObjectARB(program);
+
+	// Set these uniforms whenever the object is rendered
+	wld_space_to_obj_space_uniform = glGetUniformLocationARB(program, "wld_space_to_obj_space");
 	
+	// Set these uniforms only once when the effect is initialized
 	env_map_uniform = glGetUniformLocationARB(program, "env_map");
 	glUniform1iARB(env_map_uniform, 0);
-	
+
 	n_t = glGetUniformLocationARB(program, "n_t");
 	glUniform1fARB(n_t, (GLfloat)refraction_index);
 
 	glUseProgramObjectARB(0);
 }
 
-void RenderMethod_FresnelSphereMap::draw(const Mat4 &transform) const
+void RenderMethod_FresnelEnvMap::draw(const Mat4 &transform) const
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
 	assert(shader);
 	assert(env_map);
 
+	CHECK_GL_ERROR();
+
 	mat.bind();
-	GLhandleARB program = shader->get_program();
 
 	// Disable texture unit 2
 	glActiveTexture(GL_TEXTURE2);
@@ -243,25 +275,39 @@ void RenderMethod_FresnelSphereMap::draw(const Mat4 &transform) const
 
 	// Bind texture unit 0
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, env_map->get_gltex_name());
-	glEnable(GL_TEXTURE_2D);
+	env_map->bind();
+	CHECK_GL_ERROR();
 
-	glUseProgramObjectARB(program);
+	// Bind the shader program
+	glUseProgramObjectARB(shader->get_program());
+#if REAL_IS_DOUBLE
+#pragma error("There is no glUniformMatrix4dv function. Manual conversion is necessary!")
+#else
+	glUniformMatrix4fv(wld_space_to_obj_space_uniform, 16, GL_FALSE, wld_space_to_obj_space.m);
+#endif
 	
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixd(transform.m);
+	glMultMatrixr(transform.m);
 	
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
 	vertices_buffer->bind();
+#if REAL_IS_DOUBLE
 	glVertexPointer(3, GL_DOUBLE, 0, 0);
+#else
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+#endif
 	
 	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
 	normals_buffer->bind();
+#if REAL_IS_DOUBLE
 	glNormalPointer(GL_DOUBLE, 0, 0);
+#else
+	glNormalPointer(GL_FLOAT, 0, 0);
+#endif
 
 	// Actually draw the triangles	
 	if(indices_buffer) {
@@ -278,6 +324,8 @@ void RenderMethod_FresnelSphereMap::draw(const Mat4 &transform) const
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glPopMatrix();
+
+	CHECK_GL_ERROR();
 }
 
 RenderMethod_Fresnel::
@@ -347,22 +395,34 @@ void RenderMethod_Fresnel::draw(const Mat4 &transform) const
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixd(transform.m);
+	glMultMatrixr(transform.m);
 	
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
 	vertices_buffer->bind();
+#if REAL_IS_DOUBLE
 	glVertexPointer(3, GL_DOUBLE, 0, 0);
+#else
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+#endif
 	
 	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
 	normals_buffer->bind();
+#if REAL_IS_DOUBLE
 	glNormalPointer(GL_DOUBLE, 0, 0);
+#else
+	glNormalPointer(GL_FLOAT, 0, 0);
+#endif
 
 	// Bind the normals buffer
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	tcoords_buffer->bind();
+#if REAL_IS_DOUBLE
 	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+#else
+	glTexCoordPointer(2, GL_FLOAT, 0, 0);
+#endif
 
 	// Actually draw the triangles	
 	if(indices_buffer) {
@@ -468,28 +528,45 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixd(transform.m);
+	glMultMatrixr(transform.m);
 	
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
 	vertices_buffer->bind();
+#if REAL_IS_DOUBLE
 	glVertexPointer(3, GL_DOUBLE, 0, 0);
+#else
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+#endif
 	
 	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
 	normals_buffer->bind();
+#if REAL_IS_DOUBLE
 	glNormalPointer(GL_DOUBLE, 0, 0);
+#else
+	glNormalPointer(GL_FLOAT, 0, 0);
+#endif
 	
 	// Bind the tangents buffer
 	glEnableVertexAttribArrayARB(tangent_attrib_slot);
 	tangents_buffer->bind();
-	glVertexAttribPointerARB(tangent_attrib_slot, 4,
-		                     GL_DOUBLE, GL_FALSE, 0, 0);
+
+#if REAL_IS_DOUBLE
+	glVertexAttribPointerARB(tangent_attrib_slot, 4, GL_DOUBLE, GL_FALSE, 0, 0);
+#else
+	glVertexAttribPointerARB(tangent_attrib_slot, 4, GL_FLOAT, GL_FALSE, 0, 0);
+#endif
 
 	// Bind the tcoord buffer
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	tcoords_buffer->bind();
+
+#if REAL_IS_DOUBLE
 	glTexCoordPointer(2, GL_DOUBLE, 0, 0);
+#else
+	glTexCoordPointer(2, GL_FLOAT, 0, 0);
+#endif
 
 	// Actually draw the triangles	
 	if(indices_buffer) {
@@ -511,23 +588,38 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 }
 
 RenderMethod_CubemapReflection::
-RenderMethod_CubemapReflection(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+RenderMethod_CubemapReflection(const Mat4 &_wld_space_to_obj_space,
+							   const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
 							   const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
 							   const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
 							   const Material & _mat,
 							   const boost::shared_ptr<const CubeMapTexture> _cubemap,
 							   const boost::shared_ptr<const ShaderProgram> _shader)
-: vertices_buffer(_vertices_buffer),
+: wld_space_to_obj_space(_wld_space_to_obj_space),
+  vertices_buffer(_vertices_buffer),
   normals_buffer(_normals_buffer),
   indices_buffer(_indices_buffer),
   mat(_mat),
   cubemap(_cubemap),
   shader(_shader)
 {
+	GLint CubeMap_uniform;
+
 	assert(vertices_buffer);
 	assert(normals_buffer);
 	assert(cubemap);
 	assert(shader);
+
+	const GLhandleARB program = shader->get_program();
+
+	glUseProgramObjectARB(program);
+
+	CubeMap_uniform = glGetUniformLocationARB(program, "CubeMap");
+	glUniform1iARB(CubeMap_uniform, 0);
+
+	wld_space_to_obj_space_uniform = glGetUniformLocationARB(program, "wld_space_to_obj_space");
+
+	glUseProgramObjectARB(0);
 }
 
 void RenderMethod_CubemapReflection::draw(const Mat4 &transform) const
@@ -558,21 +650,34 @@ void RenderMethod_CubemapReflection::draw(const Mat4 &transform) const
 
 	// Bind the shader program
 	glUseProgram(shader->get_program());
+#if REAL_IS_DOUBLE
+#pragma error("There is no glUniformMatrix4dv function. Manual conversion is necessary!")
+#else
+	glUniformMatrix4fv(wld_space_to_obj_space_uniform, 16, GL_FALSE, wld_space_to_obj_space.m);
+#endif
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixd(transform.m);
+	glMultMatrixr(transform.m);
 
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
 	vertices_buffer->bind();
+#if REAL_IS_DOUBLE
 	glVertexPointer(3, GL_DOUBLE, 0, 0);
+#else
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+#endif
 
 	// Bind the normals buffer
 	glEnableClientState(GL_NORMAL_ARRAY);
 	normals_buffer->bind();
+#if REAL_IS_DOUBLE
 	glNormalPointer(GL_DOUBLE, 0, 0);
+#else
+	glNormalPointer(GL_FLOAT, 0, 0);
+#endif
 
 	// Actually draw the triangles	
 	if(indices_buffer) {

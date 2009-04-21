@@ -9,10 +9,21 @@
 #ifndef _462MATH_H_
 #define _462MATH_H_
 
-// floating point precision set by this typedef
-typedef double real_t;
+#define REAL_IS_DOUBLE 0
 
-#define PI 3.141592653589793238
+#if REAL_IS_DOUBLE
+typedef double real_t;
+#define glLoadMatrixr glLoadMatrixd
+#define glMultMatrixr glMultMatrixd
+#else
+typedef float real_t;
+#define glLoadMatrixr glLoadMatrixf
+#define glMultMatrixr glMultMatrixf
+#pragma warning(disable: 4244)
+#pragma warning(disable: 4305)
+#endif
+
+#define PI (real_t)(3.141592653589793238)
 
 class Vec4;
 

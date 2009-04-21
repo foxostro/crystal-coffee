@@ -37,6 +37,7 @@ for(;;) {                                                                  \
     {                                                                      \
 		std::cerr << __FILE__ << "(" << __LINE__ << "): "                  \
 		          << (const char*)gluErrorString(errorCode) << std::endl;  \
+		DebugBreak();                                                      \
     }                                                                      \
 	break;}
 #else

@@ -1,9 +1,14 @@
-varying vec3 refdir;
+uniform mat4 wld_space_to_obj_space;
+varying vec3 refdir_in_wld_space;
 
-void main(void)
+void main()
 {
-   vec4 camcen= gl_ModelViewMatrixInverse[3];//camera center in World Space Coordinates
-   vec4 dir   = gl_Vertex - camcen;//(Assuming) gl_Vertex is given in WSC
-   refdir     = reflect(vec3(dir.x, dir.y, dir.z), gl_Normal);
-   gl_Position = ftransform();
+	vec3 vertex_in_wld_space, normal_in_wld_space;
+	
+	// transform vertex position into clip-space
+	gl_Position = ftransform();
+	
+	normal_in_wld_space = vec4(wld_space_to_obj_space * vec4(gl_Normal, 1.0)).xyz;
+	vertex_in_wld_space = vec4(wld_space_to_obj_space * gl_Vertex).xyz;
+	refdir_in_wld_space = reflect(vertex_in_wld_space, normal_in_wld_space);
 }

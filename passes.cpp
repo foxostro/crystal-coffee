@@ -79,6 +79,7 @@ void CubeMapUpdatePass::render(const Scene * scene)
 		set_light_positions(scene->lights);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		CHECK_GL_ERROR();
 		for(RenderInstanceList::const_iterator i = instances.begin();
 			i != instances.end(); ++i)
 		{
@@ -111,7 +112,7 @@ void CubeMapUpdatePass::set_camera(const Vec3 &eye, const Quat &orientation)
 
 	// set the projection matrix
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixd(proj.m);
+	glLoadMatrixr(proj.m);
 
 	// set the modelview matrix
 	glMatrixMode(GL_MODELVIEW);

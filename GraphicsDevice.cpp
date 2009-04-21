@@ -99,13 +99,21 @@ void GraphicsDevice::setAttributes() {
 
 Mat4 GraphicsDevice::getProjectionMatrix() {
 	Mat4 m;
+#if REAL_IS_DOUBLE
 	glGetDoublev(GL_PROJECTION_MATRIX, m.m);
+#else
+	glGetFloatv(GL_PROJECTION_MATRIX, m.m);
+#endif
 	return m;
 }
 
 Mat4 GraphicsDevice::getModelViewMatrix() {
 	Mat4 m;
+#if REAL_IS_DOUBLE
 	glGetDoublev(GL_MODELVIEW_MATRIX, m.m);
+#else
+	glGetFloatv(GL_MODELVIEW_MATRIX, m.m);
+#endif
 	return m;
 }
 
