@@ -19,14 +19,14 @@ class Scene;
 /* app.cpp defines and prototypes */
 
 // default window dimensions
-#define DEFAULT_WINDOW_WIDTH 800
-#define DEFAULT_WINDOW_HEIGHT 600
+#define DEFAULT_WINDOW_WIDTH (800)
+#define DEFAULT_WINDOW_HEIGHT (600)
 // default framerate
-#define DEFAULT_WINDOW_FPS 30.0
+#define DEFAULT_WINDOW_FPS (30.0)
 // default window title
 #define DEFAULT_WINDOW_TITLE "15-462"
 // default scene number to load on program start
-#define DEFAULT_INITIAL_SCENE 1
+#define DEFAULT_INITIAL_SCENE (5)
 // default filename to save screenshots in
 #define DEFAULT_SCREENSHOT_FILENAME "sshot"
 

@@ -75,8 +75,7 @@ private:
 class RenderMethod_FresnelEnvMap : public RenderMethod
 {
 public:
-    RenderMethod_FresnelEnvMap(const Mat4 &wld_space_to_obj_space,
-	                           const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
+    RenderMethod_FresnelEnvMap(const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer,
                                const boost::shared_ptr< const BufferObject<Vec3> > normals_buffer,
                                const boost::shared_ptr< const BufferObject<index_t> > indices_buffer,
 						       const boost::shared_ptr<const ShaderProgram> shader,
@@ -87,7 +86,6 @@ public:
 	virtual void draw(const Mat4 &transform) const;
     
 private:
-	const Mat4 wld_space_to_obj_space;
 	GLint wld_space_to_obj_space_uniform;
 
 	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;
@@ -156,8 +154,7 @@ private:
 class RenderMethod_CubemapReflection : public RenderMethod
 {
 public:
-	RenderMethod_CubemapReflection(const Mat4 &wld_space_to_obj_space,
-	                               const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+	RenderMethod_CubemapReflection(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
                                    const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
 								   const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
                                    const Material & _mat,
@@ -167,7 +164,6 @@ public:
 	virtual void draw(const Mat4 &transform) const;
 
 private:
-	const Mat4 wld_space_to_obj_space;
 	GLint wld_space_to_obj_space_uniform;
 
 	const boost::shared_ptr< const BufferObject<Vec3> > vertices_buffer;

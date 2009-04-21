@@ -213,16 +213,14 @@ void RenderMethod_TextureReplace::draw(const Mat4 &transform) const
 }
 
 RenderMethod_FresnelEnvMap::
-RenderMethod_FresnelEnvMap(const Mat4 &_wld_space_to_obj_space,
-						   const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+RenderMethod_FresnelEnvMap(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
 					       const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
 					       const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
 					       const boost::shared_ptr< const ShaderProgram > _shader,
 						   const Material & _mat,
 						   const boost::shared_ptr<const Texture> _env_map,
 				           real_t refraction_index)
-: wld_space_to_obj_space(_wld_space_to_obj_space),
-  wld_space_to_obj_space_uniform(0),
+: wld_space_to_obj_space_uniform(0),
   vertices_buffer(_vertices_buffer),
   normals_buffer(_normals_buffer),
   indices_buffer(_indices_buffer),
@@ -254,7 +252,7 @@ RenderMethod_FresnelEnvMap(const Mat4 &_wld_space_to_obj_space,
 	glUseProgramObjectARB(0);
 }
 
-void RenderMethod_FresnelEnvMap::draw(const Mat4 &transform) const
+void RenderMethod_FresnelEnvMap::draw(const Mat4 &obj_space_to_wld_space) const
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
@@ -263,6 +261,7 @@ void RenderMethod_FresnelEnvMap::draw(const Mat4 &transform) const
 
 	CHECK_GL_ERROR();
 
+	// Set material properties
 	mat.bind();
 
 	// Disable texture unit 2
@@ -280,6 +279,7 @@ void RenderMethod_FresnelEnvMap::draw(const Mat4 &transform) const
 
 	// Bind the shader program
 	glUseProgramObjectARB(shader->get_program());
+	const Mat4 wld_space_to_obj_space = obj_space_to_wld_space.inverse();
 #if REAL_IS_DOUBLE
 #pragma error("There is no glUniformMatrix4dv function. Manual conversion is necessary!")
 #else
@@ -289,7 +289,7 @@ void RenderMethod_FresnelEnvMap::draw(const Mat4 &transform) const
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixr(transform.m);
+	glMultMatrixr(obj_space_to_wld_space.m);
 	
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -588,15 +588,13 @@ void RenderMethod_BumpMap::draw(const Mat4 &transform) const
 }
 
 RenderMethod_CubemapReflection::
-RenderMethod_CubemapReflection(const Mat4 &_wld_space_to_obj_space,
-							   const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
+RenderMethod_CubemapReflection(const boost::shared_ptr< const BufferObject<Vec3> > _vertices_buffer,
 							   const boost::shared_ptr< const BufferObject<Vec3> > _normals_buffer,
 							   const boost::shared_ptr< const BufferObject<index_t> > _indices_buffer,
 							   const Material & _mat,
 							   const boost::shared_ptr<const CubeMapTexture> _cubemap,
 							   const boost::shared_ptr<const ShaderProgram> _shader)
-: wld_space_to_obj_space(_wld_space_to_obj_space),
-  vertices_buffer(_vertices_buffer),
+: vertices_buffer(_vertices_buffer),
   normals_buffer(_normals_buffer),
   indices_buffer(_indices_buffer),
   mat(_mat),
@@ -622,7 +620,7 @@ RenderMethod_CubemapReflection(const Mat4 &_wld_space_to_obj_space,
 	glUseProgramObjectARB(0);
 }
 
-void RenderMethod_CubemapReflection::draw(const Mat4 &transform) const
+void RenderMethod_CubemapReflection::draw(const Mat4 &obj_space_to_wld_space) const
 {
 	assert(vertices_buffer);
 	assert(normals_buffer);
@@ -650,6 +648,7 @@ void RenderMethod_CubemapReflection::draw(const Mat4 &transform) const
 
 	// Bind the shader program
 	glUseProgram(shader->get_program());
+	const Mat4 wld_space_to_obj_space = obj_space_to_wld_space.inverse();
 #if REAL_IS_DOUBLE
 #pragma error("There is no glUniformMatrix4dv function. Manual conversion is necessary!")
 #else
@@ -659,7 +658,7 @@ void RenderMethod_CubemapReflection::draw(const Mat4 &transform) const
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	glMultMatrixr(transform.m);
+	glMultMatrixr(obj_space_to_wld_space.m);
 
 	// Bind the vertex buffer
 	glEnableClientState(GL_VERTEX_ARRAY);
