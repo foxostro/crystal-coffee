@@ -65,8 +65,6 @@ void ShaderProgram::load_shader(const char* file,
 	if(!result) {
 		glGetInfoLogARB(shader, sizeof(error_msg), NULL, error_msg);
 		std::cerr << "GLSL COMPILE ERROR(" << file << "): " << error_msg << std::endl;
-		DebugBreak();
-		exit(2);
 	}
 
 	// Attach The Shader Objects To The Program Object
@@ -99,8 +97,6 @@ GLhandleARB ShaderProgram::load_shaders(const char* vert_file,
 	if(!result) {
 		glGetInfoLogARB(program, sizeof(error_msg), NULL, error_msg);
 		std::cerr << "Shader failed to link: " << error_msg << std::endl;
-		DebugBreak();
-		exit(2);
 	}
 
 	// Validate the shader (ensure it can run on this hardware setup)
@@ -109,8 +105,6 @@ GLhandleARB ShaderProgram::load_shaders(const char* vert_file,
 	if(!result) {
 		glGetInfoLogARB(program, sizeof(error_msg), NULL, error_msg);
 		std::cerr << "Shader failed to validate: " << error_msg << std::endl;
-		DebugBreak();
-		exit(2);
 	}
 
 	return program;

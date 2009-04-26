@@ -79,3 +79,22 @@ std::istream& operator>>(std::istream& is, Vec4& v)
     return is;
 }
 
+Vec3 normalize(const Vec3 &a)
+{
+	return a * (1.0/a.magnitude());
+}
+
+real_t dot(const Vec3 &a, const Vec3 &b)
+{
+	return a.dot(b);
+}
+
+Vec3 cross(const Vec3 &a, const Vec3 &b)
+{
+	return a.cross(b);
+}
+
+real_t length(const Vec3 &a)
+{
+	return a.magnitude();
+}

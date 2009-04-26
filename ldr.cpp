@@ -71,8 +71,9 @@ static boost::shared_ptr<RenderMethod> create_tex_sphere(Scene * scene, const ch
 
 static
 boost::shared_ptr<RenderMethod>
-create_mirror_sphere(Scene * scene,
-					 const boost::shared_ptr< const CubeMapTexture > &cubemap)
+create_cubemapped_sphere(Scene * scene,
+					 const boost::shared_ptr< const CubeMapTexture > &cubemap,
+					 const char *vert, const char *frag)
 {
 	Material mat;
 	boost::shared_ptr<RenderMethod> rendermethod;
@@ -90,7 +91,7 @@ create_mirror_sphere(Scene * scene,
 	TriangleSoup sphere = gen_sphere(scene, 4);
 
 	// Compile a shader for the mirror sphere
-	shader = boost::shared_ptr<ShaderProgram>(new ShaderProgram("shaders/reflect_vert.glsl", "shaders/reflect_frag.glsl"));
+	shader = boost::shared_ptr<ShaderProgram>(new ShaderProgram(vert, frag));
 	
 	// Put it all together to make the object
 	rendermethod = boost::shared_ptr<RenderMethod>(new RenderMethod_CubemapReflection(sphere.vertices_buffer,
@@ -817,8 +818,8 @@ ldr_load_cubemap_rendertarget_scene_2_setup_instances(Scene * scene,
 	boost::shared_ptr<RenderMethod> water = create_water(scene, cubemap3);
 	boost::shared_ptr<RenderMethod> swirly_sphere = create_tex_sphere(scene, "images/swirly.png");
 	boost::shared_ptr<RenderMethod> tree = create_tree(scene);
-	boost::shared_ptr<RenderMethod> mirror_sphere1 = create_mirror_sphere(scene, cubemap1);
-	boost::shared_ptr<RenderMethod> mirror_sphere2 = create_mirror_sphere(scene, cubemap2);
+	boost::shared_ptr<RenderMethod> mirror_sphere1 = create_cubemapped_sphere(scene, cubemap1, "shaders/reflect_vert.glsl", "shaders/reflect_frag.glsl");
+	boost::shared_ptr<RenderMethod> mirror_sphere2 = create_cubemapped_sphere(scene, cubemap2, "shaders/reflect_vert.glsl", "shaders/reflect_frag.glsl");
 
 	instances.push_back(boost::shared_ptr<RenderInstance>(new RenderInstance(Mat4::Identity,
 	                                                                         pool)));
@@ -1093,7 +1094,7 @@ bool ldr_load_scene(Scene* scene, int num)
 		break;
 
     default:
-    	std::cout << "#" << num << " does not refer to a scene." << std::endl;
+    	std::cerr << "#" << num << " does not refer to a scene." << std::endl;
         return false;
     }
 

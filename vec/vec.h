@@ -1037,5 +1037,10 @@ std::ostream& operator<<(std::ostream& os, const Vec4& rhs);
  */
 std::istream& operator>>(std::istream& is, Vec4& rhs);
 
+Vec3 normalize(const Vec3 &a);
+real_t dot(const Vec3 &a, const Vec3 &b);
+Vec3 cross(const Vec3 &a, const Vec3 &b);
+real_t length(const Vec3 &a);
+
 #endif /* _VEC_VEC_H_ */
 

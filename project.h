@@ -27,6 +27,7 @@ class Scene;
 #define DEFAULT_WINDOW_TITLE "15-462"
 // default scene number to load on program start
 #define DEFAULT_INITIAL_SCENE (5)
+#define NUM_SCENES (9)
 // default filename to save screenshots in
 #define DEFAULT_SCREENSHOT_FILENAME "sshot"
 

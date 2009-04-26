@@ -150,6 +150,49 @@ Mat3 Mat3::transpose() const
                  _m[2][0], _m[2][1], _m[2][2] );
 }
 
+Mat3 Mat3::lookAt( const Vec3 &look, const Vec3 &up )
+{
+	/*
+	Finally, let s = f x UP', and	u = s x	f.
+
+	    |  s[0]  s[1]   s[2] |
+	M = |  u[0]  u[1]   u[2] |
+	    | -f[0] -f[1]  -f[2] |
+	*/
+
+	const Vec3 f = normalize(look);
+	const Vec3 s = cross(f, normalize(up));
+	const Vec3 u = cross(s, f);
+
+	Mat3 m = Mat3( s.x,  s.y,  s.z,
+	               u.x,  u.y,  u.z,
+	              -f.x, -f.y, -f.z);
+
+	return m;
+}
+
+Mat4 Mat4::lookAt( const Vec3 &look, const Vec3 &up )
+{
+	/*
+	Finally, let s = f x UP', and	u = s x	f.
+
+	    |  s[0]  s[1]   s[2] |
+	M = |  u[0]  u[1]   u[2] |
+	    | -f[0] -f[1]  -f[2] |
+	*/
+
+	const Vec3 f = normalize(look);
+	const Vec3 s = cross(f, normalize(up));
+	const Vec3 u = cross(s, f);
+
+	Mat4 m = Mat4(  s.x,  s.y,  s.z, 0.0,
+	                u.x,  u.y,  u.z, 0.0,
+	               -f.x, -f.y, -f.z, 0.0,
+				    0.0,  0.0,  0.0, 1.0);
+
+	return m;
+}
+
 const Mat4 Mat4::Identity = Mat4( 1, 0, 0, 0,
                                   0, 1, 0, 0,
                                   0, 0, 1, 0,

@@ -138,6 +138,8 @@ public:
     Mat3 transpose() const;
 
     //Mat3 inverse() const;
+
+	static Mat3 lookAt(const Vec3 &look, const Vec3 &up);
 };
 
 inline Mat3 operator*(real_t r, const Mat3& m)
@@ -319,7 +321,11 @@ public:
 	{
 		return ortho(left, right, top, bottom, -1, +1);
 	}
+
+	static Mat4 lookAt(const Vec3 &look, const Vec3 &up);
 };
+
+static Mat3 lookAt(const Vec3 &f, const Vec3 &up);
 
 inline Mat4 operator*(real_t r, const Mat4& m)
 {

@@ -101,17 +101,25 @@ Scene* app_get_scene()
     return state.scene;
 }
 
-/**
- * Toggles between scenes 0 and 1.
- */
+/** Cycles between available scenes */
 void app_toggle_scene()
 {
-    state.scene_index = !state.scene_index;
+    state.scene_index = (state.scene_index + 1) % NUM_SCENES;
     delete state.scene;
     state.scene = new Scene();
     load_scene(state.scene, state.scene_index);
     update_camera_aspect();
     prj_initialize(state.scene);
+}
+
+/** Reloads the current scene */
+void app_reload_scene()
+{
+	delete state.scene;
+	state.scene = new Scene();
+	load_scene(state.scene, state.scene_index);
+	update_camera_aspect();
+	prj_initialize(state.scene);
 }
 
 /**
@@ -359,6 +367,20 @@ static void mouse_motion_callback(int x, int y, int xrel, int yrel)
 	if(yrel != 0) { apply_control(mouse.camera_control[1], yrel); }
 }
 
+static void key_press(SDLKey key)
+{
+	switch(key)
+	{
+	case SDLK_F1:
+		app_toggle_scene();
+		break;
+
+	case SDLK_SPACE:
+		app_reload_scene();
+		break;
+	}
+}
+
 /**
  * Prints program usage.
  */
@@ -464,6 +486,7 @@ static void app_initialize(int argc, char *argv[],
 	state.input->callback_mouse_button_left_up = &mouse_button_left_up;
 	state.input->callback_mouse_button_right_down = &mouse_button_right_down;
 	state.input->callback_mouse_button_right_up = &mouse_button_right_up;
+	state.input->callback_key_press = &key_press;
 
 	// Initialize TreeLib once for the entire application
 	treelib_init();
