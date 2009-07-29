@@ -14,9 +14,17 @@
 #define NOMINMAX
 #include <iostream>
 #include <windows.h>
-#include <GL/glew.h>
 #endif /* WIN32 */
 
+
+
+#ifndef _WIN32
+#define DebugBreak() asm("int $3")
+#endif
+
+
+
+#include <GL/glew.h>
 #include <cstdlib>
 #include <GL/glext.h>
 
