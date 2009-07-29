@@ -19,7 +19,6 @@
 #include "scene.h"
 #include "timer.h"
 #include "SDLinput.h"
-#include "treelib.h"
 #include "devil_wrapper.h"
 #include "graphicsdevice.h"
 #include <cassert>
@@ -487,9 +486,6 @@ static void app_initialize(int argc, char *argv[],
 	state.input->callback_mouse_button_right_down = &mouse_button_right_down;
 	state.input->callback_mouse_button_right_up = &mouse_button_right_up;
 	state.input->callback_key_press = &key_press;
-
-	// Initialize TreeLib once for the entire application
-	treelib_init();
 
 	// Initialize DevIL once for the entire application
 	devil_init();

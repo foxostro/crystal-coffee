@@ -9,7 +9,6 @@
 #include "glheaders.h"
 #include "project.h"
 #include "scene.h"
-#include "treelib.h"
 #include "geom/sphere.h"
 #include <iostream>
 using namespace std;

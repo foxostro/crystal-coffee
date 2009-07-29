@@ -37,8 +37,6 @@ void StandardPass::render(const Scene * scene)
 		CHECK_GL_ERROR();
 	}
 
-	treelib_render();
-
 	if(rendertarget) { glPopAttrib(); } // restore the viewport
 
 	CHECK_GL_ERROR();
@@ -88,8 +86,6 @@ void CubeMapUpdatePass::render(const Scene * scene)
 			glPopAttrib();
 			CHECK_GL_ERROR();
 		}
-
-		treelib_render();
 
 		glPopMatrix(); // restore the modelview matrix
 	}

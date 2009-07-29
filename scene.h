@@ -14,7 +14,6 @@
 #include "rendermethod.h"
 #include "vec/vec.h"
 #include "vec/quat.h"
-#include "treelib.h"
 #include "material.h"
 #include <string>
 #include <vector>
