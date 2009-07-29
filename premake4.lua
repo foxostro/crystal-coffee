@@ -28,8 +28,8 @@ solution "crystal-coffee"
                     "glut" }
                     
         configuration "gmake"
-            includedirs { "$(pwd)", path.join("$(pwd)", "include") }
-            libdirs { path.join("$(pwd)", "lib") }
+            includedirs { ".", "./include" }
+            libdirs { "./lib" }
                     
         configuration "vs2008"
             includedirs { "$(ProjectDir)", "$(ProjectDir)include" }
