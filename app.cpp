@@ -20,7 +20,7 @@
 #include "timer.h"
 #include "SDLinput.h"
 #include "devil_wrapper.h"
-#include "graphicsdevice.h"
+#include "GraphicsDevice.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>

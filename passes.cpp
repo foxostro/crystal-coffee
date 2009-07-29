@@ -1,7 +1,10 @@
 #include <SDL/SDL.h>
+
 #include "glheaders.h"
 #include "scene.h"
 #include "passes.h"
+
+#include <iostream>
 
 void StandardPass::render(const Scene * scene)
 {

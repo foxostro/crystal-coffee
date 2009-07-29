@@ -1,6 +1,9 @@
 #include <SDL/SDL.h>
+
 #include "glheaders.h"
 #include "GraphicsDevice.h"
+
+#include <iostream>
 
 #ifdef _WIN32
 void GraphicsDevice::flushMessageQueue() {

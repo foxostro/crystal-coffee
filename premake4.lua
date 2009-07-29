@@ -5,7 +5,9 @@ solution "crystal-coffee"
         kind "ConsoleApp"
         language "C++"
         files { "**.h", "**.cpp" } -- recurse into subdirectories
-        
+		targetname "crystal-coffee"
+		targetdir "./bin/"
+
         configuration "windows"  
             links { "opengl32",
             		"glu32",
@@ -20,19 +22,18 @@ solution "crystal-coffee"
         configuration "linux"
         	links { "GL",
                     "GLU",
+            		"GLEW",
             		"SDL",
             		"SDLmain",
-            		"il",
-            		"ilu",
-            		"ilut",
-                    "glut" }
+            		"IL",
+            		"ILU",
+            		"ILUT" }
                     
         configuration "gmake"
-            includedirs { ".", "./include" }
-            libdirs { "./lib" }
-                    
+            includedirs { "." }
+
         configuration "vs2008"
-            includedirs { "$(ProjectDir)", "$(ProjectDir)include" }
+            includedirs { "$(ProjectDir)", "$(ProjectDir)include-win32" }
             libdirs { "$(ProjectDir)lib" }
             linkoptions { "/NODEFAULTLIB:LIBCMT" }
             
@@ -42,9 +43,8 @@ solution "crystal-coffee"
         configuration "Debug"
             defines { "DEBUG" }
             flags { "Symbols" }
-            targetname "crystal-coffee-DEBUG"
+            targetprefix "DEBUG-"
         
         configuration "Release"
             defines { "NDEBUG" }
             flags { "OptimizeSpeed" }
-            targetname "crystal-coffee"

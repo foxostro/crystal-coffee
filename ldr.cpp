@@ -37,12 +37,15 @@ create_tex_sphere(Scene * scene,
 	TriangleSoup sphere = gen_sphere(scene, 4);
 	
 	// Put it all together to make the object
-	rendermethod = boost::shared_ptr<RenderMethod>(new RenderMethod_DiffuseTexture(sphere.vertices_buffer,
-		                                                                           sphere.normals_buffer,
-												                                   include_tcoords ? sphere.tcoords_buffer : boost::shared_ptr< const BufferObject<Vec2> >(),
-												                                   boost::shared_ptr< const BufferObject<index_t> >(), // no indices
-		                                                                           mat,
-		                                                                           tex));
+	rendermethod = boost::shared_ptr<RenderMethod>(
+		new RenderMethod_DiffuseTexture(sphere.vertices_buffer,
+		                                sphere.normals_buffer,
+										include_tcoords
+										  ? sphere.tcoords_buffer
+										  : boost::shared_ptr< BufferObject<Vec2> >(),
+										boost::shared_ptr< const BufferObject<index_t> >(), // no indices
+		                                mat,
+		                                tex));
 	scene->rendermethods.push_back(rendermethod);
 
 	return rendermethod;

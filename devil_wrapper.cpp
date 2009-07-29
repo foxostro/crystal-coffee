@@ -33,8 +33,7 @@ unsigned int devil_loadImage(const std::string &fileName) {
 	ILenum error = ilGetError();
 	
 	if (error != IL_NO_ERROR) {
-		ILstring errstring = iluErrorString(error);
-		std::cerr << "DevIL error: " << errstring << std::endl;
+		std::cerr << "DevIL error: " << iluErrorString(error) << std::endl;
 		return 0;
 	} else {
 		if (ilGetInteger(IL_ORIGIN_MODE) == IL_ORIGIN_LOWER_LEFT &&
